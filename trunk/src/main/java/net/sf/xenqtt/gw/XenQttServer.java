@@ -1,4 +1,4 @@
-package net.sv.xenqtt.gw;
+package net.sf.xenqtt.gw;
 
 public class XenQttServer {
 
