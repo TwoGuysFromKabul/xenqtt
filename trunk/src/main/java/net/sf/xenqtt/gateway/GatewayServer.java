@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw;
+package net.sf.xenqtt.gateway;
 
 public class GatewayServer {
 
