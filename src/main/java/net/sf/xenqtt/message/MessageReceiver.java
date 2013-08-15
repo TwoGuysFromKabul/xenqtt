@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw.message;
+package net.sf.xenqtt.message;
 
 /**
  * Receives {@link MqttMessage}s. Implementations will invoke a {@link MessageHandler} for each received message.

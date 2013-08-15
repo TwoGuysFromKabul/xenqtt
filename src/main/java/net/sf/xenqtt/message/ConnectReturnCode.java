@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw.message;
+package net.sf.xenqtt.message;
 
 /**
  * The code returned in the {@link ConnAckMessage}. The order is important as the ordinal is the numeric value used in messages.

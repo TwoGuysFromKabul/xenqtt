@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw.message;
+package net.sf.xenqtt.message;
 
 /**
  * Handles received {@link MqttMessage}s. There is a method for each message type.
