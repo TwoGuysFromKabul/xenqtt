@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 public final class ConnAckMessage extends MqttMessage {
 
 	/**
-	 * Used to constrcuct a received message.
+	 * Used to construct a received message.
 	 */
 	public ConnAckMessage(ByteBuffer buffer, int remainingLength) {
 		super(buffer, remainingLength);
