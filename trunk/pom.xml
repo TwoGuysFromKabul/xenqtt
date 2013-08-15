@@ -50,7 +50,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-						    <mainClass>net.sf.xenqtt.gw.XenQttServer</mainClass>
+						    <mainClass>net.sf.xenqtt.gw.GatewayServer</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

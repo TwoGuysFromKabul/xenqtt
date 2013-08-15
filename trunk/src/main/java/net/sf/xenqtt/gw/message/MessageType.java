@@ -20,4 +20,19 @@ public enum MessageType {
 	PINGRESP, // PING Response
 	DISCONNECT, // Client is Disconnecting
 	UNUSED_15 // Reserved
+	;
+
+	/**
+	 * @return The {@link MessageType} associated with the specified numeric value.
+	 */
+	public static MessageType lookup(int value) {
+		return values()[value];
+	}
+
+	/**
+	 * @return The numeric value for this {@link MessageType}
+	 */
+	public int value() {
+		return ordinal();
+	}
 }
