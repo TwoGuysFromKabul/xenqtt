@@ -30,6 +30,7 @@ public class ByteChannelMessageSender implements MessageSender {
 
 		if (currentMessage == null) {
 			currentMessage = message;
+			// FIXME [jim] - maybe just call send? single threaded after all
 			return true;
 		}
 
