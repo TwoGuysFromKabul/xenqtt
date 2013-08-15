@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw.message;
+package net.sf.xenqtt.message;
 
 /**
  * MQTT Message types. The order must not be changed as the enum ordinal() is the numeric value of the message type.

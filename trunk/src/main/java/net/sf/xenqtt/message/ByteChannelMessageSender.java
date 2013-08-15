@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw.message;
+package net.sf.xenqtt.message;
 
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayDeque;
@@ -23,7 +23,7 @@ public class ByteChannelMessageSender implements MessageSender {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.gw.message.MessageSender#enqueue(net.sf.xenqtt.gw.message.MqttMessage)
+	 * @see net.sf.xenqtt.message.MessageSender#enqueue(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
 	public boolean enqueue(MqttMessage message) {
@@ -38,7 +38,7 @@ public class ByteChannelMessageSender implements MessageSender {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.gw.message.MessageSender#send()
+	 * @see net.sf.xenqtt.message.MessageSender#send()
 	 */
 	@Override
 	public boolean send() {

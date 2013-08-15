@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw.message;
+package net.sf.xenqtt.message;
 
 /**
  * Sends {@link MqttMessage}s

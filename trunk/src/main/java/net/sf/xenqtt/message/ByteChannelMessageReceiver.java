@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gw.message;
+package net.sf.xenqtt.message;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
@@ -32,7 +32,7 @@ public final class ByteChannelMessageReceiver implements MessageReceiver {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.gw.message.MessageReceiver#receive()
+	 * @see net.sf.xenqtt.message.MessageReceiver#receive()
 	 */
 	@Override
 	public boolean receive() {
