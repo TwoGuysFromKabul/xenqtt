@@ -145,10 +145,41 @@ public class MqttMessage {
 	}
 
 	/**
+	 * @return The string values as UTF-8 bytes. UTF-8 is the character set used for all MQTT strings. Null if the values is null. Null array entry if the
+	 *         values array entry is null.
+	 */
+	final static byte[][] stringsToUtf8(String[] values) {
+
+		byte[][] utf8 = new byte[values.length][];
+		for (int i = 0; i < values.length; i++) {
+			utf8[i] = stringToUtf8(values[i]);
+		}
+		return utf8;
+	}
+
+	/**
 	 * @return The size of the MQTT string that will be created from the specified UTF-8 bytes. 0 if utf8 is null. 2 if utf8 is empty.
 	 */
 	final static int mqttStringSize(byte[] utf8) {
 		return utf8 == null ? 0 : utf8.length;
+	}
+
+	/**
+	 * @return The size of the MQTT strings that will be created from the specified UTF-8 bytes. 0 if utf8 is null.
+	 */
+	final static int mqttStringSize(byte[][] utf8) {
+
+		if (utf8 == null) {
+			return 0;
+		}
+
+		int size = 0;
+
+		for (byte[] b : utf8) {
+			size += mqttStringSize(b);
+		}
+
+		return size;
 	}
 
 	/**
@@ -170,6 +201,15 @@ public class MqttMessage {
 	final void putString(String value) {
 
 		putString(stringToUtf8(value));
+	}
+
+	/**
+	 * @return A string at the specified index. This will change the buffer's current position.
+	 */
+	final String getString(int index) {
+
+		buffer.position(index);
+		return getString();
 	}
 
 	/**

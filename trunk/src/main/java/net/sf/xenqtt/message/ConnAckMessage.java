@@ -31,4 +31,11 @@ public final class ConnAckMessage extends MqttMessage {
 	public ConnectReturnCode getReturnCode() {
 		return ConnectReturnCode.lookup(buffer.get(3) & 0xff);
 	}
+
+	/**
+	 * Sets the return code
+	 */
+	public void setReturnCode(ConnectReturnCode returnCode) {
+		buffer.put(3, (byte) returnCode.value());
+	}
 }
