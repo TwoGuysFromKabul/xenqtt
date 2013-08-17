@@ -1,4 +1,4 @@
-package net.sf.xenqtt.message.client;
+package net.sf.xenqtt.client;
 
 import java.io.IOException;
 
