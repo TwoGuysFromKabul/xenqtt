@@ -11,8 +11,8 @@ public final class PubCompMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubCompMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public PubCompMessage(ByteBuffer buffer) {
+		super(buffer, 2);
 	}
 
 	/**
@@ -21,6 +21,7 @@ public final class PubCompMessage extends MqttMessage {
 	public PubCompMessage(int messageId) {
 		super(MessageType.PUBCOMP, 2);
 		buffer.putShort((short) messageId);
+		buffer.flip();
 	}
 
 	/**

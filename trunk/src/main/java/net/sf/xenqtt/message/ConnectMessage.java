@@ -34,6 +34,7 @@ public final class ConnectMessage extends MqttMessage {
 		this.password = isPasswordFlag() && buffer.hasRemaining() ? getString() : null;
 	}
 
+	// FIXME [jim] - this is wrong. the will qos and retain should be configurable
 	/**
 	 * Create an instance with credentials and no will message.
 	 */
@@ -151,7 +152,7 @@ public final class ConnectMessage extends MqttMessage {
 	 * @return The QoS of the {@link #willMessage}. If there is a Will Message then this will be {@link QoS#AT_LEAST_ONCE}. Otherwise it is not applicable.
 	 */
 	public QoS getWillQoS() {
-		return QoS.values()[(flags >> 3) & 0xff];
+		return QoS.values()[(flags & 0x18 >> 3)];
 	}
 
 	/**

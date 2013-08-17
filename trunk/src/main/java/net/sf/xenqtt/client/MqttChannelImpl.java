@@ -105,7 +105,6 @@ public class MqttChannelImpl implements MqttChannel {
 	public void send(MqttMessage message) throws IOException {
 
 		ByteBuffer buffer = message.getBuffer();
-		buffer.flip();
 
 		if (sendBuffer != null) {
 			writesPending.offer(buffer);
@@ -117,7 +116,6 @@ public class MqttChannelImpl implements MqttChannel {
 		write();
 	}
 
-	// FIXME [jim] - all need unit tests
 	/**
 	 * @see net.sf.xenqtt.client.MqttChannel#write()
 	 */
@@ -152,28 +150,28 @@ public class MqttChannelImpl implements MqttChannel {
 
 		buffer.flip();
 
-		MessageType messageType = MessageType.lookup((buffer.get(0) >> 4) & 0xff);
+		MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 		switch (messageType) {
 		case CONNECT:
 			handler.handle(new ConnectMessage(buffer, remainingLength));
 			break;
 		case CONNACK:
-			handler.handle(new ConnAckMessage(buffer, remainingLength));
+			handler.handle(new ConnAckMessage(buffer));
 			break;
 		case PUBLISH:
 			handler.handle(new PublishMessage(buffer, remainingLength));
 			break;
 		case PUBACK:
-			handler.handle(new PubAckMessage(buffer, remainingLength));
+			handler.handle(new PubAckMessage(buffer));
 			break;
 		case PUBREC:
-			handler.handle(new PubRecMessage(buffer, remainingLength));
+			handler.handle(new PubRecMessage(buffer));
 			break;
 		case PUBREL:
-			handler.handle(new PubRelMessage(buffer, remainingLength));
+			handler.handle(new PubRelMessage(buffer));
 			break;
 		case PUBCOMP:
-			handler.handle(new PubCompMessage(buffer, remainingLength));
+			handler.handle(new PubCompMessage(buffer));
 			break;
 		case SUBSCRIBE:
 			handler.handle(new SubscribeMessage(buffer, remainingLength));
@@ -185,16 +183,16 @@ public class MqttChannelImpl implements MqttChannel {
 			handler.handle(new UnsubscribeMessage(buffer, remainingLength));
 			break;
 		case UNSUBACK:
-			handler.handle(new UnsubAckMessage(buffer, remainingLength));
+			handler.handle(new UnsubAckMessage(buffer));
 			break;
 		case PINGREQ:
-			handler.handle(new PingReqMessage(buffer, remainingLength));
+			handler.handle(new PingReqMessage(buffer));
 			break;
 		case PINGRESP:
-			handler.handle(new PingRespMessage(buffer, remainingLength));
+			handler.handle(new PingRespMessage(buffer));
 			break;
 		case DISCONNECT:
-			handler.handle(new DisconnectMessage(buffer, remainingLength));
+			handler.handle(new DisconnectMessage(buffer));
 			break;
 		default:
 			throw new IllegalStateException("Unsupported message type: " + messageType);

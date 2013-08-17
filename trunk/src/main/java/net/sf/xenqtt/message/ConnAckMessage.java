@@ -10,8 +10,8 @@ public final class ConnAckMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public ConnAckMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public ConnAckMessage(ByteBuffer buffer) {
+		super(buffer, 2);
 	}
 
 	/**

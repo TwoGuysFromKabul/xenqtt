@@ -11,8 +11,8 @@ public final class PubRelMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubRelMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public PubRelMessage(ByteBuffer buffer) {
+		super(buffer, 2);
 	}
 
 	/**
@@ -21,6 +21,7 @@ public final class PubRelMessage extends MqttMessage {
 	public PubRelMessage(int messageId) {
 		super(MessageType.PUBREL, false, QoS.AT_LEAST_ONCE, false, 2);
 		buffer.putShort((short) messageId);
+		buffer.flip();
 	}
 
 	/**

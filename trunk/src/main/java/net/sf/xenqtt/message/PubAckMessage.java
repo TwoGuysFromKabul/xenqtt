@@ -11,8 +11,8 @@ public final class PubAckMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubAckMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public PubAckMessage(ByteBuffer buffer) {
+		super(buffer, 2);
 	}
 
 	/**
@@ -21,6 +21,7 @@ public final class PubAckMessage extends MqttMessage {
 	public PubAckMessage(int messageId) {
 		super(MessageType.PUBACK, 2);
 		buffer.putShort((short) messageId);
+		buffer.flip();
 	}
 
 	/**

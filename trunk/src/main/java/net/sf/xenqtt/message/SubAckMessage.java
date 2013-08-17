@@ -26,6 +26,7 @@ public final class SubAckMessage extends MqttMessage {
 		for (QoS qos : grantedQoses) {
 			buffer.put((byte) qos.value());
 		}
+		buffer.flip();
 	}
 
 	/**
