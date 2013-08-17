@@ -1,4 +1,4 @@
-package net.sf.xenqtt.message.client;
+package net.sf.xenqtt.client;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -63,7 +63,7 @@ public class MqttSocketChannel implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.client.MqttChannel#read()
+	 * @see net.sf.xenqtt.client.MqttChannel#read()
 	 */
 	@Override
 	public boolean read() throws IOException {
@@ -100,7 +100,7 @@ public class MqttSocketChannel implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.client.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
+	 * @see net.sf.xenqtt.client.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
 	public void send(MqttMessage message) throws IOException {
@@ -120,7 +120,7 @@ public class MqttSocketChannel implements MqttChannel {
 
 	// FIXME [jim] - all need unit tests
 	/**
-	 * @see net.sf.xenqtt.message.client.MqttChannel#write()
+	 * @see net.sf.xenqtt.client.MqttChannel#write()
 	 */
 	@Override
 	public void write() throws IOException {
@@ -137,7 +137,7 @@ public class MqttSocketChannel implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.client.MqttChannel#close()
+	 * @see net.sf.xenqtt.client.MqttChannel#close()
 	 */
 	@Override
 	public void close() {
