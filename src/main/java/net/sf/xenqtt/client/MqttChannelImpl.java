@@ -29,9 +29,9 @@ import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
 /**
- * {@link MqttChannel} implementation using a socket for transport.
+ * Default {@link MqttChannel} implementation.
  */
-public class MqttSocketChannel implements MqttChannel {
+public class MqttChannelImpl implements MqttChannel {
 
 	private final MessageHandler handler;
 	private final Socket socket;
@@ -54,7 +54,7 @@ public class MqttSocketChannel implements MqttChannel {
 
 	private ByteBuffer sendBuffer;
 
-	public MqttSocketChannel(Selector selector, Socket socket, MessageHandler handler) throws ClosedChannelException {
+	public MqttChannelImpl(Selector selector, Socket socket, MessageHandler handler) throws ClosedChannelException {
 		this.socket = socket;
 		this.handler = handler;
 		this.channel = socket.getChannel();
