@@ -13,8 +13,8 @@ public final class PubRecMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubRecMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public PubRecMessage(ByteBuffer buffer) {
+		super(buffer, 2);
 	}
 
 	/**
@@ -23,6 +23,7 @@ public final class PubRecMessage extends MqttMessage {
 	public PubRecMessage(int messageId) {
 		super(MessageType.PUBREC, 2);
 		buffer.putShort((short) messageId);
+		buffer.flip();
 	}
 
 	/**

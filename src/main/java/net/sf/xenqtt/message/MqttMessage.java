@@ -91,7 +91,7 @@ public class MqttMessage {
 	 * The type of message
 	 */
 	public final MessageType getMessageType() {
-		return MessageType.lookup((buffer.get(0) >> 4) & 0xff);
+		return MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 	}
 
 	/**
@@ -109,7 +109,7 @@ public class MqttMessage {
 	 * The level of assurance for delivery of a PUBLISH message.
 	 */
 	public final QoS getQoS() {
-		return QoS.lookup((buffer.get(0) >> 1) & 0xff);
+		return QoS.lookup((buffer.get(0) & 0x06) >> 1);
 	}
 
 	/**

@@ -10,8 +10,8 @@ public final class PingRespMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PingRespMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public PingRespMessage(ByteBuffer buffer) {
+		super(buffer, 0);
 	}
 
 	/**
@@ -19,5 +19,6 @@ public final class PingRespMessage extends MqttMessage {
 	 */
 	public PingRespMessage() {
 		super(MessageType.PINGRESP, 0);
+		buffer.flip();
 	}
 }

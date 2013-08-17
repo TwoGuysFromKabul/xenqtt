@@ -15,8 +15,8 @@ public final class DisconnectMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public DisconnectMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public DisconnectMessage(ByteBuffer buffer) {
+		super(buffer, 0);
 	}
 
 	/**
@@ -24,5 +24,6 @@ public final class DisconnectMessage extends MqttMessage {
 	 */
 	public DisconnectMessage() {
 		super(MessageType.DISCONNECT, 0);
+		buffer.flip();
 	}
 }

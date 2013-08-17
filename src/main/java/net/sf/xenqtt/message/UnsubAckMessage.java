@@ -10,17 +10,17 @@ public final class UnsubAckMessage extends MqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public UnsubAckMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public UnsubAckMessage(ByteBuffer buffer) {
+		super(buffer, 2);
 	}
 
-	// FIXME [jim] - check all buffer offset references to be sure fixedHeaderEndOffset is used instead of a fixed number
-	// FIXME [jim] - check all message types to be sure they are correct
 	/**
 	 * Used to construct a message for sending
 	 */
 	public UnsubAckMessage(int messageId) {
 		super(MessageType.UNSUBACK, 2);
+		buffer.putShort((short) messageId);
+		buffer.flip();
 	}
 
 	/**
@@ -29,13 +29,13 @@ public final class UnsubAckMessage extends MqttMessage {
 	 * @see PublishMessage#getMessageId()
 	 */
 	public int getMessageId() {
-		return buffer.getShort(fixedHeaderEndOffset) & 0xffff;
+		return buffer.getShort(2) & 0xffff;
 	}
 
 	/**
 	 * Sets the message ID
 	 */
 	public void setMessageId(int messageId) {
-		buffer.putShort(fixedHeaderEndOffset, (short) messageId);
+		buffer.putShort(2, (short) messageId);
 	}
 }
