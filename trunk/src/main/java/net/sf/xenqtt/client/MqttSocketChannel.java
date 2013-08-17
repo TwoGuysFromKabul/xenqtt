@@ -28,7 +28,6 @@ import net.sf.xenqtt.message.SubscribeMessage;
 import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
-// FIXME [jim] - for the gateway we want to always invoke all read ops as they will generate writes. then call all write ops
 /**
  * {@link MqttChannel} implementation using a socket for transport.
  */
