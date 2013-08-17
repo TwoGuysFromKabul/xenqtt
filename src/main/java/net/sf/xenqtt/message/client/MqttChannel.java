@@ -1,5 +1,7 @@
 package net.sf.xenqtt.message.client;
 
+import java.io.IOException;
+
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttMessage;
 
@@ -13,19 +15,20 @@ public interface MqttChannel {
 	 * 
 	 * @return True if the stream is still open. False if end of stream is reached.
 	 */
-	boolean read();
+	boolean read() throws IOException;
 
 	/**
 	 * Sends the specified message asynchronously.
-	 * 
-	 * @return True if this message is being sent immediately. False if there are other messages ahead of it.
 	 */
-	boolean send(MqttMessage message);
+	void send(MqttMessage message) throws IOException;
 
 	/**
 	 * Writes as much data as possible.
-	 * 
-	 * @return True if there is still pending data to send. False if there is none.
 	 */
-	boolean write();
+	void write() throws IOException;
+
+	/**
+	 * Closes the underlying channels, sockets, etc
+	 */
+	void close();
 }

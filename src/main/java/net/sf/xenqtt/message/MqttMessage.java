@@ -81,6 +81,13 @@ public class MqttMessage {
 	}
 
 	/**
+	 * @return The buffer underlying this class. This should only be used by code that is sending the data.
+	 */
+	public final ByteBuffer getBuffer() {
+		return buffer;
+	}
+
+	/**
 	 * The type of message
 	 */
 	public final MessageType getMessageType() {
@@ -221,21 +228,6 @@ public class MqttMessage {
 		byte[] bytes = new byte[len];
 		buffer.get(bytes);
 		return new String(bytes, UTF8);
-	}
-
-	// FIXME - will need this code or similar later when building the received byte buffer
-	private int parseRemainingLengthBytes() {
-
-		int value = 0;
-		byte b;
-		int multiplier = 1;
-		do {
-			b = buffer.get();
-			value += (b & 0x7f) * multiplier;
-			multiplier *= 0x80;
-		} while ((b & 0x80) != 0);
-
-		return value;
 	}
 
 	private byte[] buildRemainingLengthBytes() {
