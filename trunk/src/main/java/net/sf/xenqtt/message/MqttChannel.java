@@ -15,7 +15,13 @@ public interface MqttChannel {
 	void register(Selector selector) throws IOException;
 
 	/**
-	 * Reads data. This will read as many messages as it can and pass them to a {@link MessageHandler}.
+	 * Finishes a connection. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_CONNECT} op is ready.
+	 */
+	void finishConnect() throws IOException;
+
+	/**
+	 * Reads data. This will read as many messages as it can and pass them to a {@link MessageHandler}.This should be called when a {@link SelectionKey}s
+	 * {@link SelectionKey#OP_READ} op is ready.
 	 * 
 	 * @return True if the stream is still open. False if end of stream is reached.
 	 */
@@ -27,7 +33,7 @@ public interface MqttChannel {
 	void send(MqttMessage message) throws IOException;
 
 	/**
-	 * Writes as much data as possible.
+	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.
 	 */
 	void write() throws IOException;
 

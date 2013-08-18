@@ -1,22 +1,22 @@
 package net.sf.xenqtt.message;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 /**
- * Default {@link MqttChannel} implementation. This class is NOT thread safe.
+ * Default {@link MqttChannel} implementation. This class is NOT thread safe. At construction a {@link SocketChannel} will be registered with the
+ * {@link Selector} specified in the constructor. The new instance of this class will be available from {@link SelectionKey#attachment()}.
  */
 public class MqttChannelImpl implements MqttChannel {
 
 	private final MessageHandler handler;
-	private final Socket socket;
 	private final SocketChannel channel;
 	private SelectionKey selectionKey;
 
@@ -36,10 +36,26 @@ public class MqttChannelImpl implements MqttChannel {
 
 	private ByteBuffer sendBuffer;
 
-	public MqttChannelImpl(Socket socket, MessageHandler handler, Selector selector) throws ClosedChannelException {
-		this.socket = socket;
+	/**
+	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
+	 * {@link SelectionKey#OP_CONNECT} as a ready op then {@link #finishConnect()} should be called.
+	 */
+	public MqttChannelImpl(String host, int port, MessageHandler handler, Selector selector) throws IOException {
+
+		this.channel = SocketChannel.open();
+		this.channel.configureBlocking(false);
 		this.handler = handler;
-		this.channel = socket.getChannel();
+		this.selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, this);
+		this.channel.connect(new InetSocketAddress(host, port));
+	}
+
+	/**
+	 * Use this constructor for clients accepted from a {@link ServerSocketChannel}.
+	 */
+	public MqttChannelImpl(SocketChannel channel, MessageHandler handler, Selector selector) throws IOException {
+		this.handler = handler;
+		this.channel = channel;
+		this.channel.configureBlocking(false);
 		this.selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
 	}
 
@@ -52,6 +68,17 @@ public class MqttChannelImpl implements MqttChannel {
 		int ops = selectionKey.interestOps();
 		selectionKey.cancel();
 		selectionKey = channel.register(selector, ops, this);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#finishConnect()
+	 */
+	@Override
+	public void finishConnect() throws IOException {
+
+		if (channel.finishConnect()) {
+			selectionKey.interestOps(SelectionKey.OP_READ);
+		}
 	}
 
 	/**
@@ -134,7 +161,7 @@ public class MqttChannelImpl implements MqttChannel {
 
 		try {
 			selectionKey.cancel();
-			socket.close();
+			channel.close();
 		} catch (IOException ignore) {
 		}
 	}
