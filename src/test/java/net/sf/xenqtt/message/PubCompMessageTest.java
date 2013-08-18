@@ -31,7 +31,7 @@ public class PubCompMessageTest {
 		for (int i = 0; i < 0xffff; i++) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0x70, 0x02, (byte) (i >> 8), (byte) (i & 0xff) });
 			msg = new PubCompMessage(i);
-			assertEquals(buf, msg.getBuffer());
+			assertEquals(buf, msg.buffer);
 			assertEquals(i, msg.getMessageId());
 		}
 
@@ -44,7 +44,7 @@ public class PubCompMessageTest {
 
 	private void assertMsg() {
 
-		assertEquals(buf, msg.getBuffer());
+		assertEquals(buf, msg.buffer);
 
 		assertEquals(MessageType.PUBCOMP, msg.getMessageType());
 		assertFalse(msg.isDuplicate());

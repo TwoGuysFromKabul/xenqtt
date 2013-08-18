@@ -27,7 +27,7 @@ public class DisconnectMessageTest {
 
 	private void assertMsg() {
 
-		assertEquals(buf, msg.getBuffer());
+		assertEquals(buf, msg.buffer);
 
 		assertEquals(MessageType.DISCONNECT, msg.getMessageType());
 		assertFalse(msg.isDuplicate());

@@ -1,9 +1,6 @@
-package net.sf.xenqtt.client;
+package net.sf.xenqtt.message;
 
 import java.io.IOException;
-
-import net.sf.xenqtt.message.MessageHandler;
-import net.sf.xenqtt.message.MqttMessage;
 
 /**
  * Sends and receives {@link MqttMessage}s over a channel. This may be client or server side.

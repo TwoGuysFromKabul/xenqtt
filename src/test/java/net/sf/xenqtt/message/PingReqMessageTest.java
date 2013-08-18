@@ -27,7 +27,7 @@ public class PingReqMessageTest {
 
 	private void assertMsg() {
 
-		assertEquals(buf, msg.getBuffer());
+		assertEquals(buf, msg.buffer);
 
 		assertEquals(MessageType.PINGREQ, msg.getMessageType());
 		assertFalse(msg.isDuplicate());
