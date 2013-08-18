@@ -1,4 +1,4 @@
-package net.sf.xenqtt.client;
+package net.sf.xenqtt.message;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -9,24 +9,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Queue;
-
-import net.sf.xenqtt.message.ConnAckMessage;
-import net.sf.xenqtt.message.ConnectMessage;
-import net.sf.xenqtt.message.DisconnectMessage;
-import net.sf.xenqtt.message.MessageHandler;
-import net.sf.xenqtt.message.MessageType;
-import net.sf.xenqtt.message.MqttMessage;
-import net.sf.xenqtt.message.PingReqMessage;
-import net.sf.xenqtt.message.PingRespMessage;
-import net.sf.xenqtt.message.PubAckMessage;
-import net.sf.xenqtt.message.PubCompMessage;
-import net.sf.xenqtt.message.PubRecMessage;
-import net.sf.xenqtt.message.PubRelMessage;
-import net.sf.xenqtt.message.PublishMessage;
-import net.sf.xenqtt.message.SubAckMessage;
-import net.sf.xenqtt.message.SubscribeMessage;
-import net.sf.xenqtt.message.UnsubAckMessage;
-import net.sf.xenqtt.message.UnsubscribeMessage;
 
 /**
  * Default {@link MqttChannel} implementation.
@@ -62,7 +44,7 @@ public class MqttChannelImpl implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.client.MqttChannel#read()
+	 * @see net.sf.xenqtt.message.MqttChannel#read()
 	 */
 	@Override
 	public boolean read() throws IOException {
@@ -99,12 +81,12 @@ public class MqttChannelImpl implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.client.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
 	public void send(MqttMessage message) throws IOException {
 
-		ByteBuffer buffer = message.getBuffer();
+		ByteBuffer buffer = message.buffer;
 
 		if (sendBuffer != null) {
 			writesPending.offer(buffer);
@@ -117,7 +99,7 @@ public class MqttChannelImpl implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.client.MqttChannel#write()
+	 * @see net.sf.xenqtt.message.MqttChannel#write()
 	 */
 	@Override
 	public void write() throws IOException {
@@ -134,7 +116,7 @@ public class MqttChannelImpl implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.client.MqttChannel#close()
+	 * @see net.sf.xenqtt.message.MqttChannel#close()
 	 */
 	@Override
 	public void close() {

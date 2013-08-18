@@ -31,7 +31,7 @@ public class UnsubAckMessageTest {
 		for (int i = 0; i < 0xffff; i++) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0xb0, 0x02, (byte) (i >> 8), (byte) (i & 0xff) });
 			msg = new UnsubAckMessage(i);
-			assertEquals(buf, msg.getBuffer());
+			assertEquals(buf, msg.buffer);
 			assertEquals(i, msg.getMessageId());
 		}
 
@@ -44,7 +44,7 @@ public class UnsubAckMessageTest {
 
 	private void assertMsg() {
 
-		assertEquals(buf, msg.getBuffer());
+		assertEquals(buf, msg.buffer);
 
 		assertEquals(MessageType.UNSUBACK, msg.getMessageType());
 		assertFalse(msg.isDuplicate());

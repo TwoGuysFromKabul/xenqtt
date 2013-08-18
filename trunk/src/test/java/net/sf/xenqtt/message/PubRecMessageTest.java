@@ -31,7 +31,7 @@ public class PubRecMessageTest {
 		for (int i = 0; i < 0xffff; i++) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0x50, 0x02, (byte) (i >> 8), (byte) (i & 0xff) });
 			msg = new PubRecMessage(i);
-			assertEquals(buf, msg.getBuffer());
+			assertEquals(buf, msg.buffer);
 			assertEquals(i, msg.getMessageId());
 		}
 
@@ -44,7 +44,7 @@ public class PubRecMessageTest {
 
 	private void assertMsg() {
 
-		assertEquals(buf, msg.getBuffer());
+		assertEquals(buf, msg.buffer);
 
 		assertEquals(MessageType.PUBREC, msg.getMessageType());
 		assertFalse(msg.isDuplicate());

@@ -31,7 +31,7 @@ public class ConnAckMessageTest {
 		for (ConnectReturnCode code : ConnectReturnCode.values()) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0x20, 0x02, 0x00, (byte) code.value() });
 			msg = new ConnAckMessage(code);
-			assertEquals(buf, msg.getBuffer());
+			assertEquals(buf, msg.buffer);
 			assertEquals(code, msg.getReturnCode());
 		}
 
@@ -44,7 +44,7 @@ public class ConnAckMessageTest {
 
 	private void assertMsg() {
 
-		assertEquals(buf, msg.getBuffer());
+		assertEquals(buf, msg.buffer);
 
 		assertEquals(MessageType.CONNACK, msg.getMessageType());
 		assertFalse(msg.isDuplicate());

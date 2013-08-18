@@ -31,7 +31,7 @@ public class PubAckMessageTest {
 		for (int i = 0; i < 0xffff; i++) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0x40, 0x02, (byte) (i >> 8), (byte) (i & 0xff) });
 			msg = new PubAckMessage(i);
-			assertEquals(buf, msg.getBuffer());
+			assertEquals(buf, msg.buffer);
 			assertEquals(i, msg.getMessageId());
 		}
 
@@ -44,7 +44,7 @@ public class PubAckMessageTest {
 
 	private void assertMsg() {
 
-		assertEquals(buf, msg.getBuffer());
+		assertEquals(buf, msg.buffer);
 
 		assertEquals(MessageType.PUBACK, msg.getMessageType());
 		assertFalse(msg.isDuplicate());

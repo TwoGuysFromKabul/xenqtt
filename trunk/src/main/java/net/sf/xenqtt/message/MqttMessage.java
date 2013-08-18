@@ -81,13 +81,6 @@ public class MqttMessage {
 	}
 
 	/**
-	 * @return The buffer underlying this class. This should only be used by code that is sending the data.
-	 */
-	public final ByteBuffer getBuffer() {
-		return buffer;
-	}
-
-	/**
 	 * The type of message
 	 */
 	public final MessageType getMessageType() {

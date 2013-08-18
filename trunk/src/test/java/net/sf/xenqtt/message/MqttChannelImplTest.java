@@ -1,4 +1,4 @@
-package net.sf.xenqtt.client;
+package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
 
