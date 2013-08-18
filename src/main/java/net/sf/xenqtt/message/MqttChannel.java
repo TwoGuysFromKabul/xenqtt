@@ -1,11 +1,18 @@
 package net.sf.xenqtt.message;
 
 import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 /**
  * Sends and receives {@link MqttMessage}s over a channel. This may be client or server side.
  */
 public interface MqttChannel {
+
+	/**
+	 * Registers this channel with the specified selector. The {@link SelectionKey} for the previously registered selector is canceled.
+	 */
+	void register(Selector selector) throws IOException;
 
 	/**
 	 * Reads data. This will read as many messages as it can and pass them to a {@link MessageHandler}.

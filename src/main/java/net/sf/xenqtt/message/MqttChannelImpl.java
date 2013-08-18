@@ -11,14 +11,14 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 
 /**
- * Default {@link MqttChannel} implementation.
+ * Default {@link MqttChannel} implementation. This class is NOT thread safe.
  */
 public class MqttChannelImpl implements MqttChannel {
 
 	private final MessageHandler handler;
 	private final Socket socket;
 	private final SocketChannel channel;
-	private final SelectionKey selectionKey;
+	private SelectionKey selectionKey;
 
 	// reads the first byte of the fixed header
 	private final ByteBuffer readHeader1 = ByteBuffer.allocate(2);
@@ -36,11 +36,22 @@ public class MqttChannelImpl implements MqttChannel {
 
 	private ByteBuffer sendBuffer;
 
-	public MqttChannelImpl(Selector selector, Socket socket, MessageHandler handler) throws ClosedChannelException {
+	public MqttChannelImpl(Socket socket, MessageHandler handler, Selector selector) throws ClosedChannelException {
 		this.socket = socket;
 		this.handler = handler;
 		this.channel = socket.getChannel();
-		selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
+		this.selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#register(java.nio.channels.Selector)
+	 */
+	@Override
+	public void register(Selector selector) throws IOException {
+
+		int ops = selectionKey.interestOps();
+		selectionKey.cancel();
+		selectionKey = channel.register(selector, ops, this);
 	}
 
 	/**
