@@ -2,93 +2,358 @@ package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class MqttChannelImplTest {
 
-	@Mock MessageHandler handler;
+	MockMessageHandler clientHandler = new MockMessageHandler();
+	MockMessageHandler brokerHandler = new MockMessageHandler();
 
-	int port;
-	volatile Exception serverException;
-	ByteBuffer serverBuffer = ByteBuffer.allocate(1024);
+	ServerSocketChannel ssc;
 	Selector selector;
+	int port;
 
-	TestServer server;
-	MqttChannel channel;
+	MqttChannel clientChannel;
+	MqttChannel brokerChannel;
 
 	@Before
 	public void setup() throws Exception {
 
 		MockitoAnnotations.initMocks(this);
 
+		ssc = ServerSocketChannel.open();
+		ssc.configureBlocking(false);
+
+		ServerSocket serverSocket = ssc.socket();
+		serverSocket.bind(new InetSocketAddress(0));
+		port = serverSocket.getLocalPort();
+
 		selector = Selector.open();
-		server = new TestServer();
-		server.start();
+		selector = Selector.open();
+
+		ssc.register(selector, SelectionKey.OP_ACCEPT);
 	}
 
-	// FIXME [jim] - only got as far as setting up the basic framework for getting a connection going
 	@Test
-	public void test() throws Exception {
+	public void testCtors() throws Exception {
 
-		channel = new MqttChannelImpl("localhost", port, handler, selector);
+		establishConnection();
 
-		assertEquals(1, selector.select());
-		SelectionKey key = selector.selectedKeys().iterator().next();
-		assertEquals(SelectionKey.OP_CONNECT, key.readyOps());
-		channel.finishConnect();
+		assertFalse(clientChannel.isConnectionPending());
+		assertTrue(clientChannel.isOpen());
+		assertTrue(clientChannel.isConnected());
 
-		channel.close();
-		server.join();
-		fail("Not yet implemented");
+		assertFalse(brokerChannel.isConnectionPending());
+		assertTrue(brokerChannel.isOpen());
+		assertTrue(brokerChannel.isConnected());
 
+		closeConnection();
 	}
 
-	private class TestServer extends Thread {
+	@Test
+	public void testRegister() throws Exception {
 
-		ServerSocketChannel ssc;
+		establishConnection();
 
-		public TestServer() throws Exception {
-			ssc = ServerSocketChannel.open();
-			ServerSocket serverSocket = ssc.socket();
-			serverSocket.bind(new InetSocketAddress(0));
-			port = serverSocket.getLocalPort();
+		Selector newSelector = Selector.open();
+		assertEquals(0, newSelector.keys().size());
+
+		clientChannel.register(newSelector);
+		assertEquals(1, newSelector.keys().size());
+
+		closeConnection();
+	}
+
+	@Test
+	public void testReadWriteSend_ClientClosesConnection() throws Exception {
+
+		establishConnection();
+
+		clientChannel.close();
+
+		assertEquals(brokerChannel, readWrite(1, 1));
+
+		brokerChannel.close();
+	}
+
+	@Test
+	public void testReadWriteSend_BrokerClosesConnection() throws Exception {
+
+		establishConnection();
+
+		brokerChannel.close();
+
+		assertEquals(clientChannel, readWrite(1, 1));
+
+		clientChannel.close();
+	}
+
+	@Test
+	public void testReadWriteSend_PingReqResp() throws Exception {
+
+		establishConnection();
+
+		PingReqMessage pingReqMsg = new PingReqMessage();
+		PingRespMessage pingRespMsg = new PingRespMessage();
+
+		clientChannel.send(pingReqMsg);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertNotSame(pingReqMsg, brokerHandler.messagesReceived.get(0));
+		assertEquals(pingReqMsg, brokerHandler.messagesReceived.get(0));
+
+		brokerChannel.send(pingRespMsg);
+		assertNull(readWrite(1, 0));
+		assertEquals(1, clientHandler.messagesReceived.size());
+		assertNotSame(pingRespMsg, clientHandler.messagesReceived.get(0));
+		assertEquals(pingRespMsg, clientHandler.messagesReceived.get(0));
+
+		clientChannel.close();
+
+		assertEquals(brokerChannel, readWrite(1, 1));
+
+		brokerChannel.close();
+	}
+
+	@Test
+	public void testReadWriteSend_RemainingLengthZero() throws Exception {
+
+		establishConnection();
+
+		PingReqMessage msg = new PingReqMessage();
+
+		clientChannel.send(msg);
+		assertNull(readWrite(0, 1));
+
+		closeConnection();
+	}
+
+	@Test
+	public void testReadWriteSend_RemainingLength2() throws Exception {
+
+		establishConnection();
+
+		PubAckMessage msg = new PubAckMessage(123);
+
+		clientChannel.send(msg);
+		assertNull(readWrite(0, 1));
+
+		closeConnection();
+	}
+
+	@Test
+	public void testReadWriteSend_RemainingLength126to129() throws Exception {
+
+		doTestReadWriteSend(126, 4);
+	}
+
+	@Test
+	public void testReadWriteSend_RemainingLength16382to16385() throws Exception {
+		doTestReadWriteSend(16382, 4);
+	}
+
+	@Test
+	public void testReadWriteSend_RemainingLength2097150to2097155() throws Exception {
+		doTestReadWriteSend(2097150, 6);
+	}
+
+	@Test
+	public void testReadWriteSend_LotsOfMessages() throws Exception {
+		doTestReadWriteSend(1000, 5000);
+	}
+
+	private void doTestReadWriteSend(int firstRemainingLength, int messageCount) throws Exception {
+
+		List<PublishMessage> messagesSent = new ArrayList<PublishMessage>();
+
+		establishConnection();
+
+		for (int remainingLength = firstRemainingLength; remainingLength < firstRemainingLength + messageCount; remainingLength++) {
+			int payloadLength = remainingLength - 7;
+			byte[] payload = new byte[payloadLength];
+			Arrays.fill(payload, (byte) messageCount);
+
+			PublishMessage msg = new PublishMessage(false, QoS.AT_LEAST_ONCE, false, "abc", 123, payload);
+
+			clientChannel.send(msg);
+			messagesSent.add(msg);
+		}
+
+		assertNull(readWrite(0, messageCount));
+
+		assertEquals(brokerHandler.messagesReceived, messagesSent);
+
+		closeConnection();
+	}
+
+	/**
+	 * reads and writes until the specified number of client and broker messages are received or until a channel is closed
+	 * 
+	 * @return null if the requested message counts were received. Otherwise, the connection that was closed (read op hit end of stream)
+	 */
+	private MqttChannel readWrite(int clientMessageCount, int brokerMessageCount) throws Exception {
+
+		clientHandler.messagesReceived.clear();
+		brokerHandler.messagesReceived.clear();
+
+		while (brokerHandler.messagesReceived.size() < brokerMessageCount || clientHandler.messagesReceived.size() < clientMessageCount) {
+
+			selector.select();
+			Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+
+			while (iter.hasNext()) {
+				SelectionKey key = iter.next();
+				MqttChannel channel = (MqttChannel) key.attachment();
+				if (key.isReadable()) {
+					if (!channel.read()) {
+						return channel;
+					}
+				}
+				if (key.isWritable()) {
+					channel.write();
+				}
+				iter.remove();
+			}
+		}
+
+		return null;
+	}
+
+	private void closeConnection() {
+
+		clientChannel.close();
+		assertFalse(clientChannel.isOpen());
+		brokerChannel.close();
+		assertFalse(brokerChannel.isOpen());
+	}
+
+	private void establishConnection() throws Exception {
+
+		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
+		assertFalse(clientChannel.isConnected());
+		assertTrue(clientChannel.isOpen());
+		assertTrue(clientChannel.isConnectionPending());
+
+		assertEquals(2, selector.keys().size());
+
+		boolean clientConnected = false;
+		while (brokerChannel == null || !clientConnected) {
+			selector.select();
+
+			Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+			while (iter.hasNext()) {
+				SelectionKey key = iter.next();
+				if (key.isAcceptable()) {
+					assertSame(ssc, key.channel());
+					assertTrue(key.isAcceptable());
+					SocketChannel brokerSocketChannel = ssc.accept();
+					brokerChannel = new MqttChannelImpl(brokerSocketChannel, brokerHandler, selector);
+					assertFalse(brokerChannel.isConnectionPending());
+					assertTrue(brokerChannel.isOpen());
+					assertTrue(brokerChannel.isConnected());
+					key.cancel();
+					ssc.close();
+				} else if (key.isConnectable()) {
+					assertSame(clientChannel, key.attachment());
+					assertFalse(key.channel().isBlocking());
+					assertTrue(key.channel().isRegistered());
+					assertTrue(clientChannel.isConnectionPending());
+					clientChannel.finishConnect();
+					assertFalse(clientChannel.isConnectionPending());
+					assertTrue(clientChannel.isOpen());
+					assertTrue(clientChannel.isConnected());
+					clientConnected = true;
+				}
+				iter.remove();
+			}
+		}
+	}
+
+	private static class MockMessageHandler implements MessageHandler {
+
+		List<MqttMessage> messagesReceived = new ArrayList<MqttMessage>();
+
+		@Override
+		public void handle(ConnectMessage message) {
+			messagesReceived.add(message);
 		}
 
 		@Override
-		public void run() {
+		public void handle(ConnAckMessage message) {
+			messagesReceived.add(message);
+		}
 
-			SocketChannel socketChannel = null;
-			try {
+		@Override
+		public void handle(PublishMessage message) {
+			messagesReceived.add(message);
+		}
 
-				socketChannel = ssc.accept();
-				while (socketChannel.read(serverBuffer) > 0) {
-					;
-				}
+		@Override
+		public void handle(PubAckMessage message) {
+			messagesReceived.add(message);
+		}
 
-			} catch (Exception e) {
-				serverException = e;
-			} finally {
-				if (ssc != null) {
-					try {
-						ssc.close();
-						socketChannel.close();
-					} catch (IOException ignore) {
-					}
-				}
-			}
+		@Override
+		public void handle(PubRecMessage message) {
+			messagesReceived.add(message);
+		}
 
+		@Override
+		public void handle(PubRelMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(PubCompMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(SubscribeMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(SubAckMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(UnsubscribeMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(UnsubAckMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(PingReqMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(PingRespMessage message) {
+			messagesReceived.add(message);
+		}
+
+		@Override
+		public void handle(DisconnectMessage message) {
+			messagesReceived.add(message);
 		}
 	}
 }
