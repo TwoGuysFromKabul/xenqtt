@@ -2,6 +2,7 @@ package net.sf.xenqtt.message;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 /**
  * This is a generic MQTT message. Extending classes support more specific message types
@@ -221,6 +222,52 @@ public class MqttMessage {
 		byte[] bytes = new byte[len];
 		buffer.get(bytes);
 		return new String(bytes, UTF8);
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+
+		return Arrays.hashCode(getBytes());
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (obj == null || !(getClass().isAssignableFrom(obj.getClass()))) {
+			return false;
+		}
+
+		MqttMessage that = (MqttMessage) obj;
+
+		return Arrays.equals(getBytes(), that.getBytes());
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return getClass().getSimpleName() + ": " + Arrays.toString(getBytes());
+	}
+
+	private byte[] getBytes() {
+
+		int pos = buffer.position();
+		buffer.rewind();
+
+		byte[] buf = new byte[buffer.limit()];
+		buffer.get(buf);
+
+		buffer.position(pos);
+
+		return buf;
 	}
 
 	private byte[] buildRemainingLengthBytes() {
