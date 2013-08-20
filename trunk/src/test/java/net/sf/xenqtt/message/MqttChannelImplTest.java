@@ -19,15 +19,15 @@ import org.mockito.MockitoAnnotations;
 
 public class MqttChannelImplTest {
 
-	MockMessageHandler clientHandler = new MockMessageHandler();
-	MockMessageHandler brokerHandler = new MockMessageHandler();
-
 	ServerSocketChannel ssc;
 	Selector selector;
 	int port;
 
 	MqttChannel clientChannel;
 	MqttChannel brokerChannel;
+
+	MockMessageHandler clientHandler = new MockMessageHandler(false);
+	MockMessageHandler brokerHandler = new MockMessageHandler(true);
 
 	@Before
 	public void setup() throws Exception {
@@ -71,7 +71,7 @@ public class MqttChannelImplTest {
 		Selector newSelector = Selector.open();
 		assertEquals(0, newSelector.keys().size());
 
-		clientChannel.register(newSelector);
+		clientChannel.register(newSelector, new MockMessageHandler(false));
 		assertEquals(1, newSelector.keys().size());
 
 		closeConnection();
@@ -282,78 +282,97 @@ public class MqttChannelImplTest {
 		}
 	}
 
-	private static class MockMessageHandler implements MessageHandler {
+	private class MockMessageHandler implements MessageHandler {
 
+		private final boolean isBrokerChannel;
 		List<MqttMessage> messagesReceived = new ArrayList<MqttMessage>();
 
-		@Override
-		public void handle(ConnectMessage message) {
-			messagesReceived.add(message);
+		public MockMessageHandler(boolean isBrokerChannel) {
+			this.isBrokerChannel = isBrokerChannel;
 		}
 
 		@Override
-		public void handle(ConnAckMessage message) {
+		public void handle(MqttChannel channel, ConnectMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(PublishMessage message) {
+		public void handle(MqttChannel channel, ConnAckMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(PubAckMessage message) {
+		public void handle(MqttChannel channel, PublishMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(PubRecMessage message) {
+		public void handle(MqttChannel channel, PubAckMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(PubRelMessage message) {
+		public void handle(MqttChannel channel, PubRecMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(PubCompMessage message) {
+		public void handle(MqttChannel channel, PubRelMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(SubscribeMessage message) {
+		public void handle(MqttChannel channel, PubCompMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(SubAckMessage message) {
+		public void handle(MqttChannel channel, SubscribeMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(UnsubscribeMessage message) {
+		public void handle(MqttChannel channel, SubAckMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(UnsubAckMessage message) {
+		public void handle(MqttChannel channel, UnsubscribeMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(PingReqMessage message) {
+		public void handle(MqttChannel channel, UnsubAckMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(PingRespMessage message) {
+		public void handle(MqttChannel channel, PingReqMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(DisconnectMessage message) {
+		public void handle(MqttChannel channel, PingRespMessage message) {
 			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		}
+
+		@Override
+		public void handle(MqttChannel channel, DisconnectMessage message) {
+			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 	}
 }

@@ -16,9 +16,9 @@ import java.util.Queue;
  */
 public class MqttChannelImpl implements MqttChannel {
 
-	private final MessageHandler handler;
 	private final SocketChannel channel;
 	private SelectionKey selectionKey;
+	private MessageHandler handler;
 
 	// reads the first byte of the fixed header
 	private final ByteBuffer readHeader1 = ByteBuffer.allocate(2);
@@ -60,14 +60,25 @@ public class MqttChannelImpl implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#register(java.nio.channels.Selector)
+	 * @see net.sf.xenqtt.message.MqttChannel#deregister()
 	 */
 	@Override
-	public void register(Selector selector) throws IOException {
+	public void deregister() {
 
-		int ops = selectionKey.interestOps();
+		selectionKey.cancel();
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#register(java.nio.channels.Selector, net.sf.xenqtt.message.MessageHandler)
+	 */
+	@Override
+	public void register(Selector selector, MessageHandler handler) throws IOException {
+
+		int ops = sendBuffer == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
+
 		selectionKey.cancel();
 		selectionKey = channel.register(selector, ops, this);
+		this.handler = handler;
 	}
 
 	/**
@@ -81,7 +92,6 @@ public class MqttChannelImpl implements MqttChannel {
 		}
 	}
 
-	// FIXME [jim] - will I get an op_read ready when the channel is closed?
 	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#read()
 	 */
@@ -199,46 +209,46 @@ public class MqttChannelImpl implements MqttChannel {
 		MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 		switch (messageType) {
 		case CONNECT:
-			handler.handle(new ConnectMessage(buffer, remainingLength));
+			handler.handle(this, new ConnectMessage(buffer, remainingLength));
 			break;
 		case CONNACK:
-			handler.handle(new ConnAckMessage(buffer));
+			handler.handle(this, new ConnAckMessage(buffer));
 			break;
 		case PUBLISH:
-			handler.handle(new PublishMessage(buffer, remainingLength));
+			handler.handle(this, new PublishMessage(buffer, remainingLength));
 			break;
 		case PUBACK:
-			handler.handle(new PubAckMessage(buffer));
+			handler.handle(this, new PubAckMessage(buffer));
 			break;
 		case PUBREC:
-			handler.handle(new PubRecMessage(buffer));
+			handler.handle(this, new PubRecMessage(buffer));
 			break;
 		case PUBREL:
-			handler.handle(new PubRelMessage(buffer));
+			handler.handle(this, new PubRelMessage(buffer));
 			break;
 		case PUBCOMP:
-			handler.handle(new PubCompMessage(buffer));
+			handler.handle(this, new PubCompMessage(buffer));
 			break;
 		case SUBSCRIBE:
-			handler.handle(new SubscribeMessage(buffer, remainingLength));
+			handler.handle(this, new SubscribeMessage(buffer, remainingLength));
 			break;
 		case SUBACK:
-			handler.handle(new SubAckMessage(buffer, remainingLength));
+			handler.handle(this, new SubAckMessage(buffer, remainingLength));
 			break;
 		case UNSUBSCRIBE:
-			handler.handle(new UnsubscribeMessage(buffer, remainingLength));
+			handler.handle(this, new UnsubscribeMessage(buffer, remainingLength));
 			break;
 		case UNSUBACK:
-			handler.handle(new UnsubAckMessage(buffer));
+			handler.handle(this, new UnsubAckMessage(buffer));
 			break;
 		case PINGREQ:
-			handler.handle(new PingReqMessage(buffer));
+			handler.handle(this, new PingReqMessage(buffer));
 			break;
 		case PINGRESP:
-			handler.handle(new PingRespMessage(buffer));
+			handler.handle(this, new PingRespMessage(buffer));
 			break;
 		case DISCONNECT:
-			handler.handle(new DisconnectMessage(buffer));
+			handler.handle(this, new DisconnectMessage(buffer));
 			break;
 		default:
 			throw new IllegalStateException("Unsupported message type: " + messageType);

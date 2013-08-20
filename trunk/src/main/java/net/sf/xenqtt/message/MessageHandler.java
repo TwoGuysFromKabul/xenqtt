@@ -6,72 +6,72 @@ package net.sf.xenqtt.message;
 public interface MessageHandler {
 
 	/**
-	 * Called when a {@link ConnectMessage} is received
+	 * Called when a {@link ConnectMessage} is received through the specified channel
 	 */
-	void handle(ConnectMessage message);
+	void handle(MqttChannel channel, ConnectMessage message);
 
 	/**
-	 * Called when a {@link ConnAckMessage} is received
+	 * Called when a {@link ConnAckMessage} is received through the specified channel
 	 */
-	void handle(ConnAckMessage message);
+	void handle(MqttChannel channel, ConnAckMessage message);
 
 	/**
-	 * Called when a {@link PublishMessage} is received
+	 * Called when a {@link PublishMessage} is received through the specified channel
 	 */
-	void handle(PublishMessage message);
+	void handle(MqttChannel channel, PublishMessage message);
 
 	/**
-	 * Called when a {@link PubAckMessage} is received
+	 * Called when a {@link PubAckMessage} is received through the specified channel
 	 */
-	void handle(PubAckMessage message);
+	void handle(MqttChannel channel, PubAckMessage message);
 
 	/**
-	 * Called when a {@link PubRecMessage} is received
+	 * Called when a {@link PubRecMessage} is received through the specified channel
 	 */
-	void handle(PubRecMessage message);
+	void handle(MqttChannel channel, PubRecMessage message);
 
 	/**
-	 * Called when a {@link PubRelMessage} is received
+	 * Called when a {@link PubRelMessage} is received through the specified channel
 	 */
-	void handle(PubRelMessage message);
+	void handle(MqttChannel channel, PubRelMessage message);
 
 	/**
-	 * Called when a {@link PubCompMessage} is received
+	 * Called when a {@link PubCompMessage} is received through the specified channel
 	 */
-	void handle(PubCompMessage message);
+	void handle(MqttChannel channel, PubCompMessage message);
 
 	/**
-	 * Called when a {@link SubscribeMessage} is received
+	 * Called when a {@link SubscribeMessage} is received through the specified channel
 	 */
-	void handle(SubscribeMessage message);
+	void handle(MqttChannel channel, SubscribeMessage message);
 
 	/**
-	 * Called when a {@link SubAckMessage} is received
+	 * Called when a {@link SubAckMessage} is received through the specified channel
 	 */
-	void handle(SubAckMessage message);
+	void handle(MqttChannel channel, SubAckMessage message);
 
 	/**
-	 * Called when a {@link UnsubscribeMessage} is received
+	 * Called when a {@link UnsubscribeMessage} is received through the specified channel
 	 */
-	void handle(UnsubscribeMessage message);
+	void handle(MqttChannel channel, UnsubscribeMessage message);
 
 	/**
-	 * Called when a {@link UnsubAckMessage} is received
+	 * Called when a {@link UnsubAckMessage} is received through the specified channel
 	 */
-	void handle(UnsubAckMessage message);
+	void handle(MqttChannel channel, UnsubAckMessage message);
 
 	/**
-	 * Called when a {@link PingReqMessage} is received
+	 * Called when a {@link PingReqMessage} is received through the specified channel
 	 */
-	void handle(PingReqMessage message);
+	void handle(MqttChannel channel, PingReqMessage message);
 
 	/**
-	 * Called when a {@link PingRespMessage} is received
+	 * Called when a {@link PingRespMessage} is received through the specified channel
 	 */
-	void handle(PingRespMessage message);
+	void handle(MqttChannel channel, PingRespMessage message);
 
 	/**
-	 * Called when a {@link DisconnectMessage} is received
+	 * Called when a {@link DisconnectMessage} is received through the specified channel
 	 */
-	void handle(DisconnectMessage message);
+	void handle(MqttChannel channel, DisconnectMessage message);
 }

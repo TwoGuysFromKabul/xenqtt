@@ -10,9 +10,15 @@ import java.nio.channels.Selector;
 public interface MqttChannel {
 
 	/**
-	 * Registers this channel with the specified selector. The {@link SelectionKey} for the previously registered selector is canceled.
+	 * Deregisters this channel. Cancels the underlying {@link SelectionKey}.
 	 */
-	void register(Selector selector) throws IOException;
+	void deregister();
+
+	/**
+	 * Registers this channel with the specified selector. The {@link SelectionKey} for the previously registered selector is canceled. The current
+	 * {@link MessageHandler} is replaced with the specified one.
+	 */
+	void register(Selector selector, MessageHandler handler) throws IOException;
 
 	/**
 	 * Finishes a connection. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_CONNECT} op is ready.
