@@ -11,6 +11,8 @@ import java.nio.ByteBuffer;
  */
 public final class PublishMessage extends MqttMessage {
 
+	private int messageIdIndex = -1;
+
 	/**
 	 * Used to construct a received message.
 	 */
@@ -21,8 +23,8 @@ public final class PublishMessage extends MqttMessage {
 	/**
 	 * Used to construct a message for sending
 	 */
-	public PublishMessage(boolean duplicate, QoS qos, boolean retain, String topicName, int messageId) {
-		this(duplicate, qos, retain, stringToUtf8(topicName), messageId);
+	public PublishMessage(boolean duplicate, QoS qos, boolean retain, String topicName, int messageId, byte[] payload) {
+		this(duplicate, qos, retain, stringToUtf8(topicName), messageId, payload);
 	}
 
 	/**
@@ -55,6 +57,20 @@ public final class PublishMessage extends MqttMessage {
 	}
 
 	/**
+	 * Contains the data for publishing. The content and format of the data is application specific. It is valid for a PUBLISH to contain a 0-length payload.
+	 */
+	public byte[] getPayload() {
+
+		int pos = buffer.position();
+		buffer.position(getMessageIdIndex() + 2);
+		byte[] payload = new byte[buffer.limit() - buffer.position()];
+		buffer.get(payload);
+		buffer.position(pos);
+
+		return payload;
+	}
+
+	/**
 	 * Sets the message ID
 	 */
 	public void setMessageId(int messageId) {
@@ -62,14 +78,20 @@ public final class PublishMessage extends MqttMessage {
 	}
 
 	private int getMessageIdIndex() {
-		return fixedHeaderEndOffset + 2 + (buffer.getShort(fixedHeaderEndOffset) & 0xffff);
+
+		if (messageIdIndex == -1) {
+			messageIdIndex = fixedHeaderEndOffset + 2 + (buffer.getShort(fixedHeaderEndOffset) & 0xffff);
+		}
+
+		return messageIdIndex;
 	}
 
-	private PublishMessage(boolean duplicate, QoS qos, boolean retain, byte[] topicNameUtf8, int messageId) {
-		super(MessageType.PUBLISH, duplicate, qos, retain, 2 + mqttStringSize(topicNameUtf8));
+	private PublishMessage(boolean duplicate, QoS qos, boolean retain, byte[] topicNameUtf8, int messageId, byte[] payload) {
+		super(MessageType.PUBLISH, duplicate, qos, retain, 2 + mqttStringSize(topicNameUtf8) + payload.length);
 
 		putString(topicNameUtf8);
 		buffer.putShort((short) messageId);
+		buffer.put(payload);
 		buffer.flip();
 	}
 }
