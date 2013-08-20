@@ -129,6 +129,21 @@ public class MqttChannelImplTest {
 	}
 
 	@Test
+	public void testSend_NotConnectedYet() throws Exception {
+
+		PingReqMessage msg = new PingReqMessage();
+
+		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
+		clientChannel.send(msg);
+
+		establishConnection();
+
+		assertNull(readWrite(0, 1));
+
+		closeConnection();
+	}
+
+	@Test
 	public void testReadWriteSend_RemainingLengthZero() throws Exception {
 
 		establishConnection();
@@ -242,7 +257,10 @@ public class MqttChannelImplTest {
 
 	private void establishConnection() throws Exception {
 
-		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
+		if (clientChannel == null) {
+			clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
+		}
+
 		assertFalse(clientChannel.isConnected());
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnectionPending());
