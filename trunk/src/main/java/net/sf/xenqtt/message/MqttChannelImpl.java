@@ -81,6 +81,7 @@ public class MqttChannelImpl implements MqttChannel {
 		}
 	}
 
+	// FIXME [jim] - will I get an op_read ready when the channel is closed?
 	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#read()
 	 */
@@ -133,6 +134,7 @@ public class MqttChannelImpl implements MqttChannel {
 
 		sendBuffer = buffer;
 		selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+
 		write();
 	}
 
@@ -164,6 +166,30 @@ public class MqttChannelImpl implements MqttChannel {
 			channel.close();
 		} catch (IOException ignore) {
 		}
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#isOpen()
+	 */
+	@Override
+	public boolean isOpen() {
+		return channel.isOpen();
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#isConnected()
+	 */
+	@Override
+	public boolean isConnected() {
+		return channel.isConnected();
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#isConnectionPending()
+	 */
+	@Override
+	public boolean isConnectionPending() {
+		return channel.isConnectionPending();
 	}
 
 	private void processMessage(ByteBuffer buffer) {
