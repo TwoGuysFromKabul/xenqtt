@@ -88,7 +88,8 @@ public class MqttChannelImpl implements MqttChannel {
 	public void finishConnect() throws IOException {
 
 		if (channel.finishConnect()) {
-			selectionKey.interestOps(SelectionKey.OP_READ);
+			int ops = sendBuffer != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
+			selectionKey.interestOps(ops);
 		}
 	}
 
@@ -143,9 +144,11 @@ public class MqttChannelImpl implements MqttChannel {
 		}
 
 		sendBuffer = buffer;
-		selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 
-		write();
+		if (isConnected()) {
+			selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+			write();
+		}
 	}
 
 	/**
