@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * <p>
  * When it receives a PUBREC message, the recipient sends a PUBREL message to the sender with the same Message ID as the PUBREC message.
  */
-public final class PubRecMessage extends MqttMessageWithId {
+public final class PubRecMessage extends IdentifiableMqttMessage {
 
 	/**
 	 * Used to construct a received message.

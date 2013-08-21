@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * A SUBACK message contains a list of granted QoS levels. The order of granted QoS levels in the SUBACK message matches the order of the topic names in the
  * corresponding SUBSCRIBE message.
  */
-public final class SubAckMessage extends MqttMessageWithId {
+public final class SubAckMessage extends IdentifiableMqttMessage {
 
 	/**
 	 * Used to construct a received message.
@@ -32,7 +32,7 @@ public final class SubAckMessage extends MqttMessageWithId {
 	/**
 	 * The Message Identifier (Message ID) for the SUBSCRIBE message that is being acknowledged.
 	 * 
-	 * @see net.sf.xenqtt.message.MqttMessageWithId#getMessageId()
+	 * @see net.sf.xenqtt.message.IdentifiableMqttMessage#getMessageId()
 	 */
 	@Override
 	public int getMessageId() {
@@ -40,7 +40,7 @@ public final class SubAckMessage extends MqttMessageWithId {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttMessageWithId#setMessageId(int)
+	 * @see net.sf.xenqtt.message.IdentifiableMqttMessage#setMessageId(int)
 	 */
 	@Override
 	public void setMessageId(int messageId) {

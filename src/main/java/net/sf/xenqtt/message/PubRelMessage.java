@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * A PUBREL message is the response either from a publisher to a PUBREC message from the server, or from the server to a PUBREC message from a subscriber. It is
  * the third message in the QoS 2 protocol flow.
  */
-public final class PubRelMessage extends MqttMessageWithId {
+public final class PubRelMessage extends IdentifiableMqttMessage {
 
 	/**
 	 * Used to construct a received message.
