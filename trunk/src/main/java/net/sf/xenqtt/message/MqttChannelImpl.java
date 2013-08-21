@@ -145,7 +145,7 @@ public class MqttChannelImpl implements MqttChannel {
 
 		sendBuffer = buffer;
 
-		if (isConnected()) {
+		if (channel.socket().isConnected()) {
 			selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 			write();
 		}
@@ -187,14 +187,6 @@ public class MqttChannelImpl implements MqttChannel {
 	@Override
 	public boolean isOpen() {
 		return channel.isOpen();
-	}
-
-	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#isConnected()
-	 */
-	@Override
-	public boolean isConnected() {
-		return channel.isConnected();
 	}
 
 	/**
