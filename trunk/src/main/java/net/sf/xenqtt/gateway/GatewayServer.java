@@ -33,18 +33,29 @@ public class GatewayServer {
 
 	// FIXME [jim] - maybe keep track of connections that don't send a connect message within some time period and close them?
 
+	// FIXME [jim] - how do sessions get deleted? going to need some kind of thread safe callback from the session I guess
+
 	private final Map<String, GatewaySession> sessionsByClientId = new HashMap<String, GatewaySession>();
+
+	private final String brokerUrl;
 
 	private final Selector selector;
 	private final CountDownLatch exitLatch = new CountDownLatch(1);
 	private final ServerSocketChannel ssc;
 	private final MessageHandler handler = new Handler();
 
-	private volatile boolean running;
+	private volatile boolean running = true;
 
 	public static void main(String[] args) throws IOException {
 
-		final GatewayServer server = new GatewayServer();
+		if (args.length != 2) {
+			usage();
+		}
+
+		String brokerUrl = args[0];
+		int port = Integer.parseInt(args[1]);
+
+		final GatewayServer server = new GatewayServer(brokerUrl);
 
 		Thread hook = new Thread() {
 			@Override
@@ -55,24 +66,23 @@ public class GatewayServer {
 
 		Runtime.getRuntime().addShutdownHook(hook);
 
-		server.run();
+		server.run(port);
 	}
 
-	public GatewayServer() throws IOException {
+	public GatewayServer(String brokerUrl) throws IOException {
+		this.brokerUrl = brokerUrl;
 		this.selector = Selector.open();
 		this.ssc = ServerSocketChannel.open();
 	}
 
 	/**
-	 * Runs the server. The calling thread will not return until {@link #stop()} is called.
+	 * Runs the server on the specified port. The calling thread will not return until {@link #stop()} is called.
 	 */
-	public final void run() throws IOException {
+	public final void run(int port) throws IOException {
 
 		ssc.configureBlocking(false);
-		ssc.socket().bind(new InetSocketAddress(9999));
+		ssc.socket().bind(new InetSocketAddress(port));
 		SelectionKey serverKey = ssc.register(selector, SelectionKey.OP_ACCEPT);
-
-		running = true;
 
 		try {
 			while (running) {
@@ -106,9 +116,16 @@ public class GatewayServer {
 	/**
 	 * Intended to be overridden to inject a mock sessions during unit testing
 	 */
-	GatewaySession createSession(MqttChannel channel, ConnectMessage message) {
+	GatewaySession createSession(MqttChannel channel, ConnectMessage message) throws IOException {
 
-		return new GatewaySessionImpl(channel, message);
+		return new GatewaySessionImpl(brokerUrl, channel, message);
+	}
+
+	private static void usage() {
+
+		System.out.println("java -jar xenqtt.jar brokerUrl port");
+		System.out.println("brokerUrl: URL to the broker");
+		System.out.println("port: Port to listen for clustered clients on");
 	}
 
 	private void process(SelectionKey key) throws IOException {
@@ -134,16 +151,22 @@ public class GatewayServer {
 	private class Handler implements MessageHandler {
 
 		@Override
-		public void handle(MqttChannel channel, ConnectMessage message) {
+		public void handle(MqttChannel channel, ConnectMessage message) throws Exception {
 
-			channel.deregister();
-			String clientId = message.getClientId();
-			GatewaySession session = sessionsByClientId.get(clientId);
-			if (session == null) {
-				session = createSession(channel, message);
-				sessionsByClientId.put(clientId, session);
-			} else {
-				session.addClient(channel, message);
+			try {
+				channel.deregister();
+				String clientId = message.getClientId();
+				GatewaySession session = sessionsByClientId.get(clientId);
+				if (session == null) {
+					session = createSession(channel, message);
+					sessionsByClientId.put(clientId, session);
+				} else {
+					session.addClient(channel, message);
+				}
+			} catch (Exception e) {
+				// FIXME [jim] - log or something??
+				e.printStackTrace();
+				channel.close();
 			}
 		}
 
