@@ -162,7 +162,7 @@ public class MqttMessage {
 	 * @return The size of the MQTT string that will be created from the specified UTF-8 bytes. 0 if utf8 is null. 2 if utf8 is empty.
 	 */
 	final static int mqttStringSize(byte[] utf8) {
-		return utf8 == null ? 2 : utf8.length + 2;
+		return utf8 == null ? 0 : utf8.length + 2;
 	}
 
 	/**
