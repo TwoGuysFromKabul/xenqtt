@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
  * <p>
  * The server sends an UNSUBACK to a client in response to an UNSUBSCRIBE message.
  */
-public final class UnsubscribeMessage extends MqttMessage implements MqttMessageWithId {
+public final class UnsubscribeMessage extends MqttMessageWithId {
 
 	private String[] topics;
 

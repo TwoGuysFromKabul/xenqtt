@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
  * A server may chose to grant a lower level of QoS than the client requested. This could happen if the server is not able to provide the higher levels of QoS.
  * For example, if the server does not provider a reliable persistence mechanism it may chose to only grant subscriptions at QoS 0.
  */
-public final class SubscribeMessage extends MqttMessage implements MqttMessageWithId {
+public final class SubscribeMessage extends MqttMessageWithId {
 
 	private String[] topics;
 	private QoS[] qoses;
