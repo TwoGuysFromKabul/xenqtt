@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * This message is either the response from the server to a PUBREL message from a publisher, or the response from a subscriber to a PUBREL message from the
  * server. It is the fourth and last message in the QoS 2 protocol flow.
  */
-public final class PubCompMessage extends MqttMessage {
+public final class PubCompMessage extends MqttMessage implements MqttMessageWithId {
 
 	/**
 	 * Used to construct a received message.
@@ -27,15 +27,17 @@ public final class PubCompMessage extends MqttMessage {
 	/**
 	 * The same Message ID as the acknowledged PUBREL message.
 	 * 
-	 * @see PublishMessage#getMessageId()
+	 * @see net.sf.xenqtt.message.MqttMessageWithId#getMessageId()
 	 */
+	@Override
 	public int getMessageId() {
 		return buffer.getShort(2) & 0xffff;
 	}
 
 	/**
-	 * Sets the message ID
+	 * @see net.sf.xenqtt.message.MqttMessageWithId#setMessageId(int)
 	 */
+	@Override
 	public void setMessageId(int messageId) {
 		buffer.putShort(2, (short) messageId);
 	}

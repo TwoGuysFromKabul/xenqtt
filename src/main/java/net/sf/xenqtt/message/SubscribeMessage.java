@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
  * A server may chose to grant a lower level of QoS than the client requested. This could happen if the server is not able to provide the higher levels of QoS.
  * For example, if the server does not provider a reliable persistence mechanism it may chose to only grant subscriptions at QoS 0.
  */
-public final class SubscribeMessage extends MqttMessage {
+public final class SubscribeMessage extends MqttMessage implements MqttMessageWithId {
 
 	private String[] topics;
 	private QoS[] qoses;
@@ -48,27 +48,17 @@ public final class SubscribeMessage extends MqttMessage {
 	}
 
 	/**
-	 * The message identifier is present in the variable header of the following MQTT messages: PUBLISH, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBSCRIBE, SUBACK,
-	 * UNSUBSCRIBE, UNSUBACK.
-	 * <p>
-	 * The Message Identifier (Message ID) field is only present in messages where the QoS bits in the fixed header indicate QoS levels 1 or 2. See section on
-	 * Quality of Service levels and flows for more information.
-	 * <p>
-	 * The Message ID is a 16-bit unsigned integer that must be unique amongst the set of "in flight" messages in a particular direction of communication. It
-	 * typically increases by exactly one from one message to the next, but is not required to do so.
-	 * <p>
-	 * A client will maintain its own list of Message IDs separate to the Message IDs used by the server it is connected to. It is possible for a client to send
-	 * a PUBLISH with Message ID 1 at the same time as receiving a PUBLISH with Message ID 1.
-	 * <p>
-	 * Do not use Message ID 0. It is reserved as an invalid Message ID.
+	 * @see net.sf.xenqtt.message.MqttMessageWithId#getMessageId()
 	 */
+	@Override
 	public int getMessageId() {
 		return buffer.getShort(fixedHeaderEndOffset) & 0xffff;
 	}
 
 	/**
-	 * Sets the message ID
+	 * @see net.sf.xenqtt.message.MqttMessageWithId#setMessageId(int)
 	 */
+	@Override
 	public void setMessageId(int messageId) {
 		buffer.putShort(fixedHeaderEndOffset, (short) messageId);
 	}
