@@ -54,11 +54,9 @@ public class MqttChannelImplTest {
 
 		assertFalse(clientChannel.isConnectionPending());
 		assertTrue(clientChannel.isOpen());
-		assertTrue(clientChannel.isConnected());
 
 		assertFalse(brokerChannel.isConnectionPending());
 		assertTrue(brokerChannel.isOpen());
-		assertTrue(brokerChannel.isConnected());
 
 		closeConnection();
 	}
@@ -280,7 +278,6 @@ public class MqttChannelImplTest {
 			clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
 		}
 
-		assertFalse(clientChannel.isConnected());
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnectionPending());
 
@@ -300,7 +297,6 @@ public class MqttChannelImplTest {
 					brokerChannel = new MqttChannelImpl(brokerSocketChannel, brokerHandler, selector);
 					assertFalse(brokerChannel.isConnectionPending());
 					assertTrue(brokerChannel.isOpen());
-					assertTrue(brokerChannel.isConnected());
 					key.cancel();
 					ssc.close();
 				} else if (key.isConnectable()) {
@@ -311,7 +307,6 @@ public class MqttChannelImplTest {
 					clientChannel.finishConnect();
 					assertFalse(clientChannel.isConnectionPending());
 					assertTrue(clientChannel.isOpen());
-					assertTrue(clientChannel.isConnected());
 					clientConnected = true;
 				}
 				iter.remove();

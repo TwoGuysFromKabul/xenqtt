@@ -56,13 +56,6 @@ public interface MqttChannel {
 	boolean isOpen();
 
 	/**
-	 * Tells whether or not this channel's network socket is connected.
-	 * 
-	 * @return true if, and only if, this channel's network socket is connected
-	 */
-	boolean isConnected();
-
-	/**
 	 * Tells whether or not a connection operation is in progress on this channel.
 	 * 
 	 * @return true if, and only if, a connection operation has been initiated on this channel but not yet completed by invoking the {@link #finishConnect()}
