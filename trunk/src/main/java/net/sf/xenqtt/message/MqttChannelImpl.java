@@ -209,6 +209,20 @@ public class MqttChannelImpl implements MqttChannel {
 
 		buffer.flip();
 
+		try {
+			handleMessage(buffer);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// FIXME [jim] - need to log this or something
+		}
+
+		readHeader1.clear();
+		readHeader2.clear();
+		readRemaining = null;
+		remainingLength = 0;
+	}
+
+	private void handleMessage(ByteBuffer buffer) throws Exception {
 		MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 		switch (messageType) {
 		case CONNECT:
@@ -256,11 +270,6 @@ public class MqttChannelImpl implements MqttChannel {
 		default:
 			throw new IllegalStateException("Unsupported message type: " + messageType);
 		}
-
-		readHeader1.clear();
-		readHeader2.clear();
-		readRemaining = null;
-		remainingLength = 0;
 	}
 
 	/**
