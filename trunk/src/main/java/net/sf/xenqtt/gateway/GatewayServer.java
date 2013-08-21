@@ -2,6 +2,8 @@ package net.sf.xenqtt.gateway;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -33,11 +35,11 @@ public class GatewayServer {
 
 	// FIXME [jim] - maybe keep track of connections that don't send a connect message within some time period and close them?
 
-	// FIXME [jim] - how do sessions get deleted? going to need some kind of thread safe callback from the session I guess
-
 	private final Map<String, GatewaySession> sessionsByClientId = new HashMap<String, GatewaySession>();
 
-	private final String brokerUrl;
+	private final String brokerHost;
+	private final int brokerPort;
+	private final int sessionCleanupIntervalMillis;
 
 	private final Selector selector;
 	private final CountDownLatch exitLatch = new CountDownLatch(1);
@@ -49,25 +51,35 @@ public class GatewayServer {
 	public static void main(String[] args) throws IOException {
 
 		if (args.length != 2) {
-			usage();
-			System.exit(1);
+			usage(null);
 		}
 
-		String brokerUrl = args[0];
-		if (brokerUrl.isEmpty()) {
-			usage();
-			System.exit(1);
-		}
-
-		int port = 0;
+		String brokerHost = null;
+		int brokerPort = 0;
+		String brokerUri = args[0];
 		try {
-			port = Integer.parseInt(args[1]);
-		} catch (NumberFormatException e) {
-			usage();
-			System.exit(1);
+			if (brokerUri.isEmpty()) {
+				usage("Broker URI is required");
+			}
+
+			URI uri = new URI(brokerUri);
+			brokerHost = uri.getHost();
+			brokerPort = uri.getPort();
+			if (brokerHost == null || brokerPort <= 0) {
+				usage("The broker URI requires both a valid host and a port > 0");
+			}
+		} catch (URISyntaxException e) {
+			usage("Invalid broker URI: " + brokerUri);
 		}
 
-		final GatewayServer server = new GatewayServer(brokerUrl);
+		int clientPort = 0;
+		try {
+			clientPort = Integer.parseInt(args[1]);
+		} catch (NumberFormatException e) {
+			usage("Invalid port");
+		}
+
+		final GatewayServer server = new GatewayServer(brokerHost, brokerPort, 60000);
 
 		Thread hook = new Thread() {
 			@Override
@@ -78,11 +90,13 @@ public class GatewayServer {
 
 		Runtime.getRuntime().addShutdownHook(hook);
 
-		server.run(port);
+		server.run(clientPort);
 	}
 
-	public GatewayServer(String brokerUrl) throws IOException {
-		this.brokerUrl = brokerUrl;
+	public GatewayServer(String brokerHost, int brokerPort, int sessionCleanupIntervalMillis) throws IOException {
+		this.brokerHost = brokerHost;
+		this.brokerPort = brokerPort;
+		this.sessionCleanupIntervalMillis = sessionCleanupIntervalMillis;
 		this.selector = Selector.open();
 		this.ssc = ServerSocketChannel.open();
 	}
@@ -96,18 +110,33 @@ public class GatewayServer {
 		ssc.socket().bind(new InetSocketAddress(port));
 		SelectionKey serverKey = ssc.register(selector, SelectionKey.OP_ACCEPT);
 
+		long now = System.currentTimeMillis();
+		long nextSessionCleanupTime = now + sessionCleanupIntervalMillis;
+
 		try {
 			while (running) {
-				selector.select();
+
+				long sleepMillis = nextSessionCleanupTime - now;
+				if (sleepMillis > 0) {
+					selector.select(sleepMillis);
+				}
+
 				Iterator<SelectionKey> keyIter = selector.selectedKeys().iterator();
 				while (keyIter.hasNext()) {
-					process(keyIter.next());
+					processKey(keyIter.next());
 					keyIter.remove();
+				}
+
+				now = System.currentTimeMillis();
+				if (now >= nextSessionCleanupTime) {
+					cleanupSessions();
+					nextSessionCleanupTime = now + sessionCleanupIntervalMillis;
 				}
 			}
 		} finally {
 			serverKey.cancel();
 			ssc.close();
+			abortSessions();
 			exitLatch.countDown();
 		}
 	}
@@ -130,18 +159,47 @@ public class GatewayServer {
 	 */
 	GatewaySession createSession(MqttChannel channel, ConnectMessage message) throws IOException {
 
-		return new GatewaySessionImpl(brokerUrl, channel, message);
+		return new GatewaySessionImpl(brokerHost, brokerPort, channel, message);
 	}
 
-	private static void usage() {
+	private static void usage(String errorMessage) {
 
-		System.out.println("\njava -jar xenqtt.jar brokerUrl port");
-		System.out.println("\tbrokerUrl: URL to the broker");
+		if (errorMessage != null) {
+			System.out.println();
+			System.out.println(errorMessage);
+		}
+
+		System.out.println("\njava -jar xenqtt.jar brokerUri port");
+		System.out.println("\tbrokerUri: URI to the broker. i.e. tcp://my.host.com:1883");
 		System.out.println("\tport: Port to listen for clustered clients on");
 		System.out.println();
 	}
 
-	private void process(SelectionKey key) throws IOException {
+	private void abortSessions() {
+
+		for (GatewaySession session : sessionsByClientId.values()) {
+			try {
+				session.close();
+			} catch (Exception ignore) {
+			}
+		}
+	}
+
+	/**
+	 * We clean up session in this garbage collection manner to reduce the complexity that would be involved with having the session do some kind of callback to
+	 * this server.
+	 */
+	private void cleanupSessions() {
+		Iterator<GatewaySession> sessionIter = sessionsByClientId.values().iterator();
+		while (sessionIter.hasNext()) {
+			GatewaySession session = sessionIter.next();
+			if (!session.isOpen()) {
+				sessionIter.remove();
+			}
+		}
+	}
+
+	private void processKey(SelectionKey key) throws IOException {
 
 		if (!key.isValid()) {
 			return;
@@ -168,14 +226,17 @@ public class GatewayServer {
 
 			try {
 				channel.deregister();
+
 				String clientId = message.getClientId();
+
 				GatewaySession session = sessionsByClientId.get(clientId);
-				if (session == null) {
-					session = createSession(channel, message);
-					sessionsByClientId.put(clientId, session);
-				} else {
-					session.addClient(channel, message);
+				if (session != null && session.addClient(channel, message)) {
+					return;
 				}
+
+				session = createSession(channel, message);
+				sessionsByClientId.put(clientId, session);
+
 			} catch (Exception e) {
 				// FIXME [jim] - log or something??
 				e.printStackTrace();
