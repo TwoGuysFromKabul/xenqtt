@@ -50,10 +50,22 @@ public class GatewayServer {
 
 		if (args.length != 2) {
 			usage();
+			System.exit(1);
 		}
 
 		String brokerUrl = args[0];
-		int port = Integer.parseInt(args[1]);
+		if (brokerUrl.isEmpty()) {
+			usage();
+			System.exit(1);
+		}
+
+		int port = 0;
+		try {
+			port = Integer.parseInt(args[1]);
+		} catch (NumberFormatException e) {
+			usage();
+			System.exit(1);
+		}
 
 		final GatewayServer server = new GatewayServer(brokerUrl);
 
@@ -123,9 +135,10 @@ public class GatewayServer {
 
 	private static void usage() {
 
-		System.out.println("java -jar xenqtt.jar brokerUrl port");
-		System.out.println("brokerUrl: URL to the broker");
-		System.out.println("port: Port to listen for clustered clients on");
+		System.out.println("\njava -jar xenqtt.jar brokerUrl port");
+		System.out.println("\tbrokerUrl: URL to the broker");
+		System.out.println("\tport: Port to listen for clustered clients on");
+		System.out.println();
 	}
 
 	private void process(SelectionKey key) throws IOException {
