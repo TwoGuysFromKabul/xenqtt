@@ -34,7 +34,8 @@ public interface MqttChannel {
 	boolean read() throws IOException;
 
 	/**
-	 * Sends the specified message asynchronously.
+	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
+	 * not {@link ConnectReturnCode#ACCEPTED} is sent the channel is closed automatically.
 	 */
 	void send(MqttMessage message) throws IOException;
 

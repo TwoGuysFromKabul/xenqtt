@@ -100,6 +100,60 @@ public class MqttChannelImplTest {
 	}
 
 	@Test
+	public void testReadWriteSend_DisconnectClosesConnection() throws Exception {
+
+		establishConnection();
+
+		DisconnectMessage msg = new DisconnectMessage();
+
+		clientChannel.send(msg);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
+		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+
+		assertFalse(clientChannel.isOpen());
+		assertEquals(brokerChannel, readWrite(1, 1));
+		brokerChannel.close();
+	}
+
+	@Test
+	public void testReadWriteSend_ConnAckWithoutAcceptClosesConnection() throws Exception {
+
+		establishConnection();
+
+		ConnAckMessage msg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
+
+		clientChannel.send(msg);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
+		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+
+		assertFalse(clientChannel.isOpen());
+		assertEquals(brokerChannel, readWrite(1, 1));
+		brokerChannel.close();
+	}
+
+	@Test
+	public void testReadWriteSend_ConnAckWithAccept() throws Exception {
+
+		establishConnection();
+
+		ConnAckMessage msg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
+
+		clientChannel.send(msg);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
+		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+
+		assertTrue(clientChannel.isOpen());
+
+		closeConnection();
+	}
+
+	@Test
 	public void testReadWriteSend_PingReqResp() throws Exception {
 
 		establishConnection();
@@ -146,7 +200,7 @@ public class MqttChannelImplTest {
 
 		establishConnection();
 
-		DisconnectMessage msg1 = new DisconnectMessage();
+		UnsubAckMessage msg1 = new UnsubAckMessage(1);
 		PingReqMessage msg2 = new PingReqMessage();
 
 		clientChannel.send(msg1);
@@ -385,8 +439,7 @@ public class MqttChannelImplTest {
 
 		@Override
 		public void handle(MqttChannel channel, UnsubAckMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+			throw new RuntimeException();
 		}
 
 		@Override
@@ -403,7 +456,8 @@ public class MqttChannelImplTest {
 
 		@Override
 		public void handle(MqttChannel channel, DisconnectMessage message) {
-			throw new RuntimeException();
+			messagesReceived.add(message);
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 	}
 }
