@@ -13,6 +13,7 @@ import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttChannelImpl;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -36,6 +37,7 @@ public class GatewayServerTest {
 	Thread serverThread;
 	volatile TestServer server;
 	volatile Exception ex;
+	volatile boolean addClientResult = true;
 
 	@Before
 	public void setup() throws IOException {
@@ -62,13 +64,26 @@ public class GatewayServerTest {
 			@Override
 			public Object answer(InvocationOnMock invocation) throws Throwable {
 
+				if (!addClientResult) {
+					return false;
+				}
+
 				addedSessionChannel = (MqttChannel) invocation.getArguments()[0];
 				addedSessionMsg = (ConnectMessage) invocation.getArguments()[1];
 				selector.wakeup();
 
-				return null;
+				return true;
 			}
 		}).when(session).addClient(any(MqttChannel.class), any(ConnectMessage.class));
+
+		when(session.isOpen()).thenReturn(true);
+	}
+
+	@After
+	public void after() throws Exception {
+
+		server.stop();
+		serverThread.join();
 	}
 
 	@Test
@@ -76,6 +91,65 @@ public class GatewayServerTest {
 
 		server.stop();
 		serverThread.join();
+	}
+
+	@Test
+	public void testSessionCleanup() throws Exception {
+
+		when(session.isOpen()).thenReturn(false).thenReturn(true);
+
+		MqttChannel clientChannel1 = new MqttChannelImpl("localhost", 23416, null, selector);
+		ConnectMessage connectMessage1 = new ConnectMessage("123", false, 0, "abc", "123");
+
+		waitForConnectToSession(clientChannel1, true, connectMessage1);
+
+		assertNotSame(connectMessage1, newSessionMsg);
+		assertEquals(connectMessage1, newSessionMsg);
+
+		MqttChannel firstChannel = newSessionChannel;
+
+		Thread.sleep(200);
+
+		newSessionChannel = null;
+		newSessionMsg = null;
+		// establish another session with client id 123
+		MqttChannel clientChannel2 = new MqttChannelImpl("localhost", 23416, null, selector);
+		ConnectMessage connectMessage2 = new ConnectMessage("123", false, 0, "abc", "123");
+
+		waitForConnectToSession(clientChannel2, true, connectMessage2);
+
+		assertNotEquals(firstChannel, newSessionChannel);
+		assertNotSame(connectMessage1, connectMessage2);
+		assertEquals(connectMessage1, connectMessage2);
+
+		assertNotSame(connectMessage2, newSessionMsg);
+		assertEquals(connectMessage2, newSessionMsg);
+
+		// clean up
+		clientChannel1.close();
+		clientChannel2.close();
+
+		server.stop();
+
+		// this only happens once because the first session is cleaned up
+		verify(session).close();
+	}
+
+	@Test
+	public void testSessionAbort() throws Exception {
+
+		MqttChannel clientChannel = new MqttChannelImpl("localhost", 23416, null, selector);
+		ConnectMessage connectMessage = new ConnectMessage("123", false, 0, "abc", "123");
+
+		waitForConnectToSession(clientChannel, true, connectMessage);
+
+		// we sleep here just to be sure that the session does not get disconnected
+		Thread.sleep(200);
+
+		clientChannel.close();
+		server.stop();
+
+		verify(session).close();
 	}
 
 	@Test
@@ -128,6 +202,7 @@ public class GatewayServerTest {
 		clientChannel.close();
 		server.stop();
 
+		verify(session).close();
 		assertNotSame(connectMessage, newSessionMsg);
 		assertEquals(connectMessage, newSessionMsg);
 		assertNull(addedSessionChannel);
@@ -168,12 +243,13 @@ public class GatewayServerTest {
 		clientChannel2.close();
 
 		server.stop();
+		verify(session, times(2)).close();
 		assertNull(addedSessionChannel);
 		assertNull(addedSessionMsg);
 	}
 
 	@Test
-	public void testNewClient_ExistingSession() throws Exception {
+	public void testNewClient_ExistingSessionIsOpen() throws Exception {
 
 		// establish first session with client id 123
 		MqttChannel clientChannel1 = new MqttChannelImpl("localhost", 23416, null, selector);
@@ -186,7 +262,7 @@ public class GatewayServerTest {
 
 		MqttChannel firstChannel = newSessionChannel;
 
-		// establish another session with client id 456
+		// establish another session with client id 123
 		newSessionChannel = null;
 		newSessionMsg = null;
 
@@ -207,15 +283,59 @@ public class GatewayServerTest {
 		clientChannel2.close();
 
 		server.stop();
+		verify(session).close();
 		assertNull(newSessionChannel);
 		assertNull(newSessionMsg);
 	}
 
-	private void waitForConnectToSession(MqttChannel clientChannel, boolean newSession, ConnectMessage connectMessage) throws Exception {
+	@Test
+	public void testNewClient_ExistingSessionIsClosed() throws Exception {
+
+		addClientResult = false;
+
+		// establish first session with client id 123
+		MqttChannel clientChannel1 = new MqttChannelImpl("localhost", 23416, null, selector);
+		ConnectMessage connectMessage1 = new ConnectMessage("123", false, 0, "abc", "123");
+
+		waitForConnectToSession(clientChannel1, true, connectMessage1);
+
+		assertNotSame(connectMessage1, newSessionMsg);
+		assertEquals(connectMessage1, newSessionMsg);
+
+		MqttChannel firstChannel = newSessionChannel;
+
+		// establish another session with client id 123
+		newSessionChannel = null;
+		newSessionMsg = null;
+
+		MqttChannel clientChannel2 = new MqttChannelImpl("localhost", 23416, null, selector);
+		ConnectMessage connectMessage2 = new ConnectMessage("123", false, 0, "abc", "123");
+
+		waitForConnectToSession(clientChannel2, true, connectMessage2);
+
+		assertNotEquals(firstChannel, newSessionChannel);
+		assertNotSame(connectMessage1, connectMessage2);
+		assertEquals(connectMessage1, connectMessage2);
+
+		assertNotSame(connectMessage2, newSessionMsg);
+		assertEquals(connectMessage2, newSessionMsg);
+
+		// clean up
+		clientChannel1.close();
+		clientChannel2.close();
+
+		server.stop();
+		// this only happens once because the first channel reported itself closed already
+		verify(session).close();
+		assertNull(addedSessionChannel);
+		assertNull(addedSessionMsg);
+	}
+
+	private void waitForConnectToSession(MqttChannel clientChannel, boolean createdSession, ConnectMessage connectMessage) throws Exception {
 
 		clientChannel.send(connectMessage);
 
-		while ((newSession && newSessionChannel == null) || (!newSession && addedSessionChannel == null)) {
+		while ((createdSession && newSessionChannel == null) || (!createdSession && addedSessionChannel == null)) {
 			selector.select();
 			Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
 			while (iter.hasNext()) {
@@ -243,7 +363,7 @@ public class GatewayServerTest {
 	private class TestServer extends GatewayServer {
 
 		public TestServer() throws IOException {
-			super(null);
+			super(null, 0, 100);
 		}
 
 		@Override
