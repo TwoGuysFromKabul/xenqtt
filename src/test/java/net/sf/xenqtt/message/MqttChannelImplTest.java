@@ -144,6 +144,25 @@ public class MqttChannelImplTest {
 	}
 
 	@Test
+	public void testReadWriteSend_HanlderThrowsException() throws Exception {
+
+		establishConnection();
+
+		DisconnectMessage msg1 = new DisconnectMessage();
+		PingReqMessage msg2 = new PingReqMessage();
+
+		clientChannel.send(msg1);
+		clientChannel.send(msg2);
+
+		assertNull(readWrite(0, 1));
+
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertEquals(msg2, brokerHandler.messagesReceived.get(0));
+
+		closeConnection();
+	}
+
+	@Test
 	public void testReadWriteSend_RemainingLengthZero() throws Exception {
 
 		establishConnection();
@@ -389,8 +408,7 @@ public class MqttChannelImplTest {
 
 		@Override
 		public void handle(MqttChannel channel, DisconnectMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+			throw new RuntimeException();
 		}
 	}
 }
