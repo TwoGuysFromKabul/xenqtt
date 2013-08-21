@@ -32,9 +32,9 @@ public class MqttChannelImpl implements MqttChannel {
 	// the remaining length value for the message currently being read
 	private int remainingLength;
 
-	private final Queue<ByteBuffer> writesPending = new ArrayDeque<ByteBuffer>();
+	private final Queue<MqttMessage> writesPending = new ArrayDeque<MqttMessage>();
 
-	private ByteBuffer sendBuffer;
+	private MqttMessage sendMessageInProgress;
 
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
@@ -74,7 +74,7 @@ public class MqttChannelImpl implements MqttChannel {
 	@Override
 	public void register(Selector selector, MessageHandler handler) throws IOException {
 
-		int ops = sendBuffer == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
+		int ops = sendMessageInProgress == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
 
 		selectionKey.cancel();
 		selectionKey = channel.register(selector, ops, this);
@@ -88,7 +88,7 @@ public class MqttChannelImpl implements MqttChannel {
 	public void finishConnect() throws IOException {
 
 		if (channel.finishConnect()) {
-			int ops = sendBuffer != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
+			int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
 			selectionKey.interestOps(ops);
 		}
 	}
@@ -136,14 +136,12 @@ public class MqttChannelImpl implements MqttChannel {
 	@Override
 	public void send(MqttMessage message) throws IOException {
 
-		ByteBuffer buffer = message.buffer;
-
-		if (sendBuffer != null) {
-			writesPending.offer(buffer);
+		if (sendMessageInProgress != null) {
+			writesPending.offer(message);
 			return;
 		}
 
-		sendBuffer = buffer;
+		sendMessageInProgress = message;
 
 		if (channel.socket().isConnected()) {
 			selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
@@ -157,12 +155,29 @@ public class MqttChannelImpl implements MqttChannel {
 	@Override
 	public void write() throws IOException {
 
-		while (sendBuffer != null) {
-			int bytesWritten = channel.write(sendBuffer);
-			if (bytesWritten == 0 || sendBuffer.hasRemaining()) {
+		while (sendMessageInProgress != null) {
+			int bytesWritten = channel.write(sendMessageInProgress.buffer);
+			if (bytesWritten == 0 || sendMessageInProgress.buffer.hasRemaining()) {
 				return;
 			}
-			sendBuffer = writesPending.poll();
+
+			MessageType type = sendMessageInProgress.getMessageType();
+			if (type == MessageType.DISCONNECT) {
+				sendMessageInProgress = null;
+				close();
+				return;
+			}
+
+			if (type == MessageType.CONNACK) {
+				ConnAckMessage m = (ConnAckMessage) sendMessageInProgress;
+				if (m.getReturnCode() != ConnectReturnCode.ACCEPTED) {
+					sendMessageInProgress = null;
+					close();
+					return;
+				}
+			}
+
+			sendMessageInProgress = writesPending.poll();
 		}
 
 		selectionKey.interestOps(SelectionKey.OP_READ);
@@ -176,8 +191,12 @@ public class MqttChannelImpl implements MqttChannel {
 
 		try {
 			selectionKey.cancel();
+		} catch (Exception ignore) {
+		}
+
+		try {
 			channel.close();
-		} catch (IOException ignore) {
+		} catch (Exception ignore) {
 		}
 	}
 
