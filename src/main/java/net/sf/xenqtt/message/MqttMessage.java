@@ -7,7 +7,7 @@ import java.util.Arrays;
 /**
  * This is a generic MQTT message. Extending classes support more specific message types
  */
-public class MqttMessage {
+public abstract class MqttMessage {
 
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
@@ -103,7 +103,14 @@ public class MqttMessage {
 	 * The level of assurance for delivery of a PUBLISH message.
 	 */
 	public final QoS getQoS() {
-		return QoS.lookup((buffer.get(0) & 0x06) >> 1);
+		return QoS.lookup(getQoSLevel());
+	}
+
+	/**
+	 * The raw integer value for the level of assurance for delivery of a PUBLISH message.
+	 */
+	public final int getQoSLevel() {
+		return (buffer.get(0) & 0x06) >> 1;
 	}
 
 	/**

@@ -8,7 +8,8 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLength() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, 24);
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, 24) {
+		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -18,7 +19,8 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_FalseOnAllFlags() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, false, 24);
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, false, 24) {
+		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -30,7 +32,8 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_Duplicate() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.EXACTLY_ONCE, false, 24);
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.EXACTLY_ONCE, false, 24) {
+		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -42,7 +45,8 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_Retain() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, true, 24);
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, true, 24) {
+		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -54,7 +58,8 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_AllFlags() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.EXACTLY_ONCE, true, 24);
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.EXACTLY_ONCE, true, 24) {
+		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
