@@ -14,12 +14,14 @@ public class GatewaySessionImpl extends Thread implements GatewaySession {
 	private static final List<ClientConnection> clients = new ArrayList<ClientConnection>();
 
 	/**
+	 * @param brokerUrl
+	 *            The URL of the broker to proxy clients to
 	 * @param channel
 	 *            The channel for the first client connection in the session
 	 * @param message
 	 *            The {@link ConnectMessage} received from the channel
 	 */
-	public GatewaySessionImpl(MqttChannel channel, ConnectMessage message) {
+	public GatewaySessionImpl(String brokerUrl, MqttChannel channel, ConnectMessage message) {
 		super("GatewaySession-" + message.getClientId());
 		setDaemon(true);
 	}
