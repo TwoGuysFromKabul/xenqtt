@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * A PUBACK message is the response to a PUBLISH message with QoS level 1. A PUBACK message is sent by a server in response to a PUBLISH message from a
  * publishing client, and by a subscriber in response to a PUBLISH message from the server.
  */
-public final class PubAckMessage extends MqttMessageWithId {
+public final class PubAckMessage extends IdentifiableMqttMessage {
 
 	/**
 	 * Used to construct a received message.

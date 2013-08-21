@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * The UNSUBACK message is sent by the server to the client to confirm receipt of an UNSUBSCRIBE message.
  */
-public final class UnsubAckMessage extends MqttMessageWithId {
+public final class UnsubAckMessage extends IdentifiableMqttMessage {
 
 	/**
 	 * Used to construct a received message.

@@ -5,26 +5,26 @@ import java.nio.ByteBuffer;
 /**
  * Adds the message ID property to {@link MqttMessage}. Since different messages have this property in different places the implementations are abstract.
  */
-public abstract class MqttMessageWithId extends MqttMessage {
+public abstract class IdentifiableMqttMessage extends MqttMessage {
 
 	/**
 	 * @see MqttMessage#MqttMessage(ByteBuffer, int)
 	 */
-	public MqttMessageWithId(ByteBuffer buffer, int remainingLength) {
+	public IdentifiableMqttMessage(ByteBuffer buffer, int remainingLength) {
 		super(buffer, remainingLength);
 	}
 
 	/**
 	 * @see MqttMessage#MqttMessage(MessageType, int)
 	 */
-	public MqttMessageWithId(MessageType messageType, int remainingLength) {
+	public IdentifiableMqttMessage(MessageType messageType, int remainingLength) {
 		super(messageType, remainingLength);
 	}
 
 	/**
 	 * @see MqttMessage#MqttMessage(MessageType, boolean, QoS, boolean, int)
 	 */
-	public MqttMessageWithId(MessageType messageType, boolean duplicate, QoS qos, boolean retain, int remainingLength) {
+	public IdentifiableMqttMessage(MessageType messageType, boolean duplicate, QoS qos, boolean retain, int remainingLength) {
 		super(messageType, duplicate, qos, retain, remainingLength);
 	}
 

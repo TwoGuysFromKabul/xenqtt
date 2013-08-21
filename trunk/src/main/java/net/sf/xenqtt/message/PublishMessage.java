@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  * <p>
  * If a client subscribes to one or more topics, any message published to those topics are sent by the server to the client as a PUBLISH message.
  */
-public final class PublishMessage extends MqttMessageWithId {
+public final class PublishMessage extends IdentifiableMqttMessage {
 
 	private int messageIdIndex = -1;
 
@@ -38,7 +38,7 @@ public final class PublishMessage extends MqttMessageWithId {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttMessageWithId#getMessageId()
+	 * @see net.sf.xenqtt.message.IdentifiableMqttMessage#getMessageId()
 	 */
 	@Override
 	public int getMessageId() {
@@ -46,7 +46,7 @@ public final class PublishMessage extends MqttMessageWithId {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttMessageWithId#setMessageId(int)
+	 * @see net.sf.xenqtt.message.IdentifiableMqttMessage#setMessageId(int)
 	 */
 	@Override
 	public void setMessageId(int messageId) {
