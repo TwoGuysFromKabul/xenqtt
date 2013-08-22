@@ -254,13 +254,13 @@ public final class ConnectMessage extends MqttMessage {
 
 		this.protocolName = "MQIsdp";
 		this.protocolVersion = 3;
-		this.flags = buildFlags(cleanSession, willRetain);
 		this.keepAliveSeconds = keepAliveSeconds;
 		this.clientId = clientId;
 		this.willTopic = willTopic;
 		this.willMessage = willMessage;
 		this.userName = userName;
 		this.password = password;
+		this.flags = buildFlags(cleanSession, willRetain);
 
 		putString(protocolName);
 		buffer.put((byte) protocolVersion);
