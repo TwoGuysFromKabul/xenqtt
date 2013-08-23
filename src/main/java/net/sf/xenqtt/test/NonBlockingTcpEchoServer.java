@@ -26,7 +26,7 @@ public class NonBlockingTcpEchoServer extends AbstractNonBlockingConnectionManag
 		}
 
 		int port = Integer.parseInt(args[0]);
-		int threadsPerCore = Integer.parseInt(args[5]);
+		int threadsPerCore = Integer.parseInt(args[1]);
 
 		new NonBlockingTcpEchoServer(port, threadsPerCore).run();
 	}
