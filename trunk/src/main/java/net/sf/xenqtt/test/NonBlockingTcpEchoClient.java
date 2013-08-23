@@ -161,6 +161,8 @@ public final class NonBlockingTcpEchoClient {
 			if (info.messagesSent++ < messagesPerConnection) {
 				info.currentSendMessage.clear();
 				info.sendQueue.add(info.currentSendMessage);
+				key.interestOps(SelectionKey.OP_READ);
+				return;
 			}
 
 			info.currentSendMessage = info.sendQueue.poll();
@@ -199,6 +201,8 @@ public final class NonBlockingTcpEchoClient {
 			info.receivePayload = null;
 
 			if (info.messagesReceived >= messagesPerConnection) {
+				key.cancel();
+				key.attach(null);
 				channel.close();
 				connectionsClosed++;
 			}
