@@ -38,10 +38,10 @@ public final class NonBlockingTcpEchoClient extends AbstractNonBlockingConnectio
 
 		String host = args[0];
 		int port = Integer.parseInt(args[1]);
-		int connectionCount = Integer.parseInt(args[2]);
-		int messagesPerConnection = Integer.parseInt(args[3]);
-		int messageSize = Integer.parseInt(args[4]);
-		int threadsPerCore = Integer.parseInt(args[5]);
+		int threadsPerCore = Integer.parseInt(args[2]);
+		int connectionCount = Integer.parseInt(args[3]);
+		int messagesPerConnection = Integer.parseInt(args[4]);
+		int messageSize = Integer.parseInt(args[5]);
 
 		new NonBlockingTcpEchoClient(host, port, connectionCount, messagesPerConnection, messageSize, threadsPerCore).run();
 	}
@@ -95,13 +95,13 @@ public final class NonBlockingTcpEchoClient extends AbstractNonBlockingConnectio
 
 	private static void usage() {
 		System.out
-				.println("\nUsage: java -Xms1g -Xmx1g -server -cp:xenqtt.jar net.sf.xenqtt.test.NonBlockingTcpEchoClient host port connectionCount messagesPerConnection messageSize threadsPerCore");
+				.println("\nUsage: java -Xms1g -Xmx1g -server -cp:xenqtt.jar net.sf.xenqtt.test.NonBlockingTcpEchoClient host port threadsPerCore connectionCount messagesPerConnection messageSize");
 		System.out.println("\thost: the host the server is listening on");
 		System.out.println("\tport: the port the server is listening on");
+		System.out.println("\tthreadsPerCore: the number of threads to use per cpu core");
 		System.out.println("\tconnectionCount: the number of connections to make to the server");
 		System.out.println("\tmessagesPerConnection: the number of messages for each connection to send to the server");
 		System.out.println("\tmessageSize: the size, in bytes, of each message");
-		System.out.println("\tthreadsPerCore: the number of threads to use per cpu core");
 		System.out.println();
 	}
 
