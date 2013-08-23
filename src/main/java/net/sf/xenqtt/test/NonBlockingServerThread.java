@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public final class NonBlockingServerThread extends Thread {
+final class NonBlockingServerThread extends Thread {
 
 	private final int enableReadThreshold = (int) (NonBlockingTcpEchoServer.MAX_QUEUED_MSGS_PER_CONNECTION * .75);
 
