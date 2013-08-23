@@ -19,8 +19,8 @@ abstract class AbstractNonBlockingConnectionManager {
 	private final SelectorThread[] serverThreads;
 	private int nextIndex;
 
-	public AbstractNonBlockingConnectionManager() throws IOException {
-		int threadCount = Runtime.getRuntime().availableProcessors();
+	public AbstractNonBlockingConnectionManager(int threadsPerCore) throws IOException {
+		int threadCount = Runtime.getRuntime().availableProcessors() * threadsPerCore;
 		this.serverThreads = new SelectorThread[threadCount];
 
 		for (int i = 0; i < serverThreads.length; i++) {

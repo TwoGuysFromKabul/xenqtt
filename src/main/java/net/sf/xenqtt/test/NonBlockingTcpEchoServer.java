@@ -20,24 +20,26 @@ public class NonBlockingTcpEchoServer extends AbstractNonBlockingConnectionManag
 
 	public static void main(String[] args) throws Exception {
 
-		if (args.length != 1) {
+		if (args.length != 2) {
 			usage();
 			System.exit(1);
 		}
 
 		int port = Integer.parseInt(args[0]);
+		int threadsPerCore = Integer.parseInt(args[5]);
 
-		new NonBlockingTcpEchoServer(port).run();
+		new NonBlockingTcpEchoServer(port, threadsPerCore).run();
 	}
 
-	private NonBlockingTcpEchoServer(int port) throws IOException {
-
+	private NonBlockingTcpEchoServer(int port, int threadsPerCore) throws IOException {
+		super(threadsPerCore);
 		this.port = port;
 	}
 
 	private static void usage() {
-		System.out.println("\nUsage: java -Xms1g -Xmx1g -server -cp:xenqtt.jar net.sf.xenqtt.test.NonBlockingTcpEchoServer port");
+		System.out.println("\nUsage: java -Xms1g -Xmx1g -server -cp:xenqtt.jar net.sf.xenqtt.test.NonBlockingTcpEchoServer port threadsPerCore");
 		System.out.println("\tport: the port the server should listen on");
+		System.out.println("\tthreadsPerCore: the number of threads to use per cpu core");
 		System.out.println();
 	}
 
