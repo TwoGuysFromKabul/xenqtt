@@ -2,6 +2,8 @@ package net.sf.xenqtt.test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -12,14 +14,9 @@ import java.nio.channels.SocketChannel;
  * <li>Remaining bytes: payload</li>
  * </ul>
  */
-public class NonBlockingTcpEchoServer {
+public class NonBlockingTcpEchoServer extends AbstractNonBlockingConnectionManager {
 
-	static final int MAX_QUEUED_MSGS_PER_CONNECTION = 1000;
-
-	private final NonBlockingServerThread[] serverThreads;
 	private final int port;
-
-	private int nextIndex;
 
 	public static void main(String[] args) throws Exception {
 
@@ -36,8 +33,6 @@ public class NonBlockingTcpEchoServer {
 	private NonBlockingTcpEchoServer(int port) throws IOException {
 
 		this.port = port;
-		int threadCount = Runtime.getRuntime().availableProcessors();
-		this.serverThreads = new NonBlockingServerThread[threadCount];
 	}
 
 	private static void usage() {
@@ -46,14 +41,14 @@ public class NonBlockingTcpEchoServer {
 		System.out.println();
 	}
 
+	@Override
+	void messageReceived(SocketChannel channel, SelectionKey key, ChannelInfo info, ByteBuffer buffer) throws IOException {
+		info.send(buffer, key);
+	}
+
 	private void run() throws IOException {
 
-		for (int i = 0; i < serverThreads.length; i++) {
-			serverThreads[i] = new NonBlockingServerThread();
-			serverThreads[i].setName("Server-" + i);
-			serverThreads[i].setDaemon(true);
-			serverThreads[i].start();
-		}
+		start();
 
 		ServerSocketChannel ssc = ServerSocketChannel.open();
 		ssc.socket().bind(new InetSocketAddress(port));
@@ -63,12 +58,7 @@ public class NonBlockingTcpEchoServer {
 
 		for (;;) {
 			SocketChannel channel = ssc.accept();
-			channel.configureBlocking(false);
-			serverThreads[nextIndex++].newClient(channel);
-			if (nextIndex == serverThreads.length) {
-				nextIndex = 0;
-			}
+			newConnection(channel);
 		}
-
 	}
 }

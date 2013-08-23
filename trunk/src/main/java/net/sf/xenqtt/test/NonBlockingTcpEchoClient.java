@@ -5,12 +5,10 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Queue;
-import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This client sends data to a TCP echo server using blocking IO. Data is in the following format:
@@ -19,19 +17,17 @@ import java.util.Set;
  * <li>Remaining bytes: payload</li>
  * </ul>
  */
-public final class NonBlockingTcpEchoClient {
+public final class NonBlockingTcpEchoClient extends AbstractNonBlockingConnectionManager {
 
 	private final SocketAddress address;
-	private final Selector selector;
 	private final String host;
 	private final int port;
 	private final int connectionCount;
 	private final int messagesPerConnection;
 	private final byte[] message;
+	private final CountDownLatch messagesToReceive;
 
-	private int totalMessagesReceived;
-	private int connectionsOpened;
-	private int connectionsClosed;
+	private final AtomicInteger totalMessagesReceived = new AtomicInteger();
 
 	public static void main(String[] args) throws Exception {
 
@@ -49,15 +45,49 @@ public final class NonBlockingTcpEchoClient {
 		new NonBlockingTcpEchoClient(host, port, connectionCount, messagesPerConnection, messageSize).run();
 	}
 
+	@Override
+	void channelReady(SelectionKey key, ChannelInfo info) {
+
+		int count = Math.min(50, messagesPerConnection);
+		for (int j = 0; j < count; j++) {
+			ByteBuffer buffer = ByteBuffer.allocate(message.length + 2);
+			buffer.putShort((short) message.length);
+			buffer.put(message);
+			buffer.flip();
+			info.send(buffer, key);
+		}
+	}
+
+	@Override
+	void messageSent(SocketChannel channel, SelectionKey key, ChannelInfo info, ByteBuffer buffer) {
+		if (info.messagesSent < messagesPerConnection) {
+			buffer.clear();
+			info.send(buffer, key);
+		}
+	}
+
+	@Override
+	void messageReceived(SocketChannel channel, SelectionKey key, ChannelInfo info, ByteBuffer buffer) {
+
+		totalMessagesReceived.incrementAndGet();
+
+		if (info.messagesReceived >= messagesPerConnection) {
+			close(channel, key);
+		}
+
+		messagesToReceive.countDown();
+	}
+
 	private NonBlockingTcpEchoClient(String host, int port, int connectionCount, int messagesPerConnection, int messageSize) throws IOException {
 		this.host = host;
 		this.port = port;
 		this.connectionCount = connectionCount;
 		this.messagesPerConnection = messagesPerConnection;
-		this.selector = Selector.open();
 		this.address = new InetSocketAddress(host, port);
 		this.message = new byte[messageSize];
 		Arrays.fill(message, (byte) 9);
+
+		this.messagesToReceive = new CountDownLatch(connectionCount * messagesPerConnection);
 	}
 
 	private static void usage() {
@@ -71,165 +101,27 @@ public final class NonBlockingTcpEchoClient {
 		System.out.println();
 	}
 
-	private void run() throws IOException {
+	private void run() throws Exception {
 
-		System.out.printf(
-				"Establishing %d connections to %s:%d and waiting for all messages to be sent: %d messages/connection * %d connections = %d messages\n",
-				connectionCount, host, port, messagesPerConnection, connectionCount, messagesPerConnection * connectionCount);
+		System.out.printf("Establishing %d connections to %s:%d...\n", connectionCount, host, port);
+
+		start();
 
 		long start = System.currentTimeMillis();
 
-		openConnection();
-
-		while (connectionsOpened < connectionCount || connectionsClosed < connectionCount) {
-
-			selector.select();
-
-			Set<SelectionKey> keys = selector.selectedKeys();
-			for (SelectionKey key : keys) {
-				handleKey(key);
-			}
-
-			keys.clear();
+		for (int i = 0; i < connectionCount; i++) {
+			SocketChannel channel = SocketChannel.open(address);
+			newConnection(channel);
 		}
+
+		System.out.printf("Waiting for all messages to be sent: %d messages/connection * %d connections = %d messages\n", messagesPerConnection,
+				connectionCount, messagesPerConnection * connectionCount);
+
+		messagesToReceive.await();
 
 		long end = System.currentTimeMillis();
 
-		System.out.println("Messages sent/received: " + totalMessagesReceived);
+		System.out.println("Messages sent/received: " + totalMessagesReceived.get());
 		System.out.println("Elapsed millis: " + (end - start));
-	}
-
-	private void openConnection() throws IOException {
-
-		SocketChannel channel = SocketChannel.open();
-		channel.configureBlocking(false);
-		SelectionKey newKey = channel.register(selector, SelectionKey.OP_CONNECT);
-		ChannelInfo info = new ChannelInfo();
-		newKey.attach(info);
-		info.messagesSent = Math.min(50, messagesPerConnection);
-		for (int j = 0; j < info.messagesSent; j++) {
-			ByteBuffer buffer = ByteBuffer.allocate(message.length + 2);
-			buffer.putShort((short) message.length);
-			buffer.put(message);
-			buffer.flip();
-			info.sendQueue.add(buffer);
-		}
-		info.currentSendMessage = info.sendQueue.poll();
-
-		channel.connect(address);
-		connectionsOpened++;
-	}
-
-	private void handleKey(SelectionKey key) throws IOException {
-
-		if (!key.isValid()) {
-			return;
-		}
-
-		SocketChannel channel = (SocketChannel) key.channel();
-		if (key.isConnectable()) {
-			channel.finishConnect();
-			key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-			openConnection();
-			return;
-		}
-
-		ChannelInfo info = (ChannelInfo) key.attachment();
-		if (key.isReadable()) {
-			read(channel, info, key);
-		}
-
-		if (key.isValid() && key.isWritable()) {
-			write(channel, info, key);
-		}
-	}
-
-	private void write(SocketChannel channel, ChannelInfo info, SelectionKey key) throws IOException {
-
-		for (;;) {
-
-			if (info.currentSendMessage == null) {
-				key.interestOps(SelectionKey.OP_READ);
-				return;
-			}
-
-			channel.write(info.currentSendMessage);
-			if (info.currentSendMessage.hasRemaining()) {
-				return;
-			}
-
-			if (info.messagesSent++ < messagesPerConnection) {
-				info.currentSendMessage.clear();
-				info.sendQueue.add(info.currentSendMessage);
-				key.interestOps(SelectionKey.OP_READ);
-				return;
-			}
-
-			info.currentSendMessage = info.sendQueue.poll();
-			if (info.currentSendMessage == null) {
-				key.interestOps(SelectionKey.OP_READ);
-			}
-		}
-	}
-
-	private void read(SocketChannel channel, ChannelInfo info, SelectionKey key) throws IOException {
-
-		for (;;) {
-			if (!key.isValid()) {
-				return;
-			}
-
-			if (!read(channel, info.receiveHeader)) {
-				return;
-			}
-
-			if (info.receivePayload == null) {
-				int len = info.receiveHeader.getShort(0) & 0xffff;
-				info.receivePayload = ByteBuffer.allocate(len + 2);
-				info.receivePayload.putShort((short) len);
-			}
-
-			if (!read(channel, info.receivePayload)) {
-				return;
-			}
-
-			info.receivePayload.flip();
-
-			totalMessagesReceived++;
-			info.messagesReceived++;
-			info.receiveHeader.clear();
-			info.receivePayload = null;
-
-			if (info.messagesReceived >= messagesPerConnection) {
-				key.cancel();
-				key.attach(null);
-				channel.close();
-				connectionsClosed++;
-			}
-		}
-	}
-
-	private boolean read(SocketChannel channel, ByteBuffer buffer) throws IOException {
-
-		if (!buffer.hasRemaining()) {
-			return true;
-		}
-
-		if (channel.read(buffer) < 0) {
-			channel.close();
-			return false;
-		}
-
-		return !buffer.hasRemaining();
-	}
-
-	private static final class ChannelInfo {
-
-		final Queue<ByteBuffer> sendQueue = new ArrayDeque<ByteBuffer>();
-		final ByteBuffer receiveHeader = ByteBuffer.allocate(2);
-		ByteBuffer receivePayload;
-		ByteBuffer currentSendMessage;
-		int messagesSent;
-		int messagesReceived;
 	}
 }
