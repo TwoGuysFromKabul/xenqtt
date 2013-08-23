@@ -3,9 +3,8 @@ package net.sf.xenqtt.test;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -13,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 abstract class AbstractBlockingConnection {
 
+	private static final int MAX_QUEUED_MSGS_PER_CONNECTION = 1000;
 	private static final AtomicInteger NEXT_NUM = new AtomicInteger();
 
 	private final int connectionNumber = NEXT_NUM.incrementAndGet();
@@ -33,7 +33,10 @@ abstract class AbstractBlockingConnection {
 	}
 
 	public final void send(ByteBuffer buffer) {
-		writer.toSend.add(buffer);
+		try {
+			writer.toSend.put(buffer);
+		} catch (InterruptedException ignore) {
+		}
 	}
 
 	void messageReceived(ByteBuffer buffer) {
@@ -53,7 +56,7 @@ abstract class AbstractBlockingConnection {
 
 	private final class WriteThread extends Thread {
 
-		private final BlockingQueue<ByteBuffer> toSend = new LinkedBlockingQueue<ByteBuffer>();
+		private final BlockingQueue<ByteBuffer> toSend = new ArrayBlockingQueue<ByteBuffer>(MAX_QUEUED_MSGS_PER_CONNECTION);
 
 		public WriteThread() {
 			super("WriteThread-" + connectionNumber);
@@ -68,7 +71,7 @@ abstract class AbstractBlockingConnection {
 
 			try {
 				for (;;) {
-					ByteBuffer buffer = toSend.poll(1, TimeUnit.DAYS);
+					ByteBuffer buffer = toSend.take();
 					while (buffer != null && buffer.hasRemaining()) {
 						channel.write(buffer);
 					}
