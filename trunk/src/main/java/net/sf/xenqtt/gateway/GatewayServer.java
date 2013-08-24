@@ -33,6 +33,8 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
 
 public class GatewayServer {
 
+	// FIXME [jim] - instead of using an iterator for selected key iteration with remove just use a for loop then clear the keyset
+
 	// FIXME [jim] - maybe keep track of connections that don't send a connect message within some time period and close them?
 
 	private final Map<String, GatewaySession> sessionsByClientId = new HashMap<String, GatewaySession>();
