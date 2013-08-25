@@ -98,7 +98,7 @@ public final class NonBlockingTcpEchoClient extends AbstractNonBlockingConnectio
 				.println("\nUsage: java -Xms1g -Xmx1g -server -cp:xenqtt.jar net.sf.xenqtt.test.NonBlockingTcpEchoClient host port threadsPerCore connectionCount messagesPerConnection messageSize");
 		System.out.println("\thost: the host the server is listening on");
 		System.out.println("\tport: the port the server is listening on");
-		System.out.println("\tthreadsPerCore: the number of threads to use per cpu core");
+		System.out.println("\tthreadsPerCore: the number of threads to use per cpu core (0 to use a single thread for the app)");
 		System.out.println("\tconnectionCount: the number of connections to make to the server");
 		System.out.println("\tmessagesPerConnection: the number of messages for each connection to send to the server");
 		System.out.println("\tmessageSize: the size, in bytes, of each message");

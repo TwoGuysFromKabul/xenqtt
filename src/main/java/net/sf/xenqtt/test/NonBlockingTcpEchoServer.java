@@ -39,7 +39,7 @@ public class NonBlockingTcpEchoServer extends AbstractNonBlockingConnectionManag
 	private static void usage() {
 		System.out.println("\nUsage: java -Xms1g -Xmx1g -server -cp:xenqtt.jar net.sf.xenqtt.test.NonBlockingTcpEchoServer port threadsPerCore");
 		System.out.println("\tport: the port the server should listen on");
-		System.out.println("\tthreadsPerCore: the number of threads to use per cpu core");
+		System.out.println("\tthreadsPerCore: the number of threads to use per cpu core (0 for one thread for the app)");
 		System.out.println();
 	}
 
