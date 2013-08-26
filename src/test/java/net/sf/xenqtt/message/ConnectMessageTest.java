@@ -34,11 +34,13 @@ public class ConnectMessageTest {
 		assertEquals("smithers", message.getUserName());
 		assertEquals("hounds", message.getPassword());
 		assertEquals(40, message.getRemainingLength());
+		assertEquals(0, message.getWillQoSLevel());
+		assertEquals(QoS.AT_MOST_ONCE, message.getWillQoS());
 	}
 
 	@Test
 	public void testInboundCtor_WillTopicAndMessage() {
-		ConnectMessage message = new ConnectMessage("mr-burns", true, 3, "net.sf/will/topic", "Doh!", true);
+		ConnectMessage message = new ConnectMessage("mr-burns", true, 3, "net.sf/will/topic", "Doh!", QoS.EXACTLY_ONCE, true);
 
 		assertSame(MessageType.CONNECT, message.getMessageType());
 		assertEquals("MQIsdp", message.getProtocolName());
@@ -57,31 +59,38 @@ public class ConnectMessageTest {
 		assertEquals("Doh!", message.getWillMessage());
 		assertTrue(message.isWillRetain());
 		assertTrue(message.isWillMessageFlag());
+		assertEquals(2, message.getWillQoSLevel());
+		assertEquals(QoS.EXACTLY_ONCE, message.getWillQoS());
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testInboundCtor_WillMessageNoTopic() {
-		new ConnectMessage("mr-burns", true, 3, null, "Doh!", true);
+	public void testInboundCtor_WillMessageAndTopicNoQos() {
+		new ConnectMessage("mr-burns", true, 3, "net.sf/will/topic", "Doh!", null, true);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testInboundCtor_WillTopicNoMessage() {
-		new ConnectMessage("mr-burns", true, 3, "net.sf/will/topic", null, true);
+	public void testInboundCtor_WillMessageAndQosNoTopic() {
+		new ConnectMessage("mr-burns", true, 3, null, "Doh!", QoS.AT_LEAST_ONCE, true);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testInboundCtor_WillTopicAndQosNoMessage() {
+		new ConnectMessage("mr-burns", true, 3, "net.sf/will/topic", null, QoS.AT_LEAST_ONCE, true);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInboundCtor_WillTopicEmpty() {
-		new ConnectMessage("mr-burns", true, 3, "", "Doh!", true);
+		new ConnectMessage("mr-burns", true, 3, "", "Doh!", QoS.AT_LEAST_ONCE, true);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testInboundCtor_PasswordNoUsername() {
-		new ConnectMessage("mr-burns", true, 3, null, "hounds", "net.sf/will/topic", "Doh!", true);
+		new ConnectMessage("mr-burns", true, 3, null, "hounds", "net.sf/will/topic", "Doh!", QoS.AT_LEAST_ONCE, true);
 	}
 
 	@Test
 	public void testInboundCtor_WillTopicMessageAndCredentials() {
-		ConnectMessage message = new ConnectMessage("mr-burns", false, 7, "smithers", "hounds", "net.sf/will/topic", "Doh!", true);
+		ConnectMessage message = new ConnectMessage("mr-burns", false, 7, "smithers", "hounds", "net.sf/will/topic", "Doh!", QoS.AT_LEAST_ONCE, true);
 
 		assertSame(MessageType.CONNECT, message.getMessageType());
 		assertEquals("MQIsdp", message.getProtocolName());
@@ -100,6 +109,8 @@ public class ConnectMessageTest {
 		assertEquals("Doh!", message.getWillMessage());
 		assertTrue(message.isWillRetain());
 		assertTrue(message.isWillMessageFlag());
+		assertEquals(1, message.getWillQoSLevel());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getWillQoS());
 	}
 
 	@Test
@@ -123,6 +134,8 @@ public class ConnectMessageTest {
 		assertEquals("Doh!", message.getWillMessage());
 		assertTrue(message.isWillRetain());
 		assertTrue(message.isWillMessageFlag());
+		assertEquals(1, message.getWillQoSLevel());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getWillQoS());
 	}
 
 }

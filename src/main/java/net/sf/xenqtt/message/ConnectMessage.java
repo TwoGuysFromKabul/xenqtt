@@ -34,38 +34,42 @@ public final class ConnectMessage extends MqttMessage {
 		this.password = isPasswordFlag() && buffer.hasRemaining() ? getString() : null;
 	}
 
-	// FIXME [jim] - this is wrong. the will qos and retain should be configurable
 	/**
 	 * Create an instance with credentials and no will message.
 	 */
 	public ConnectMessage(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password) {
-		this(clientId, cleanSession, keepAliveSeconds, userName, password, null, null, false);
+		this(clientId, cleanSession, keepAliveSeconds, userName, password, null, null, null, false);
 	}
 
 	/**
 	 * Create an instance with no credentials and a will message.
 	 */
-	public ConnectMessage(String clientId, boolean cleanSession, int keepAliveSeconds, String willTopic, String willMessage, boolean willRetain) {
-		this(clientId, cleanSession, keepAliveSeconds, null, null, willTopic, willMessage, willRetain);
+	public ConnectMessage(String clientId, boolean cleanSession, int keepAliveSeconds, String willTopic, String willMessage, QoS willQos, boolean willRetain) {
+		this(clientId, cleanSession, keepAliveSeconds, null, null, willTopic, willMessage, willQos, willRetain);
 	}
 
 	/**
 	 * Create an instance with credentials and a will message.
 	 */
 	public ConnectMessage(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password, String willTopic, String willMessage,
-			boolean willRetain) {
+			QoS willQos, boolean willRetain) {
 		this(clientId, cleanSession, keepAliveSeconds, stringToUtf8(clientId), userName, stringToUtf8(userName), password, stringToUtf8(password), willTopic,
-				stringToUtf8(willTopic), willMessage, stringToUtf8(willMessage), willRetain);
+				stringToUtf8(willTopic), willMessage, stringToUtf8(willMessage), willQos, willRetain);
 
 		if (willTopic == null) {
 			if (willMessage != null) {
 				throw new IllegalArgumentException("If willTopic is null then willMessage must be null");
+			}
+			if ((willQos != null)) {
+				throw new IllegalArgumentException("If willTopic is null then willQos must be null");
 			}
 			if (willRetain) {
 				throw new IllegalArgumentException("If willTopic is null then willRetain must be false");
 			}
 		} else if (willMessage == null) {
 			throw new IllegalArgumentException("If willTopic is not null then willMessage must not be null");
+		} else if (willQos == null) {
+			throw new IllegalArgumentException("If willTopic is not null then willQos must not be null");
 		} else if (willTopic.isEmpty()) {
 			throw new IllegalArgumentException("willTopic may not be an empty string");
 		}
@@ -149,10 +153,17 @@ public final class ConnectMessage extends MqttMessage {
 	}
 
 	/**
-	 * @return The QoS of the {@link #willMessage}. If there is a Will Message then this will be {@link QoS#AT_LEAST_ONCE}. Otherwise it is not applicable.
+	 * @return The QoS of the {@link #willMessage}. If there is not a Will Message then this is not applicable.
 	 */
 	public QoS getWillQoS() {
-		return QoS.values()[(flags & 0x18 >> 3)];
+		return QoS.values()[getWillQoSLevel()];
+	}
+
+	/**
+	 * @return The integer value of the QoS of the {@link #willMessage}. If there is not a Will Message then this is not applicable.
+	 */
+	public int getWillQoSLevel() {
+		return (flags & 0x18) >> 3;
 	}
 
 	/**
@@ -223,7 +234,7 @@ public final class ConnectMessage extends MqttMessage {
 		return keepAliveSeconds;
 	}
 
-	private byte buildFlags(boolean cleanSession, boolean willRetain) {
+	private byte buildFlags(boolean cleanSession, QoS willQos, boolean willRetain) {
 
 		int flags = 0;
 		if (userName != null) {
@@ -232,12 +243,14 @@ public final class ConnectMessage extends MqttMessage {
 		if (password != null) {
 			flags |= 0x40; // bit 6
 		}
-		if (willRetain) {
-			flags |= 0x20;
-		}
-		// bit 5 is the Will Retain which is always 0
 		if (willTopic != null) {
-			flags |= 0x0c; // Will Q0S (bits 4 and 3) set to 01 and Will Flag (bit 2) set to 1
+			flags |= 0x04;
+			if (willQos != null) {
+				flags |= willQos.value() << 3;
+			}
+			if (willRetain) {
+				flags |= 0x20;
+			}
 		}
 		if (cleanSession) {
 			flags |= 0x02;
@@ -248,7 +261,8 @@ public final class ConnectMessage extends MqttMessage {
 	}
 
 	private ConnectMessage(String clientId, boolean cleanSession, int keepAliveSeconds, byte[] clientIdUtf8, String userName, byte[] userNameUtf8,
-			String password, byte[] passwordUtf8, String willTopic, byte[] willTopicUtf8, String willMessage, byte[] willMessageUtf8, boolean willRetain) {
+			String password, byte[] passwordUtf8, String willTopic, byte[] willTopicUtf8, String willMessage, byte[] willMessageUtf8, QoS willQos,
+			boolean willRetain) {
 		super(MessageType.CONNECT, 12 + mqttStringSize(willTopicUtf8) + mqttStringSize(willMessageUtf8) + mqttStringSize(clientIdUtf8)
 				+ mqttStringSize(userNameUtf8) + mqttStringSize(passwordUtf8));
 
@@ -260,7 +274,7 @@ public final class ConnectMessage extends MqttMessage {
 		this.willMessage = willMessage;
 		this.userName = userName;
 		this.password = password;
-		this.flags = buildFlags(cleanSession, willRetain);
+		this.flags = buildFlags(cleanSession, willQos, willRetain);
 
 		putString(protocolName);
 		buffer.put((byte) protocolVersion);
