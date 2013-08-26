@@ -6,10 +6,10 @@ import java.nio.channels.Selector;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -128,11 +128,12 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 				for (SelectionKey key : selector.selectedKeys()) {
 					read(key);
 				}
-				Iterator<SelectionKey> keyIter = selector.selectedKeys().iterator();
-				while (keyIter.hasNext()) {
-					write(keyIter.next());
+
+				Set<SelectionKey> keys = selector.selectedKeys();
+				for (SelectionKey key : keys) {
+					write(key);
 				}
-				keyIter.remove();
+				keys.clear();
 			} catch (Exception e) {
 				e.printStackTrace();
 				// FIXME [jim] - log or something
