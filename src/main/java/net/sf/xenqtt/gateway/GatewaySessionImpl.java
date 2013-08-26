@@ -125,11 +125,11 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 
 			try {
 				selector.select();
-				for (SelectionKey key : selector.selectedKeys()) {
+				Set<SelectionKey> keys = selector.selectedKeys();
+				for (SelectionKey key : keys) {
 					read(key);
 				}
 
-				Set<SelectionKey> keys = selector.selectedKeys();
 				for (SelectionKey key : keys) {
 					write(key);
 				}
