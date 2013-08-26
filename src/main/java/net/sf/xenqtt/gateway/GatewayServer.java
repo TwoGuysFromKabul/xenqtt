@@ -11,6 +11,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.message.ConnAckMessage;
@@ -32,8 +33,6 @@ import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
 public class GatewayServer {
-
-	// FIXME [jim] - instead of using an iterator for selected key iteration with remove just use a for loop then clear the keyset
 
 	// FIXME [jim] - maybe keep track of connections that don't send a connect message within some time period and close them?
 
@@ -123,11 +122,11 @@ public class GatewayServer {
 					selector.select(sleepMillis);
 				}
 
-				Iterator<SelectionKey> keyIter = selector.selectedKeys().iterator();
-				while (keyIter.hasNext()) {
-					processKey(keyIter.next());
-					keyIter.remove();
+				Set<SelectionKey> keys = selector.selectedKeys();
+				for (SelectionKey key : keys) {
+					processKey(key);
 				}
+				keys.clear();
 
 				now = System.currentTimeMillis();
 				if (now >= nextSessionCleanupTime) {
