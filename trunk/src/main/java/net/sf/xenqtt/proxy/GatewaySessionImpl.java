@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gateway;
+package net.sf.xenqtt.proxy;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -62,7 +62,7 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.gateway.GatewaySession#addClient(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)
+	 * @see net.sf.xenqtt.proxy.GatewaySession#addClient(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)
 	 */
 	@Override
 	public final boolean addClient(MqttChannel channel, ConnectMessage connectMessage) {
@@ -71,7 +71,7 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.gateway.GatewaySession#isOpen()
+	 * @see net.sf.xenqtt.proxy.GatewaySession#isOpen()
 	 */
 	@Override
 	public boolean isOpen() {
@@ -85,7 +85,7 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.gateway.GatewaySession#close()
+	 * @see net.sf.xenqtt.proxy.GatewaySession#close()
 	 */
 	@Override
 	public final void close() {

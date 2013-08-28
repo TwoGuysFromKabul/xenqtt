@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gateway;
+package net.sf.xenqtt.proxy;
 
 import static org.junit.Assert.*;
 
