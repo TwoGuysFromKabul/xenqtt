@@ -45,9 +45,13 @@ public class ConnectMessageTest {
 	}
 
 	@Test
+	public void testOutboundCtor_NoCredentialsNoWillMessage() {
+	}
+
+	@Test
 	public void testOutboundCtor_Credentials() {
 
-		ConnectMessage message = new ConnectMessage("mr-burns", false, 1, "smithers", "hounds");
+		ConnectMessage message = new ConnectMessage("mr-burns", false, 1);
 
 		assertSame(MessageType.CONNECT, message.getMessageType());
 		assertEquals("MQIsdp", message.getProtocolName());
@@ -56,17 +60,17 @@ public class ConnectMessageTest {
 		assertEquals(0, message.getQoSLevel());
 		assertFalse(message.isDuplicate());
 		assertFalse(message.isRetain());
-		assertTrue(message.isPasswordFlag());
-		assertTrue(message.isUserNameFlag());
+		assertFalse(message.isPasswordFlag());
+		assertFalse(message.isUserNameFlag());
 		assertFalse(message.isWillMessageFlag());
 		assertFalse(message.isWillRetain());
 
 		assertEquals("mr-burns", message.getClientId());
 		assertFalse(message.isCleanSession());
 		assertEquals(1, message.getKeepAliveSeconds());
-		assertEquals("smithers", message.getUserName());
-		assertEquals("hounds", message.getPassword());
-		assertEquals(40, message.getRemainingLength());
+		assertNull(message.getUserName());
+		assertNull(message.getPassword());
+		assertEquals(22, message.getRemainingLength());
 		assertEquals(0, message.getWillQoSLevel());
 		assertEquals(QoS.AT_MOST_ONCE, message.getWillQoS());
 	}

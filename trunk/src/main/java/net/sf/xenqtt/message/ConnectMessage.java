@@ -35,6 +35,13 @@ public final class ConnectMessage extends MqttMessage {
 	}
 
 	/**
+	 * Create an instance with no credentials and no will message.
+	 */
+	public ConnectMessage(String clientId, boolean cleanSession, int keepAliveSeconds) {
+		this(clientId, cleanSession, keepAliveSeconds, null, null, null, null, null, false);
+	}
+
+	/**
 	 * Create an instance with credentials and no will message.
 	 */
 	public ConnectMessage(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password) {
