@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-public class GatewaySessionImplTest {
+public class ProxySessionImplTest {
 
 	@Test
 	public void test() {

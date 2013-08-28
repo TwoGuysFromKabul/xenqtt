@@ -12,8 +12,8 @@ import java.util.Iterator;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttChannelImpl;
-import net.sf.xenqtt.proxy.GatewayServer;
-import net.sf.xenqtt.proxy.GatewaySession;
+import net.sf.xenqtt.proxy.ProxyServer;
+import net.sf.xenqtt.proxy.ProxySession;
 
 import org.junit.After;
 import org.junit.Before;
@@ -23,7 +23,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class GatewayServerTest {
+public class ProxyServerTest {
 
 	volatile boolean failCreateSession;
 	volatile MqttChannel newSessionChannel;
@@ -32,7 +32,7 @@ public class GatewayServerTest {
 	volatile MqttChannel addedSessionChannel;
 	volatile ConnectMessage addedSessionMsg;
 
-	volatile @Mock GatewaySession session;
+	volatile @Mock ProxySession session;
 
 	volatile Selector selector;
 
@@ -362,14 +362,14 @@ public class GatewayServerTest {
 		}
 	}
 
-	private class TestServer extends GatewayServer {
+	private class TestServer extends ProxyServer {
 
 		public TestServer() throws IOException {
 			super(null, 0, 100);
 		}
 
 		@Override
-		GatewaySession createSession(MqttChannel channel, ConnectMessage message) throws IOException {
+		ProxySession createSession(MqttChannel channel, ConnectMessage message) throws IOException {
 
 			if (failCreateSession) {
 				throw new RuntimeException();

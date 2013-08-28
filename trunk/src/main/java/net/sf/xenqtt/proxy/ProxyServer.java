@@ -32,11 +32,11 @@ import net.sf.xenqtt.message.SubscribeMessage;
 import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
-public class GatewayServer {
+public class ProxyServer {
 
 	// FIXME [jim] - maybe keep track of connections that don't send a connect message within some time period and close them?
 
-	private final Map<String, GatewaySession> sessionsByClientId = new HashMap<String, GatewaySession>();
+	private final Map<String, ProxySession> sessionsByClientId = new HashMap<String, ProxySession>();
 
 	private final String brokerHost;
 	private final int brokerPort;
@@ -80,7 +80,7 @@ public class GatewayServer {
 			usage("Invalid port");
 		}
 
-		final GatewayServer server = new GatewayServer(brokerHost, brokerPort, 60000);
+		final ProxyServer server = new ProxyServer(brokerHost, brokerPort, 60000);
 
 		Thread hook = new Thread() {
 			@Override
@@ -94,7 +94,7 @@ public class GatewayServer {
 		server.run(clientPort);
 	}
 
-	public GatewayServer(String brokerHost, int brokerPort, int sessionCleanupIntervalMillis) throws IOException {
+	public ProxyServer(String brokerHost, int brokerPort, int sessionCleanupIntervalMillis) throws IOException {
 		this.brokerHost = brokerHost;
 		this.brokerPort = brokerPort;
 		this.sessionCleanupIntervalMillis = sessionCleanupIntervalMillis;
@@ -158,9 +158,9 @@ public class GatewayServer {
 	/**
 	 * Intended to be overridden to inject a mock sessions during unit testing
 	 */
-	GatewaySession createSession(MqttChannel channel, ConnectMessage message) throws IOException {
+	ProxySession createSession(MqttChannel channel, ConnectMessage message) throws IOException {
 
-		return new GatewaySessionImpl(brokerHost, brokerPort, channel, message);
+		return new ProxySessionImpl(brokerHost, brokerPort, channel, message);
 	}
 
 	private static void usage(String errorMessage) {
@@ -178,7 +178,7 @@ public class GatewayServer {
 
 	private void abortSessions() {
 
-		for (GatewaySession session : sessionsByClientId.values()) {
+		for (ProxySession session : sessionsByClientId.values()) {
 			try {
 				session.close();
 			} catch (Exception ignore) {
@@ -191,9 +191,9 @@ public class GatewayServer {
 	 * this server.
 	 */
 	private void cleanupSessions() {
-		Iterator<GatewaySession> sessionIter = sessionsByClientId.values().iterator();
+		Iterator<ProxySession> sessionIter = sessionsByClientId.values().iterator();
 		while (sessionIter.hasNext()) {
-			GatewaySession session = sessionIter.next();
+			ProxySession session = sessionIter.next();
 			if (!session.isOpen()) {
 				sessionIter.remove();
 			}
@@ -230,7 +230,7 @@ public class GatewayServer {
 
 				String clientId = message.getClientId();
 
-				GatewaySession session = sessionsByClientId.get(clientId);
+				ProxySession session = sessionsByClientId.get(clientId);
 				if (session != null && session.addClient(channel, message)) {
 					return;
 				}
