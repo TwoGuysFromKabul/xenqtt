@@ -21,10 +21,10 @@ import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttChannelImpl;
 
 /**
- * The connections to the broker and all the clients for one client ID is a gateway session. This class may be accessed by at most 2 threads: an external thread
- * that interacts with the {@link GatewaySession} API (the API thread) and the internal thread that handles messaging for the session (the session thread).
+ * The connections to the broker and all the clients for one client ID is a proxy session. This class may be accessed by at most 2 threads: an external thread
+ * that interacts with the {@link ProxySession} API (the API thread) and the internal thread that handles messaging for the session (the session thread).
  */
-class GatewaySessionImpl extends Thread implements GatewaySession {
+class ProxySessionImpl extends Thread implements ProxySession {
 
 	private final Map<Integer, ChannelAndId> clientChannelsByMessageId = new HashMap<Integer, ChannelAndId>();
 
@@ -50,8 +50,8 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 	 *            The {@link ConnectMessage} received from the channel
 	 * @throws IOException
 	 */
-	public GatewaySessionImpl(String brokerHost, int brokerPort, MqttChannel channel, ConnectMessage message) throws IOException {
-		super("GatewaySession-" + message.getClientId());
+	public ProxySessionImpl(String brokerHost, int brokerPort, MqttChannel channel, ConnectMessage message) throws IOException {
+		super("ProxySession-" + message.getClientId());
 
 		this.firstConnectMessage = message;
 		this.brokerHandler = createBrokerMessageHandler(clientChannels, clientChannelsByMessageId);
@@ -62,7 +62,7 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.proxy.GatewaySession#addClient(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)
+	 * @see net.sf.xenqtt.proxy.ProxySession#addClient(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)
 	 */
 	@Override
 	public final boolean addClient(MqttChannel channel, ConnectMessage connectMessage) {
@@ -71,7 +71,7 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.proxy.GatewaySession#isOpen()
+	 * @see net.sf.xenqtt.proxy.ProxySession#isOpen()
 	 */
 	@Override
 	public boolean isOpen() {
@@ -85,7 +85,7 @@ class GatewaySessionImpl extends Thread implements GatewaySession {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.proxy.GatewaySession#close()
+	 * @see net.sf.xenqtt.proxy.ProxySession#close()
 	 */
 	@Override
 	public final void close() {

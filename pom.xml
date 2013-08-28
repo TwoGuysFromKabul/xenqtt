@@ -50,7 +50,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-						    <mainClass>net.sf.xenqtt.proxy.GatewayServer</mainClass>
+						    <mainClass>net.sf.xenqtt.proxy.ProxyServer</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

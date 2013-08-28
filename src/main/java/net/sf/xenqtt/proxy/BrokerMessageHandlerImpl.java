@@ -8,9 +8,9 @@ import java.util.Map;
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.DisconnectMessage;
+import net.sf.xenqtt.message.IdentifiableMqttMessage;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttMessage;
-import net.sf.xenqtt.message.IdentifiableMqttMessage;
 import net.sf.xenqtt.message.PingReqMessage;
 import net.sf.xenqtt.message.PingRespMessage;
 import net.sf.xenqtt.message.PubAckMessage;
@@ -24,7 +24,7 @@ import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
 /**
- * Handles messages from the gateway's broker connection
+ * Handles messages from the proxy's broker connection
  */
 final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 
