@@ -1,15 +1,12 @@
-package net.sf.xenqtt.gateway;
+package net.sf.xenqtt.proxy;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.DisconnectMessage;
+import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
-import net.sf.xenqtt.message.MqttMessage;
 import net.sf.xenqtt.message.IdentifiableMqttMessage;
 import net.sf.xenqtt.message.PingReqMessage;
 import net.sf.xenqtt.message.PingRespMessage;
@@ -24,51 +21,23 @@ import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
 /**
- * Handles messages from the gateway's broker connection
+ * Handles messages from gateway client connections
  */
-final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
+final class ClientMessageHandler implements MessageHandler {
 
-	private final List<MqttChannel> clientChannels;
+	// FIXME [jim] - need to add pinging the broker
+
+	// FIXME [jim] - need to deal with what happens if an ID for an inflight message becomes needed again because it is still outstanding after all other IDs
+	// have been used.
+	private int nextMessageId = 1;
+
+	// FIXME [jim] - this needs to have the original message ID in the value as well
 	private final Map<Integer, ChannelAndId> clientChannelsByMessageId;
+	private final MqttChannel brokerChannel;
 
-	private int nextClientIndex;
-
-	public BrokerMessageHandlerImpl(List<MqttChannel> clientChannels, Map<Integer, ChannelAndId> clientChannelsByMessageId) {
-		this.clientChannels = clientChannels;
+	public ClientMessageHandler(Map<Integer, ChannelAndId> clientChannelsByMessageId, MqttChannel brokerChannel) {
 		this.clientChannelsByMessageId = clientChannelsByMessageId;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.gateway.BrokerMessageHandler#newClientChannel(net.sf.xenqtt.message.MqttChannel)
-	 */
-	@Override
-	public void newClientChannel(MqttChannel clientChannel) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.gateway.BrokerMessageHandler#closeClientChannel(net.sf.xenqtt.message.MqttChannel)
-	 */
-	@Override
-	public void closeClientChannel(MqttChannel channel) {
-
-		channel.close();
-
-		Iterator<MqttChannel> iter1 = clientChannels.iterator();
-		while (iter1.hasNext()) {
-			if (iter1.next() == channel) {
-				iter1.remove();
-				break;
-			}
-		}
-
-		Iterator<ChannelAndId> iter2 = clientChannelsByMessageId.values().iterator();
-		while (iter2.hasNext()) {
-			if (iter2.next().channel == channel) {
-				iter2.remove();
-			}
-		}
+		this.brokerChannel = brokerChannel;
 	}
 
 	/**
@@ -76,7 +45,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, ConnectMessage message) throws Exception {
-		// should never be received from the broker
+		// this should only happen if the message is getting resent so ignore it
 	}
 
 	/**
@@ -84,7 +53,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, ConnAckMessage message) throws Exception {
-		// FIXME [jim] - need to deal with first conn ack, clean up if rejected, and not respond to new ones until first is acked.
+		// should never be received from the client
 	}
 
 	/**
@@ -92,7 +61,8 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, PublishMessage message) throws Exception {
-		distributeToClient(message);
+		changeMessageId(channel, message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -100,7 +70,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, PubAckMessage message) throws Exception {
-		forwardClientAck(message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -108,7 +78,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, PubRecMessage message) throws Exception {
-		forwardClientAck(message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -116,7 +86,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, PubRelMessage message) throws Exception {
-		distributeToClient(message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -124,7 +94,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, PubCompMessage message) throws Exception {
-		distributeToClient(message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -132,7 +102,8 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, SubscribeMessage message) throws Exception {
-		// should never be received from broker
+		changeMessageId(channel, message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -140,7 +111,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, SubAckMessage message) throws Exception {
-		forwardClientAck(message);
+		// should never be received from the subscriber
 	}
 
 	/**
@@ -148,7 +119,8 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, UnsubscribeMessage message) throws Exception {
-		// should never be received from broker
+		changeMessageId(channel, message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -156,7 +128,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, UnsubAckMessage message) throws Exception {
-		forwardClientAck(message);
+		brokerChannel.send(message);
 	}
 
 	/**
@@ -164,7 +136,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, PingReqMessage message) throws Exception {
-		// should never be received from broker
+		brokerChannel.send(new PingRespMessage());
 	}
 
 	/**
@@ -172,7 +144,7 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, PingRespMessage message) throws Exception {
-		// FIXME [jim] - need to deal with pings
+		// should never be received from the client
 	}
 
 	/**
@@ -180,32 +152,28 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	 */
 	@Override
 	public void handle(MqttChannel channel, DisconnectMessage message) throws Exception {
-		// should never be received from broker
+		// FIXME [jim] - need to close this channel and if the last client then need to disconnect from the broker
 	}
 
-	private void distributeToClient(MqttMessage message) throws IOException {
+	private void changeMessageId(MqttChannel channel, IdentifiableMqttMessage message) {
 
-		if (clientChannels.isEmpty()) {
-			// FIXME [jim] - log something here??
-			return;
+		int newId = getNextMessageId();
+
+		if (message.getQoSLevel() > 0) {
+
+			clientChannelsByMessageId.put(newId, new ChannelAndId(channel, message.getMessageId()));
 		}
 
-		if (nextClientIndex >= clientChannels.size()) {
-			nextClientIndex = 0;
-		}
-		MqttChannel channel = clientChannels.get(nextClientIndex++);
-		channel.send(message);
+		message.setMessageId(newId);
 	}
 
-	private void forwardClientAck(IdentifiableMqttMessage message) throws IOException {
+	private int getNextMessageId() {
 
-		ChannelAndId channelAndId = clientChannelsByMessageId.remove(message.getMessageId());
-		if (channelAndId == null) {
-			// FIXME [jim] - log something??
-			return;
+		int next = nextMessageId++;
+		if (nextMessageId > 0xffff) {
+			nextMessageId = 1;
 		}
 
-		message.setMessageId(channelAndId.clientSideMessageId);
-		channelAndId.channel.send(message);
+		return next;
 	}
 }

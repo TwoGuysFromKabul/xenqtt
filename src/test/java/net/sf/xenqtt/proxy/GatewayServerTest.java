@@ -1,4 +1,4 @@
-package net.sf.xenqtt.gateway;
+package net.sf.xenqtt.proxy;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
@@ -12,6 +12,8 @@ import java.util.Iterator;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttChannelImpl;
+import net.sf.xenqtt.proxy.GatewayServer;
+import net.sf.xenqtt.proxy.GatewaySession;
 
 import org.junit.After;
 import org.junit.Before;
