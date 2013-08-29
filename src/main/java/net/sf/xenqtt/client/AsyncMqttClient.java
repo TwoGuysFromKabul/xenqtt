@@ -3,6 +3,9 @@ package net.sf.xenqtt.client;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
 
+/**
+ * An {@link MqttClient} that handles interactions with the MQTT broker in an asynchronous fashion.
+ */
 public final class AsyncMqttClient implements MqttClient {
 
 	public AsyncMqttClient(AsyncMessageHandler messageHandler) {
