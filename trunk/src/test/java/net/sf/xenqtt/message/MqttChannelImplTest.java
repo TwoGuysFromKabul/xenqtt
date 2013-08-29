@@ -459,5 +459,9 @@ public class MqttChannelImplTest {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
+
+		@Override
+		public void channelClosed(MqttChannel channel) {
+		}
 	}
 }

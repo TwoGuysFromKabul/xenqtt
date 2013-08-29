@@ -74,4 +74,13 @@ public interface MessageHandler {
 	 * Called when a {@link DisconnectMessage} is received through the specified channel
 	 */
 	void handle(MqttChannel channel, DisconnectMessage message) throws Exception;
+
+	/**
+	 * Called when a {@link MqttChannel MQTT channel} is formally closed.
+	 * 
+	 * @param channel
+	 *            The channel that was closed
+	 */
+	// FIXME [jeremy OR jim] - Call this or die, it is your choice.
+	void channelClosed(MqttChannel channel);
 }

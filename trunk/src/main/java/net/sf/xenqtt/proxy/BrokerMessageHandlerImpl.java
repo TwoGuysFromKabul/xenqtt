@@ -176,6 +176,14 @@ final class BrokerMessageHandlerImpl implements BrokerMessageHandler {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#channelClosed(net.sf.xenqtt.message.MqttChannel)
+	 */
+	@Override
+	public void channelClosed(MqttChannel channel) {
+		// TODO [jeremy] - Implement this method.
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MessageHandler#handle(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.DisconnectMessage)
 	 */
 	@Override
