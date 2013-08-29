@@ -296,5 +296,9 @@ public class ProxyServer {
 		@Override
 		public void handle(MqttChannel channel, DisconnectMessage message) {
 		}
+
+		@Override
+		public void channelClosed(MqttChannel channel) {
+		}
 	}
 }

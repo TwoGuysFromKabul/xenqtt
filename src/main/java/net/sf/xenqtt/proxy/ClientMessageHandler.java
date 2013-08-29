@@ -155,6 +155,14 @@ final class ClientMessageHandler implements MessageHandler {
 		// FIXME [jim] - need to close this channel and if the last client then need to disconnect from the broker
 	}
 
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#channelClosed(net.sf.xenqtt.message.MqttChannel)
+	 */
+	@Override
+	public void channelClosed(MqttChannel channel) {
+		// TODO [jeremy] - Implement this method.
+	}
+
 	private void changeMessageId(MqttChannel channel, IdentifiableMqttMessage message) {
 
 		int newId = getNextMessageId();
