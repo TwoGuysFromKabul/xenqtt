@@ -94,7 +94,7 @@ public final class SubscribeMessage extends IdentifiableMqttMessage {
 
 		int count = 0;
 		while (buffer.hasRemaining()) {
-			int size = (buffer.getShort() & 0xffff) + 3;
+			int size = (buffer.getShort() & 0xffff) + 1;
 			buffer.position(buffer.position() + size);
 			count++;
 		}

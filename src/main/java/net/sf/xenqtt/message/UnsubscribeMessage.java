@@ -59,7 +59,7 @@ public final class UnsubscribeMessage extends IdentifiableMqttMessage {
 
 		int count = 0;
 		while (buffer.hasRemaining()) {
-			int size = (buffer.getShort() & 0xffff) + 2;
+			int size = (buffer.getShort() & 0xffff);
 			buffer.position(buffer.position() + size);
 			count++;
 		}
