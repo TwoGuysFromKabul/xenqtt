@@ -3,6 +3,10 @@ package net.sf.xenqtt.client;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
 
+/**
+ * An {@link MqttClient} that interacts with an MQTT broker in a synchronous fashion. All MQTT-related operations happen in a blocking style where method
+ * invocations will return once the operation completes.
+ */
 public final class SynchronousMqttClient implements MqttClient {
 
 	public SynchronousMqttClient(MqttMessageHandler messageHandler) {
