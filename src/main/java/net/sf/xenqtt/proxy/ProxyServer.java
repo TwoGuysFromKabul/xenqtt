@@ -19,7 +19,6 @@ import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.DisconnectMessage;
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
-import net.sf.xenqtt.message.MqttChannelImpl;
 import net.sf.xenqtt.message.PingReqMessage;
 import net.sf.xenqtt.message.PingRespMessage;
 import net.sf.xenqtt.message.PubAckMessage;
@@ -211,7 +210,8 @@ public class ProxyServer {
 		if (key.isAcceptable()) {
 			SocketChannel socketChannel = ssc.accept();
 			if (socketChannel != null) {
-				new MqttChannelImpl(socketChannel, handler, selector);
+				// FIXME [jim] - implement proxy
+				// new MqttChannelImpl(socketChannel, handler, selector);
 			}
 
 		} else if (key.isReadable()) {
