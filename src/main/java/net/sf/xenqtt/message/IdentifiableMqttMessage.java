@@ -10,7 +10,7 @@ public abstract class IdentifiableMqttMessage extends MqttMessage {
 	/**
 	 * Used by {@link AbstractMqttChannel} to keep track of when to resend an unack'd message
 	 */
-	long lastSendTime;
+	long nextSendTime;
 
 	/**
 	 * @see MqttMessage#MqttMessage(ByteBuffer, int)
