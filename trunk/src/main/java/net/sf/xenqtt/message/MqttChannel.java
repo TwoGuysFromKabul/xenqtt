@@ -29,20 +29,29 @@ public interface MqttChannel {
 	 * Reads data. This will read as many messages as it can and pass them to a {@link MessageHandler}.This should be called when a {@link SelectionKey}s
 	 * {@link SelectionKey#OP_READ} op is ready.
 	 * 
+	 * @param now
+	 *            The timestamp to use as the "current" time
+	 * 
 	 * @return True if the stream is still open. False if end of stream is reached.
 	 */
-	boolean read() throws IOException;
+	boolean read(long now) throws IOException;
 
 	/**
 	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
 	 * not {@link ConnectReturnCode#ACCEPTED} is sent the channel is closed automatically.
+	 * 
+	 * @param now
+	 *            The timestamp to use as the "current" time
 	 */
-	void send(MqttMessage message) throws IOException;
+	void send(long now, MqttMessage message) throws IOException;
 
 	/**
 	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.
+	 * 
+	 * @param now
+	 *            The timestamp to use as the "current" time
 	 */
-	void write() throws IOException;
+	void write(long now) throws IOException;
 
 	/**
 	 * Closes the underlying channels, sockets, etc
@@ -50,11 +59,19 @@ public interface MqttChannel {
 	void close();
 
 	/**
-	 * Tells whether or not this channel is open.
+	 * Tells whether or not this channel is open. This channel is open if the underlying channels, sockets, etc are open
 	 * 
 	 * @return true if, and only if, this channel is open
 	 */
 	boolean isOpen();
+
+	/**
+	 * Tells whether or not this channel is connected. This channel is connected if {@link #isOpen()} is true, Connect/ConnectAck has finished, and no
+	 * disconnect has been received/sent.
+	 * 
+	 * @return True if and only if this channel is connected.
+	 */
+	boolean isConnected();
 
 	/**
 	 * Tells whether or not a connection operation is in progress on this channel.
