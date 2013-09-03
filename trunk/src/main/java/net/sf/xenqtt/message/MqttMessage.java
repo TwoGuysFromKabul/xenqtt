@@ -24,6 +24,8 @@ public abstract class MqttMessage {
 	 */
 	final int fixedHeaderEndOffset;
 
+	private MessageType messageType;
+
 	/**
 	 * Creates the message from a {@link ByteBuffer}. This is typically used for received messages. The buffer will be read to the end of the fixed header. This
 	 * should only be used by constructors in extending classes. Extending classes can assume the position of the buffer is at the end of the fixed header when
@@ -82,10 +84,33 @@ public abstract class MqttMessage {
 	}
 
 	/**
+	 * @return True if this is a message that requires an ack at qos > 1
+	 */
+	public final boolean isAckable() {
+
+		MessageType type = getMessageType();
+		return type == MessageType.PUBLISH || type == MessageType.PUBREL || type == MessageType.SUBSCRIBE || type == MessageType.UNSUBSCRIBE;
+	}
+
+	/**
+	 * @return True if this is an ack to an ackable message (does not include {@link ConnAckMessage}.
+	 */
+	public final boolean isAck() {
+
+		MessageType type = getMessageType();
+		return type == MessageType.PUBACK || type == MessageType.PUBREC || type == MessageType.PUBCOMP || type == MessageType.SUBACK
+				|| type == MessageType.UNSUBACK;
+	}
+
+	/**
 	 * The type of message
 	 */
 	public final MessageType getMessageType() {
-		return MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
+		if (messageType == null) {
+			messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
+		}
+
+		return messageType;
 	}
 
 	/**
