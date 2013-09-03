@@ -20,7 +20,7 @@ public interface AsyncMessageHandler extends MqttMessageHandler {
 
 	void connectDone(ConnectReturnCode returnCode);
 
-	void subscribed(QoS[] qos);
+	void subscribed(String[] subscribedTopics, QoS[] requestedQoses, QoS[] grantedQoses);
 
 	void unsubscribed();
 

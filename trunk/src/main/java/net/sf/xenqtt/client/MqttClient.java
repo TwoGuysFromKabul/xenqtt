@@ -25,7 +25,7 @@ public interface MqttClient {
 
 	void disconnect();
 
-	QoS[] subscribe();
+	QoS[] subscribe(String[] subscribeToTopics, QoS[] requestedQoses);
 
 	void unsubscribe();
 
