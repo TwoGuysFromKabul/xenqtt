@@ -26,7 +26,7 @@ public final class SynchronousMqttClient implements MqttClient {
 	}
 
 	@Override
-	public QoS[] subscribe() {
+	public QoS[] subscribe(String[] subscribeToTopics, QoS[] requestedQoses) {
 		// TODO Auto-generated method stub
 		return null;
 	}
