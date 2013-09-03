@@ -29,6 +29,8 @@ public class MqttChannelImplTest {
 	MockMessageHandler clientHandler = new MockMessageHandler(false);
 	MockMessageHandler brokerHandler = new MockMessageHandler(true);
 
+	long now = System.currentTimeMillis();
+
 	@Before
 	public void setup() throws Exception {
 
@@ -106,7 +108,7 @@ public class MqttChannelImplTest {
 
 		DisconnectMessage msg = new DisconnectMessage();
 
-		clientChannel.send(msg);
+		clientChannel.send(now, msg);
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
@@ -124,7 +126,7 @@ public class MqttChannelImplTest {
 
 		ConnAckMessage msg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
 
-		clientChannel.send(msg);
+		clientChannel.send(now, msg);
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
@@ -142,7 +144,7 @@ public class MqttChannelImplTest {
 
 		ConnAckMessage msg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		clientChannel.send(msg);
+		clientChannel.send(now, msg);
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
@@ -161,13 +163,13 @@ public class MqttChannelImplTest {
 		PingReqMessage pingReqMsg = new PingReqMessage();
 		PingRespMessage pingRespMsg = new PingRespMessage();
 
-		clientChannel.send(pingReqMsg);
+		clientChannel.send(now, pingReqMsg);
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertNotSame(pingReqMsg, brokerHandler.messagesReceived.get(0));
 		assertEquals(pingReqMsg, brokerHandler.messagesReceived.get(0));
 
-		brokerChannel.send(pingRespMsg);
+		brokerChannel.send(now, pingRespMsg);
 		assertNull(readWrite(1, 0));
 		assertEquals(1, clientHandler.messagesReceived.size());
 		assertNotSame(pingRespMsg, clientHandler.messagesReceived.get(0));
@@ -186,7 +188,7 @@ public class MqttChannelImplTest {
 		PingReqMessage msg = new PingReqMessage();
 
 		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
-		clientChannel.send(msg);
+		clientChannel.send(now, msg);
 
 		establishConnection();
 
@@ -203,8 +205,8 @@ public class MqttChannelImplTest {
 		UnsubAckMessage msg1 = new UnsubAckMessage(1);
 		PingReqMessage msg2 = new PingReqMessage();
 
-		clientChannel.send(msg1);
-		clientChannel.send(msg2);
+		clientChannel.send(now, msg1);
+		clientChannel.send(now, msg2);
 
 		assertNull(readWrite(0, 1));
 
@@ -221,7 +223,7 @@ public class MqttChannelImplTest {
 
 		PingReqMessage msg = new PingReqMessage();
 
-		clientChannel.send(msg);
+		clientChannel.send(now, msg);
 		assertNull(readWrite(0, 1));
 
 		closeConnection();
@@ -234,7 +236,7 @@ public class MqttChannelImplTest {
 
 		PubAckMessage msg = new PubAckMessage(123);
 
-		clientChannel.send(msg);
+		clientChannel.send(now, msg);
 		assertNull(readWrite(0, 1));
 
 		closeConnection();
@@ -274,7 +276,7 @@ public class MqttChannelImplTest {
 
 			PublishMessage msg = new PublishMessage(false, QoS.AT_LEAST_ONCE, false, "abc", 123, payload);
 
-			clientChannel.send(msg);
+			clientChannel.send(now, msg);
 			messagesSent.add(msg);
 		}
 
@@ -304,12 +306,12 @@ public class MqttChannelImplTest {
 				SelectionKey key = iter.next();
 				MqttChannel channel = (MqttChannel) key.attachment();
 				if (key.isReadable()) {
-					if (!channel.read()) {
+					if (!channel.read(now)) {
 						return channel;
 					}
 				}
 				if (key.isWritable()) {
-					channel.write();
+					channel.write(now);
 				}
 				iter.remove();
 			}

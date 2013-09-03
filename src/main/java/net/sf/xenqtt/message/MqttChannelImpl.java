@@ -94,10 +94,11 @@ public class MqttChannelImpl implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#read()
+	 * @see net.sf.xenqtt.message.MqttChannel#read(long)
 	 */
 	@Override
-	public boolean read() throws IOException {
+	public boolean read(long now) throws IOException {
+		// TODO Auto-generated method stub
 
 		if (readRemaining != null) {
 			return readRemaining();
@@ -131,10 +132,11 @@ public class MqttChannelImpl implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
+	 * @see net.sf.xenqtt.message.MqttChannel#send(long, net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
-	public void send(MqttMessage message) throws IOException {
+	public void send(long now, MqttMessage message) throws IOException {
+		// TODO Auto-generated method stub
 
 		if (sendMessageInProgress != null) {
 			writesPending.offer(message);
@@ -145,15 +147,16 @@ public class MqttChannelImpl implements MqttChannel {
 
 		if (channel.socket().isConnected()) {
 			selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-			write();
+			write(now);
 		}
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#write()
+	 * @see net.sf.xenqtt.message.MqttChannel#write(long)
 	 */
 	@Override
-	public void write() throws IOException {
+	public void write(long now) throws IOException {
+		// TODO Auto-generated method stub
 
 		while (sendMessageInProgress != null) {
 			int bytesWritten = channel.write(sendMessageInProgress.buffer);
@@ -206,6 +209,15 @@ public class MqttChannelImpl implements MqttChannel {
 	@Override
 	public boolean isOpen() {
 		return channel.isOpen();
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#isConnected()
+	 */
+	@Override
+	public boolean isConnected() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	/**
