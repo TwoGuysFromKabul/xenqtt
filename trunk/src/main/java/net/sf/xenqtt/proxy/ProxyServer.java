@@ -160,7 +160,9 @@ public class ProxyServer {
 	 */
 	ProxySession createSession(MqttChannel channel, ConnectMessage message) throws IOException {
 
-		return new ProxySessionImpl(brokerHost, brokerPort, channel, message);
+		// FIXME [jim] - implement proxy
+		// return new ProxySessionImpl(brokerHost, brokerPort, channel, message);
+		return null;
 	}
 
 	private static void usage(String errorMessage) {
@@ -214,9 +216,10 @@ public class ProxyServer {
 
 		} else if (key.isReadable()) {
 			MqttChannel channel = (MqttChannel) key.attachment();
-			if (!channel.read()) {
-				channel.close();
-			}
+			// FIXME [jim] - implement proxy
+			// if (!channel.read()) {
+			// channel.close();
+			// }
 		}
 	}
 
