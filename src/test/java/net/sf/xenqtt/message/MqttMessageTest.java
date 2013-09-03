@@ -2,6 +2,8 @@ package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
 
+import java.nio.ByteBuffer;
+
 import org.junit.Test;
 
 public class MqttMessageTest {
@@ -74,4 +76,56 @@ public class MqttMessageTest {
 		fail("Need to test this.");
 	}
 
+	@Test
+	public void testIsAckable() throws Exception {
+
+		assertFalse(new TestMessage(MessageType.CONNACK, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.CONNECT, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.DISCONNECT, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.PINGREQ, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.PINGRESP, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.PUBACK, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.PUBCOMP, 0).isAckable());
+		assertTrue(new TestMessage(MessageType.PUBLISH, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.PUBREC, 0).isAckable());
+		assertTrue(new TestMessage(MessageType.PUBREL, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.SUBACK, 0).isAckable());
+		assertTrue(new TestMessage(MessageType.SUBSCRIBE, 0).isAckable());
+		assertFalse(new TestMessage(MessageType.UNSUBACK, 0).isAckable());
+		assertTrue(new TestMessage(MessageType.UNSUBSCRIBE, 0).isAckable());
+
+	}
+
+	@Test
+	public void testIsAck() throws Exception {
+		assertFalse(new TestMessage(MessageType.CONNACK, 0).isAck());
+		assertFalse(new TestMessage(MessageType.CONNECT, 0).isAck());
+		assertFalse(new TestMessage(MessageType.DISCONNECT, 0).isAck());
+		assertFalse(new TestMessage(MessageType.PINGREQ, 0).isAck());
+		assertFalse(new TestMessage(MessageType.PINGRESP, 0).isAck());
+		assertTrue(new TestMessage(MessageType.PUBACK, 0).isAck());
+		assertTrue(new TestMessage(MessageType.PUBCOMP, 0).isAck());
+		assertFalse(new TestMessage(MessageType.PUBLISH, 0).isAck());
+		assertTrue(new TestMessage(MessageType.PUBREC, 0).isAck());
+		assertFalse(new TestMessage(MessageType.PUBREL, 0).isAck());
+		assertTrue(new TestMessage(MessageType.SUBACK, 0).isAck());
+		assertFalse(new TestMessage(MessageType.SUBSCRIBE, 0).isAck());
+		assertTrue(new TestMessage(MessageType.UNSUBACK, 0).isAck());
+		assertFalse(new TestMessage(MessageType.UNSUBSCRIBE, 0).isAck());
+	}
+
+	private static class TestMessage extends MqttMessage {
+
+		public TestMessage(ByteBuffer buffer, int remainingLength) {
+			super(buffer, remainingLength);
+		}
+
+		public TestMessage(MessageType messageType, boolean duplicate, QoS qos, boolean retain, int remainingLength) {
+			super(messageType, duplicate, qos, retain, remainingLength);
+		}
+
+		public TestMessage(MessageType messageType, int remainingLength) {
+			super(messageType, remainingLength);
+		}
+	}
 }
