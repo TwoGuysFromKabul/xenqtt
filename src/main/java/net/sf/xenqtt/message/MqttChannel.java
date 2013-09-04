@@ -96,7 +96,7 @@ public interface MqttChannel {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return Maximum millis until this method should be called again.
+	 * @return Maximum millis until this method should be called again. Returns {@link Long#MAX_VALUE} if this method does not need to be called again.
 	 */
 	long houseKeeping(long now) throws IOException;
 
