@@ -5,9 +5,14 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
 /**
+ * <p>
  * Sends and receives {@link MqttMessage}s over a channel. This may be client or server side. Since {@link #read(long)} may generate data to send it should
  * always be called before {@link #write(long)}. {@link #houseKeeping(long)} should be called after both {@link #read(long)} and {@link #write(long)} as those
  * methods may change paramaters used to determine what housekeeping is required.
+ * </p>
+ * <p>
+ * If any exception occurs the channel is closed.
+ * </p>
  */
 public interface MqttChannel {
 
@@ -34,7 +39,7 @@ public interface MqttChannel {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return True if the stream is still open. False if end of stream is reached.
+	 * @return True if the stream is still open. False if end of stream is reached in which case the channel is closed.
 	 */
 	boolean read(long now) throws IOException;
 

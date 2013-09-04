@@ -71,6 +71,8 @@ public interface MessageHandler {
 	 * 
 	 * @param channel
 	 *            The channel that was closed
+	 * @param cause
+	 *            The reason the channel was closed. Null if the channel was not closed because of an exception.
 	 */
-	void channelClosed(MqttChannel channel);
+	void channelClosed(MqttChannel channel, Throwable cause);
 }

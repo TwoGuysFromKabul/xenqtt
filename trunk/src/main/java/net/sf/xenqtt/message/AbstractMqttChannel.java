@@ -19,7 +19,6 @@ import java.util.Queue;
  * Default {@link MqttChannel} implementation. This class is NOT thread safe. At construction a {@link SocketChannel} will be registered with the
  * {@link Selector} specified in the constructor. The new instance of this class will be available from {@link SelectionKey#attachment()}.
  */
-// FIXME [jim] - have channel close on any exception
 abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
@@ -94,11 +93,19 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public void register(Selector selector, MessageHandler handler) throws IOException {
 
-		int ops = sendMessageInProgress == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
+		try {
+			int ops = sendMessageInProgress == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
 
-		selectionKey.cancel();
-		selectionKey = channel.register(selector, ops, this);
-		this.handler = handler;
+			selectionKey.cancel();
+			selectionKey = channel.register(selector, ops, this);
+			this.handler = handler;
+		} catch (IOException e) {
+			doClose(e);
+			throw e;
+		} catch (RuntimeException e) {
+			doClose(e);
+			throw e;
+		}
 	}
 
 	/**
@@ -107,9 +114,17 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public void finishConnect() throws IOException {
 
-		if (channel.finishConnect()) {
-			int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
-			selectionKey.interestOps(ops);
+		try {
+			if (channel.finishConnect()) {
+				int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
+				selectionKey.interestOps(ops);
+			}
+		} catch (IOException e) {
+			doClose(e);
+			throw e;
+		} catch (RuntimeException e) {
+			doClose(e);
+			throw e;
 		}
 	}
 
@@ -119,35 +134,20 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public boolean read(long now) throws IOException {
 
-		if (readRemaining != null) {
-			return readRemaining();
-		}
-
-		if (readHeader1.hasRemaining()) {
-			int result = channel.read(readHeader1);
-			if (readHeader1.hasRemaining()) {
-				return result >= 0;
+		try {
+			if (!doRead(now)) {
+				close();
+				return false;
 			}
-		}
 
-		byte firstLenByte = readHeader1.get(1);
-		if (firstLenByte == 0) {
-			processMessage(readHeader1);
 			return true;
+		} catch (IOException e) {
+			doClose(e);
+			throw e;
+		} catch (RuntimeException e) {
+			doClose(e);
+			throw e;
 		}
-
-		if ((firstLenByte & 0x80) == 0) {
-			return readRemaining();
-		}
-
-		if (readHeader2.hasRemaining()) {
-			int result = channel.read(readHeader2);
-			if (readHeader2.hasRemaining()) {
-				return result >= 0;
-			}
-		}
-
-		return readRemaining();
 	}
 
 	/**
@@ -156,16 +156,24 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public void send(long now, MqttMessage message) throws IOException {
 
-		if (sendMessageInProgress != null) {
-			writesPending.offer(message);
-			return;
-		}
+		try {
+			if (sendMessageInProgress != null) {
+				writesPending.offer(message);
+				return;
+			}
 
-		sendMessageInProgress = message;
+			sendMessageInProgress = message;
 
-		if (channel.socket().isConnected()) {
-			selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-			write(now);
+			if (channel.socket().isConnected()) {
+				selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+				write(now);
+			}
+		} catch (IOException e) {
+			doClose(e);
+			throw e;
+		} catch (RuntimeException e) {
+			doClose(e);
+			throw e;
 		}
 	}
 
@@ -175,40 +183,15 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public void write(long now) throws IOException {
 
-		while (sendMessageInProgress != null) {
-			int bytesWritten = channel.write(sendMessageInProgress.buffer);
-			if (bytesWritten == 0 || sendMessageInProgress.buffer.hasRemaining()) {
-				return;
-			}
-
-			MessageType type = sendMessageInProgress.getMessageType();
-			if (type == MessageType.DISCONNECT) {
-				sendMessageInProgress = null;
-				close();
-				return;
-			}
-
-			if (type == MessageType.CONNACK) {
-				ConnAckMessage m = (ConnAckMessage) sendMessageInProgress;
-				if (m.getReturnCode() != ConnectReturnCode.ACCEPTED) {
-					sendMessageInProgress = null;
-					close();
-					return;
-				} else {
-					connected = true;
-				}
-			}
-
-			if (messageResendIntervalMillis > 0 && sendMessageInProgress.isAckable() && sendMessageInProgress.getQoSLevel() > 0) {
-				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
-				m.nextSendTime = now + messageResendIntervalMillis;
-				inFlightMessages.put(m.getMessageId(), m);
-			}
-
-			sendMessageInProgress = writesPending.poll();
+		try {
+			doWrite(now);
+		} catch (IOException e) {
+			doClose(e);
+			throw e;
+		} catch (RuntimeException e) {
+			doClose(e);
+			throw e;
 		}
-
-		selectionKey.interestOps(SelectionKey.OP_READ);
 	}
 
 	/**
@@ -217,19 +200,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public void close() {
 
-		connected = false;
-
-		try {
-			selectionKey.cancel();
-		} catch (Exception ignore) {
-		}
-
-		try {
-			channel.close();
-		} catch (Exception ignore) {
-		}
-
-		handler.channelClosed(this);
+		doClose(null);
 	}
 
 	/**
@@ -293,12 +264,103 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	/**
 	 * Called when a {@link PingReqMessage} is received.
 	 */
-	abstract void pingReq(PingReqMessage message);
+	abstract void pingReq(PingReqMessage message) throws Exception;
 
 	/**
 	 * Called when a {@link PingRespMessage} is received.
 	 */
-	abstract void pingResp(PingRespMessage message);
+	abstract void pingResp(PingRespMessage message) throws Exception;
+
+	private void doWrite(long now) throws IOException {
+
+		while (sendMessageInProgress != null) {
+			int bytesWritten = channel.write(sendMessageInProgress.buffer);
+			if (bytesWritten == 0 || sendMessageInProgress.buffer.hasRemaining()) {
+				return;
+			}
+
+			MessageType type = sendMessageInProgress.getMessageType();
+			if (type == MessageType.DISCONNECT) {
+				sendMessageInProgress = null;
+				close();
+				return;
+			}
+
+			if (type == MessageType.CONNACK) {
+				ConnAckMessage m = (ConnAckMessage) sendMessageInProgress;
+				if (m.getReturnCode() != ConnectReturnCode.ACCEPTED) {
+					sendMessageInProgress = null;
+					close();
+					return;
+				} else {
+					connected = true;
+				}
+			}
+
+			if (messageResendIntervalMillis > 0 && sendMessageInProgress.isAckable() && sendMessageInProgress.getQoSLevel() > 0) {
+				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
+				m.nextSendTime = now + messageResendIntervalMillis;
+				inFlightMessages.put(m.getMessageId(), m);
+			}
+
+			sendMessageInProgress = writesPending.poll();
+		}
+
+		selectionKey.interestOps(SelectionKey.OP_READ);
+	}
+
+	private boolean doRead(long now) throws IOException {
+		if (readRemaining != null) {
+			return readRemaining();
+		}
+
+		if (readHeader1.hasRemaining()) {
+			int result = channel.read(readHeader1);
+			if (readHeader1.hasRemaining()) {
+				return result >= 0;
+			}
+		}
+
+		byte firstLenByte = readHeader1.get(1);
+		if (firstLenByte == 0) {
+			processMessage(readHeader1);
+			return true;
+		}
+
+		if ((firstLenByte & 0x80) == 0) {
+			return readRemaining();
+		}
+
+		if (readHeader2.hasRemaining()) {
+			int result = channel.read(readHeader2);
+			if (readHeader2.hasRemaining()) {
+				return result >= 0;
+			}
+		}
+
+		return readRemaining();
+	}
+
+	private void doClose(Throwable cause) {
+
+		connected = false;
+
+		try {
+			selectionKey.cancel();
+		} catch (Exception ignore) {
+		}
+
+		try {
+			channel.close();
+		} catch (Exception ignore) {
+		}
+
+		try {
+			handler.channelClosed(this, cause);
+		} catch (Exception e) {
+			// FIXME [jim] - log or something
+		}
+	}
 
 	private long resendMessages(long now) throws IOException {
 
