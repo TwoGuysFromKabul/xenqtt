@@ -250,7 +250,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		}
 
 		try {
-			keepAlive(now, lastSentTime, lastReceivedTime);
+			long maxKeepAliveTime = keepAlive(now, lastSentTime, lastReceivedTime);
+			if (maxKeepAliveTime < maxIdleTime) {
+				maxIdleTime = maxKeepAliveTime;
+			}
 		} catch (IOException e) {
 			throw e;
 		} catch (Exception e) {
@@ -300,8 +303,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 *            The last time a message was sent
 	 * @param lastMessageReceived
 	 *            The last time a message was received
+	 * @return Maximum time in millis until keep alive will have work to do and needs to be called again
 	 */
-	abstract void keepAlive(long now, long lastMessageSent, long lastMessageReceived) throws Exception;
+	abstract long keepAlive(long now, long lastMessageSent, long lastMessageReceived) throws Exception;
 
 	/**
 	 * Called when a {@link PingReqMessage} is received.

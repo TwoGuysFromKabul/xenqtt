@@ -124,8 +124,8 @@ public class AbstractMqttChannelTest {
 		clientChannel.send(now, msg);
 		assertNull(readWrite(0, 1));
 
-		clientChannel.houseKeeping(now + 1000);
-		brokerChannel.houseKeeping(now + 1000);
+		assertEquals(25000, clientChannel.houseKeeping(now + 1000));
+		assertEquals(25000, brokerChannel.houseKeeping(now + 1000));
 
 		assertTrue(clientChannel.lastSent >= now && clientChannel.lastSent < now + 100);
 		assertTrue(brokerChannel.lastReceived >= clientChannel.lastSent && brokerChannel.lastReceived < now + 100);
@@ -136,7 +136,7 @@ public class AbstractMqttChannelTest {
 	@Test
 	public void testSend_qos0() throws Exception {
 
-		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 15000);
 
 		establishConnection();
 
@@ -154,7 +154,7 @@ public class AbstractMqttChannelTest {
 	@Test
 	public void testHouseKeeping_ResendMessage_qos1() throws Exception {
 
-		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 15000);
 
 		establishConnection();
 
@@ -168,7 +168,12 @@ public class AbstractMqttChannelTest {
 		assertFalse(brokerHandler.messagesReceived.get(0).isDuplicate());
 		assertEquals(1, clientChannel.inFlightMessageCount());
 
-		clientChannel.houseKeeping(now + 100);
+		// the time hasn't elapsed yet so we should get the time until next resend of the message
+		assertEquals(15000, clientChannel.houseKeeping(now));
+		assertEquals(1, clientChannel.inFlightMessageCount());
+
+		// now the time has elapsed so we resend and get the time until the keep alive
+		assertEquals(25000, clientChannel.houseKeeping(now + 15000));
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertEquals(msg.getMessageId(), ((IdentifiableMqttMessage) brokerHandler.messagesReceived.get(0)).getMessageId());
@@ -184,7 +189,7 @@ public class AbstractMqttChannelTest {
 	@Test
 	public void testHouseKeeping_ResendMessage_qos2() throws Exception {
 
-		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 15000);
 
 		establishConnection();
 
@@ -198,7 +203,12 @@ public class AbstractMqttChannelTest {
 		assertFalse(brokerHandler.messagesReceived.get(0).isDuplicate());
 		assertEquals(1, clientChannel.inFlightMessageCount());
 
-		clientChannel.houseKeeping(now + 100);
+		// the time hasn't elapsed yet so we should get the time until next resend of the message
+		assertEquals(15000, clientChannel.houseKeeping(now));
+		assertEquals(1, clientChannel.inFlightMessageCount());
+
+		// now the time has elapsed so we resend and get the time until the keep alive
+		assertEquals(25000, clientChannel.houseKeeping(now + 15000));
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertEquals(msg.getMessageId(), ((IdentifiableMqttMessage) brokerHandler.messagesReceived.get(0)).getMessageId());
@@ -749,13 +759,15 @@ public class AbstractMqttChannelTest {
 		}
 
 		@Override
-		void keepAlive(long now, long lastMessageSent, long lastMessageReceived) throws Exception {
+		long keepAlive(long now, long lastMessageSent, long lastMessageReceived) throws Exception {
 
 			if (exceptionToThrow != null) {
 				throw exceptionToThrow;
 			}
 			lastSent = lastMessageSent;
 			lastReceived = lastMessageReceived;
+
+			return 25000;
 		}
 	}
 }
