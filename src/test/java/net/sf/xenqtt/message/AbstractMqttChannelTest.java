@@ -24,8 +24,8 @@ public class AbstractMqttChannelTest {
 	Selector selector;
 	int port;
 
-	MqttChannel clientChannel;
-	MqttChannel brokerChannel;
+	TestChannel clientChannel;
+	TestChannel brokerChannel;
 
 	MockMessageHandler clientHandler = new MockMessageHandler(false);
 	MockMessageHandler brokerHandler = new MockMessageHandler(true);
@@ -298,6 +298,44 @@ public class AbstractMqttChannelTest {
 	}
 
 	@Test
+	public void testReadWriteSend_PingReq_ThrowsException() throws Exception {
+
+		establishConnection();
+
+		brokerChannel.exceptionToThrow = new RuntimeException("crap");
+
+		PingReqMessage pingReqMsg = new PingReqMessage();
+		PubAckMessage msg2 = new PubAckMessage(1);
+
+		clientChannel.send(now, pingReqMsg);
+		clientChannel.send(now, msg2);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertEquals(msg2, brokerHandler.messagesReceived.get(0));
+
+		closeConnection();
+	}
+
+	@Test
+	public void testReadWriteSend_PingResp_ThrowsException() throws Exception {
+
+		establishConnection();
+
+		brokerChannel.exceptionToThrow = new RuntimeException("crap");
+
+		PingRespMessage pingRespMsg = new PingRespMessage();
+		PubAckMessage msg2 = new PubAckMessage(1);
+
+		clientChannel.send(now, pingRespMsg);
+		clientChannel.send(now, msg2);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertEquals(msg2, brokerHandler.messagesReceived.get(0));
+
+		closeConnection();
+	}
+
+	@Test
 	public void testSend_NotConnectedYet() throws Exception {
 
 		PingReqMessage msg = new PingReqMessage();
@@ -313,7 +351,7 @@ public class AbstractMqttChannelTest {
 	}
 
 	@Test
-	public void testReadWriteSend_HanlderThrowsException() throws Exception {
+	public void testReadWriteSend_HandlerThrowsException() throws Exception {
 
 		establishConnection();
 
@@ -327,6 +365,28 @@ public class AbstractMqttChannelTest {
 
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertEquals(msg2, brokerHandler.messagesReceived.get(0));
+
+		closeConnection();
+	}
+
+	@Test
+	public void testReadWriteSend_IOException() throws Exception {
+
+		establishConnection();
+
+		brokerChannel.close();
+
+		PingReqMessage msg = new PingReqMessage();
+		clientChannel.send(now, msg);
+
+		try {
+			assertNull(readWrite(0, 1));
+			fail("Expected exception");
+		} catch (IOException e) {
+			assertFalse(clientChannel.isOpen());
+			assertTrue(clientHandler.closed);
+			assertSame(e, clientHandler.closeCause);
+		}
 
 		closeConnection();
 	}
@@ -500,6 +560,7 @@ public class AbstractMqttChannelTest {
 		private final boolean isBrokerChannel;
 		List<MqttMessage> messagesReceived = new ArrayList<MqttMessage>();
 		boolean closed;
+		Throwable closeCause;
 
 		public MockMessageHandler(boolean isBrokerChannel) {
 			this.isBrokerChannel = isBrokerChannel;
@@ -577,8 +638,9 @@ public class AbstractMqttChannelTest {
 		}
 
 		@Override
-		public void channelClosed(MqttChannel channel) {
+		public void channelClosed(MqttChannel channel, Throwable cause) {
 			closed = true;
+			closeCause = cause;
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 	}
@@ -586,6 +648,7 @@ public class AbstractMqttChannelTest {
 	private final class TestChannel extends AbstractMqttChannel {
 
 		private final MockMessageHandler messageHandler;
+		Exception exceptionToThrow;
 
 		public TestChannel(SocketChannel channel, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 			super(channel, handler, selector, messageResendIntervalMillis);
@@ -598,12 +661,18 @@ public class AbstractMqttChannelTest {
 		}
 
 		@Override
-		void pingReq(PingReqMessage message) {
+		void pingReq(PingReqMessage message) throws Exception {
+			if (exceptionToThrow != null) {
+				throw exceptionToThrow;
+			}
 			messageHandler.messagesReceived.add(message);
 		}
 
 		@Override
-		void pingResp(PingRespMessage message) {
+		void pingResp(PingRespMessage message) throws Exception {
+			if (exceptionToThrow != null) {
+				throw exceptionToThrow;
+			}
 			messageHandler.messagesReceived.add(message);
 		}
 	}
