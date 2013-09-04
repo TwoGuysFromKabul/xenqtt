@@ -3,6 +3,7 @@ package net.sf.xenqtt.message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -19,8 +20,6 @@ import java.util.Queue;
  * Default {@link MqttChannel} implementation. This class is NOT thread safe. At construction a {@link SocketChannel} will be registered with the
  * {@link Selector} specified in the constructor. The new instance of this class will be available from {@link SelectionKey#attachment()}.
  */
-// FIXME [jim] - test what happens when we read from or write to a closed channel. probably need to handle ClosedChannelException specially so it doesn't get
-// logged or anything.
 abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
@@ -146,6 +145,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			return true;
+		} catch (ClosedChannelException e) {
+			doClose(null);
+			return false;
 		} catch (IOException e) {
 			doClose(e);
 			throw e;
@@ -169,7 +171,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			sendMessageInProgress = message;
 
-			if (channel.socket().isConnected()) {
+			if (selectionKey.isValid() && channel.socket().isConnected()) {
 				selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 				write(now);
 			}
@@ -196,6 +198,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			return true;
 
+		} catch (ClosedChannelException e) {
+			doClose(null);
+			return false;
 		} catch (IOException e) {
 			doClose(e);
 			throw e;
