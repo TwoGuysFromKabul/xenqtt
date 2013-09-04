@@ -8,13 +8,24 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 /**
  * Default {@link MqttChannel} implementation. This class is NOT thread safe. At construction a {@link SocketChannel} will be registered with the
  * {@link Selector} specified in the constructor. The new instance of this class will be available from {@link SelectionKey#attachment()}.
  */
+// FIXME [jim] - need to implement qos 2
+// FIXME [jim] - have channel close on any exception
 public class MqttChannelImpl implements MqttChannel {
+
+	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
+	private final List<IdentifiableMqttMessage> messagesToResend = new ArrayList<IdentifiableMqttMessage>();
+	private final long messageResendIntervalMillis;
 
 	private final SocketChannel channel;
 	private SelectionKey selectionKey;
@@ -39,9 +50,13 @@ public class MqttChannelImpl implements MqttChannel {
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
 	 * {@link SelectionKey#OP_CONNECT} as a ready op then {@link #finishConnect()} should be called.
+	 * 
+	 * @param messageResendIntervalMillis
+	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public MqttChannelImpl(String host, int port, MessageHandler handler, Selector selector) throws IOException {
+	public MqttChannelImpl(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 
+		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.channel = SocketChannel.open();
 		this.channel.configureBlocking(false);
 		this.handler = handler;
@@ -51,8 +66,12 @@ public class MqttChannelImpl implements MqttChannel {
 
 	/**
 	 * Use this constructor for clients accepted from a {@link ServerSocketChannel}.
+	 * 
+	 * @param messageResendIntervalMillis
+	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public MqttChannelImpl(SocketChannel channel, MessageHandler handler, Selector selector) throws IOException {
+	public MqttChannelImpl(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.handler = handler;
 		this.channel = channel;
 		this.channel.configureBlocking(false);
@@ -180,6 +199,12 @@ public class MqttChannelImpl implements MqttChannel {
 				}
 			}
 
+			if (messageResendIntervalMillis > 0 && sendMessageInProgress.isAckable() && sendMessageInProgress.getQoSLevel() > 0) {
+				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
+				m.nextSendTime = now + messageResendIntervalMillis;
+				inFlightMessages.put(m.getMessageId(), m);
+			}
+
 			sendMessageInProgress = writesPending.poll();
 		}
 
@@ -228,6 +253,72 @@ public class MqttChannelImpl implements MqttChannel {
 		return channel.isConnectionPending();
 	}
 
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#houseKeeping(long)
+	 */
+	@Override
+	public long houseKeeping(long now) throws IOException {
+
+		long maxIdleTime = Long.MAX_VALUE;
+
+		if (messageResendIntervalMillis > 0) {
+			maxIdleTime = resendMessages(now);
+		}
+
+		// FIXME [jim] - do keep alive
+
+		return maxIdleTime;
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#sendQueueDepth()
+	 */
+	@Override
+	public int sendQueueDepth() {
+
+		return writesPending.size();
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#inFlightMessageCount()
+	 */
+	@Override
+	public int inFlightMessageCount() {
+		return inFlightMessages.size();
+	}
+
+	private long resendMessages(long now) throws IOException {
+
+		long maxIdleTime = Long.MAX_VALUE;
+		long minSendTime = now + 1000;
+
+		Iterator<IdentifiableMqttMessage> msgIter = inFlightMessages.values().iterator();
+		while (msgIter.hasNext()) {
+			IdentifiableMqttMessage msg = msgIter.next();
+			if (msg.nextSendTime <= minSendTime) {
+				messagesToResend.add(msg);
+				msgIter.remove();
+			} else {
+				long next = msg.nextSendTime - now;
+				if (next < maxIdleTime) {
+					maxIdleTime = next;
+				}
+			}
+		}
+
+		// FIXME [jim] - invoke keep alive
+
+		for (IdentifiableMqttMessage msg : messagesToResend) {
+			msg.buffer.rewind();
+			msg.setDuplicateFlag();
+			send(now, msg);
+		}
+
+		messagesToResend.clear();
+
+		return maxIdleTime;
+	}
+
 	private void processMessage(ByteBuffer buffer) {
 
 		buffer.flip();
@@ -258,28 +349,38 @@ public class MqttChannelImpl implements MqttChannel {
 			handler.handle(this, new PublishMessage(buffer, remainingLength));
 			break;
 		case PUBACK:
-			handler.handle(this, new PubAckMessage(buffer));
+			PubAckMessage pubAckMessage = new PubAckMessage(buffer);
+			inFlightMessages.remove(pubAckMessage.getMessageId());
+			handler.handle(this, pubAckMessage);
 			break;
 		case PUBREC:
-			handler.handle(this, new PubRecMessage(buffer));
+			PubRecMessage pubRecMessage = new PubRecMessage(buffer);
+			inFlightMessages.remove(pubRecMessage.getMessageId());
+			handler.handle(this, pubRecMessage);
 			break;
 		case PUBREL:
 			handler.handle(this, new PubRelMessage(buffer));
 			break;
 		case PUBCOMP:
-			handler.handle(this, new PubCompMessage(buffer));
+			PubCompMessage pubCompMessage = new PubCompMessage(buffer);
+			inFlightMessages.remove(pubCompMessage.getMessageId());
+			handler.handle(this, pubCompMessage);
 			break;
 		case SUBSCRIBE:
 			handler.handle(this, new SubscribeMessage(buffer, remainingLength));
 			break;
 		case SUBACK:
-			handler.handle(this, new SubAckMessage(buffer, remainingLength));
+			SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength);
+			inFlightMessages.remove(subAckMessage.getMessageId());
+			handler.handle(this, subAckMessage);
 			break;
 		case UNSUBSCRIBE:
 			handler.handle(this, new UnsubscribeMessage(buffer, remainingLength));
 			break;
 		case UNSUBACK:
-			handler.handle(this, new UnsubAckMessage(buffer));
+			UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer);
+			inFlightMessages.remove(unsubAckMessage.getMessageId());
+			handler.handle(this, unsubAckMessage);
 			break;
 		case PINGREQ:
 			handler.handle(this, new PingReqMessage(buffer));

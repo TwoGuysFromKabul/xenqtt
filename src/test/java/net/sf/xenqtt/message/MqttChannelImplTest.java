@@ -44,7 +44,6 @@ public class MqttChannelImplTest {
 		port = serverSocket.getLocalPort();
 
 		selector = Selector.open();
-		selector = Selector.open();
 
 		ssc.register(selector, SelectionKey.OP_ACCEPT);
 	}
@@ -75,6 +74,108 @@ public class MqttChannelImplTest {
 		assertEquals(1, newSelector.keys().size());
 
 		closeConnection();
+	}
+
+	@Test
+	public void testDeregister() throws Exception {
+
+		establishConnection();
+
+		int originalCancelledKeyCount = 0;
+		for (SelectionKey key : selector.keys()) {
+			if (!key.isValid()) {
+				originalCancelledKeyCount++;
+			}
+		}
+
+		clientChannel.deregister();
+
+		int cancelledKeyCount = 0;
+		for (SelectionKey key : selector.keys()) {
+			if (!key.isValid()) {
+				cancelledKeyCount++;
+			}
+		}
+
+		assertEquals(originalCancelledKeyCount + 1, cancelledKeyCount);
+	}
+
+	@Test
+	public void testHouseKeeping_ResendMessage_qos0() throws Exception {
+
+		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10);
+
+		establishConnection();
+
+		PublishMessage msg = new PublishMessage(false, QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
+
+		clientChannel.send(now, msg);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
+		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+		assertFalse(brokerHandler.messagesReceived.get(0).isDuplicate());
+		assertEquals(0, clientChannel.inFlightMessageCount());
+	}
+
+	@Test
+	public void testHouseKeeping_ResendMessage_qos1() throws Exception {
+
+		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10);
+
+		establishConnection();
+
+		PublishMessage msg = new PublishMessage(false, QoS.AT_LEAST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
+
+		clientChannel.send(now, msg);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
+		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+		assertFalse(brokerHandler.messagesReceived.get(0).isDuplicate());
+		assertEquals(1, clientChannel.inFlightMessageCount());
+
+		clientChannel.houseKeeping(now + 100);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertEquals(msg.getMessageId(), ((IdentifiableMqttMessage) brokerHandler.messagesReceived.get(0)).getMessageId());
+		assertTrue(brokerHandler.messagesReceived.get(0).isDuplicate());
+		assertEquals(1, clientChannel.inFlightMessageCount());
+
+		brokerChannel.send(now, new PubAckMessage(12));
+		assertNull(readWrite(1, 0));
+		assertEquals(0, clientChannel.inFlightMessageCount());
+		assertEquals(0, brokerChannel.inFlightMessageCount());
+	}
+
+	@Test
+	public void testHouseKeeping_ResendMessage_qos2() throws Exception {
+
+		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10);
+
+		establishConnection();
+
+		PublishMessage msg = new PublishMessage(false, QoS.EXACTLY_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
+
+		clientChannel.send(now, msg);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
+		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+		assertFalse(brokerHandler.messagesReceived.get(0).isDuplicate());
+		assertEquals(1, clientChannel.inFlightMessageCount());
+
+		clientChannel.houseKeeping(now + 100);
+		assertNull(readWrite(0, 1));
+		assertEquals(1, brokerHandler.messagesReceived.size());
+		assertEquals(msg.getMessageId(), ((IdentifiableMqttMessage) brokerHandler.messagesReceived.get(0)).getMessageId());
+		assertTrue(brokerHandler.messagesReceived.get(0).isDuplicate());
+		assertEquals(1, clientChannel.inFlightMessageCount());
+
+		brokerChannel.send(now, new PubRecMessage(12));
+		assertNull(readWrite(1, 0));
+		assertEquals(0, clientChannel.inFlightMessageCount());
+		assertEquals(0, brokerChannel.inFlightMessageCount());
 	}
 
 	@Test
@@ -187,7 +288,7 @@ public class MqttChannelImplTest {
 
 		PingReqMessage msg = new PingReqMessage();
 
-		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
+		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10000);
 		clientChannel.send(now, msg);
 
 		establishConnection();
@@ -331,7 +432,7 @@ public class MqttChannelImplTest {
 	private void establishConnection() throws Exception {
 
 		if (clientChannel == null) {
-			clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector);
+			clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10000);
 		}
 
 		assertTrue(clientChannel.isOpen());
@@ -350,7 +451,7 @@ public class MqttChannelImplTest {
 					assertSame(ssc, key.channel());
 					assertTrue(key.isAcceptable());
 					SocketChannel brokerSocketChannel = ssc.accept();
-					brokerChannel = new MqttChannelImpl(brokerSocketChannel, brokerHandler, selector);
+					brokerChannel = new MqttChannelImpl(brokerSocketChannel, brokerHandler, selector, 10000);
 					assertFalse(brokerChannel.isConnectionPending());
 					assertTrue(brokerChannel.isOpen());
 					key.cancel();
