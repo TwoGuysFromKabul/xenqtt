@@ -8,6 +8,8 @@ import org.junit.Test;
 
 public class MqttMessageTest {
 
+	static final byte[] PAYLOAD = new byte[] { 29, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLength() {
 		MqttMessage message = new MqttMessage(MessageType.CONNECT, 24) {
@@ -71,8 +73,17 @@ public class MqttMessageTest {
 	}
 
 	@Test
-	public void testOutboundCtor() {
-		fail("Need to test this.");
+	public void testInboundCtor() {
+		MqttMessage message = new MqttMessage(ByteBuffer.wrap(PAYLOAD), 24) {
+		};
+
+		assertEquals(MessageType.CONNECT, message.getMessageType());
+		assertEquals(24, message.getRemainingLength());
+		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(0x08, message.buffer.get(0) & 0x08);
+		assertEquals(0x01, message.buffer.get(0) & 0x01);
+
+		assertArrayEquals(PAYLOAD, message.buffer.array());
 	}
 
 	@Test
