@@ -47,6 +47,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private boolean connected;
 
+	private long lastSentTime;
+	private long lastReceivedTime;
+
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
 	 * {@link SelectionKey#OP_CONNECT} as a ready op then {@link #finishConnect()} should be called.
@@ -82,7 +85,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#deregister()
 	 */
 	@Override
-	public void deregister() {
+	public final void deregister() {
 
 		selectionKey.cancel();
 	}
@@ -91,7 +94,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#register(java.nio.channels.Selector, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
-	public void register(Selector selector, MessageHandler handler) throws IOException {
+	public final void register(Selector selector, MessageHandler handler) throws IOException {
 
 		try {
 			int ops = sendMessageInProgress == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
@@ -112,7 +115,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#finishConnect()
 	 */
 	@Override
-	public void finishConnect() throws IOException {
+	public final void finishConnect() throws IOException {
 
 		try {
 			if (channel.finishConnect()) {
@@ -132,7 +135,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#read(long)
 	 */
 	@Override
-	public boolean read(long now) throws IOException {
+	public final boolean read(long now) throws IOException {
 
 		try {
 			if (!doRead(now)) {
@@ -154,7 +157,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#send(long, net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
-	public void send(long now, MqttMessage message) throws IOException {
+	public final void send(long now, MqttMessage message) throws IOException {
 
 		try {
 			if (sendMessageInProgress != null) {
@@ -181,7 +184,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#write(long)
 	 */
 	@Override
-	public void write(long now) throws IOException {
+	public final void write(long now) throws IOException {
 
 		try {
 			doWrite(now);
@@ -198,7 +201,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#close()
 	 */
 	@Override
-	public void close() {
+	public final void close() {
 
 		doClose(null);
 	}
@@ -207,7 +210,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#isOpen()
 	 */
 	@Override
-	public boolean isOpen() {
+	public final boolean isOpen() {
 		return channel.isOpen();
 	}
 
@@ -215,7 +218,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#isConnected()
 	 */
 	@Override
-	public boolean isConnected() {
+	public final boolean isConnected() {
 		return connected;
 	}
 
@@ -223,7 +226,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#isConnectionPending()
 	 */
 	@Override
-	public boolean isConnectionPending() {
+	public final boolean isConnectionPending() {
 		return channel.isConnectionPending();
 	}
 
@@ -231,7 +234,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#houseKeeping(long)
 	 */
 	@Override
-	public long houseKeeping(long now) throws IOException {
+	public final long houseKeeping(long now) throws IOException {
 
 		long maxIdleTime = Long.MAX_VALUE;
 
@@ -239,7 +242,14 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			maxIdleTime = resendMessages(now);
 		}
 
-		// FIXME [jim] - do keep alive
+		// FIXME [jim] - test
+		try {
+			keepAlive(now, lastSentTime, lastReceivedTime);
+		} catch (IOException e) {
+			throw e;
+		} catch (Exception e) {
+			// FIXME [jim] - log
+		}
 
 		return maxIdleTime;
 	}
@@ -248,7 +258,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#sendQueueDepth()
 	 */
 	@Override
-	public int sendQueueDepth() {
+	public final int sendQueueDepth() {
 
 		return writesPending.size();
 	}
@@ -257,9 +267,21 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#inFlightMessageCount()
 	 */
 	@Override
-	public int inFlightMessageCount() {
+	public final int inFlightMessageCount() {
 		return inFlightMessages.size();
 	}
+
+	/**
+	 * Called during {@link #houseKeeping(long)} to handle keep alive (pinging)
+	 * 
+	 * @param now
+	 *            The timestamp to use as the "current" time
+	 * @param lastMessageSent
+	 *            The last time a message was sent
+	 * @param lastMessageReceived
+	 *            The last time a message was received
+	 */
+	abstract void keepAlive(long now, long lastMessageSent, long lastMessageReceived) throws Exception;
 
 	/**
 	 * Called when a {@link PingReqMessage} is received.
@@ -303,6 +325,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				inFlightMessages.put(m.getMessageId(), m);
 			}
 
+			lastSentTime = now;
+
 			sendMessageInProgress = writesPending.poll();
 		}
 
@@ -311,7 +335,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private boolean doRead(long now) throws IOException {
 		if (readRemaining != null) {
-			return readRemaining();
+			return readRemaining(now);
 		}
 
 		if (readHeader1.hasRemaining()) {
@@ -323,12 +347,12 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		byte firstLenByte = readHeader1.get(1);
 		if (firstLenByte == 0) {
-			processMessage(readHeader1);
+			processMessage(now, readHeader1);
 			return true;
 		}
 
 		if ((firstLenByte & 0x80) == 0) {
-			return readRemaining();
+			return readRemaining(now);
 		}
 
 		if (readHeader2.hasRemaining()) {
@@ -338,7 +362,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 		}
 
-		return readRemaining();
+		return readRemaining(now);
 	}
 
 	private void doClose(Throwable cause) {
@@ -392,7 +416,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return maxIdleTime;
 	}
 
-	private void processMessage(ByteBuffer buffer) {
+	private void processMessage(long now, ByteBuffer buffer) {
+
+		lastReceivedTime = now;
 
 		buffer.flip();
 
@@ -492,7 +518,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return byteCount;
 	}
 
-	private boolean readRemaining() throws IOException {
+	private boolean readRemaining(long now) throws IOException {
 
 		if (readRemaining == null) {
 			int remainingLengthSize = calculateRemainingLength();
@@ -512,7 +538,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			return result >= 0;
 		}
 
-		processMessage(readRemaining);
+		processMessage(now, readRemaining);
 
 		return true;
 	}
