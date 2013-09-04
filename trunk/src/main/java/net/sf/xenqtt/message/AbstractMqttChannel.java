@@ -21,7 +21,7 @@ import java.util.Queue;
  */
 // FIXME [jim] - need to implement qos 2
 // FIXME [jim] - have channel close on any exception
-public class MqttChannelImpl implements MqttChannel {
+abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
 	private final List<IdentifiableMqttMessage> messagesToResend = new ArrayList<IdentifiableMqttMessage>();
@@ -54,7 +54,7 @@ public class MqttChannelImpl implements MqttChannel {
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public MqttChannelImpl(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+	AbstractMqttChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.channel = SocketChannel.open();
@@ -70,7 +70,7 @@ public class MqttChannelImpl implements MqttChannel {
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public MqttChannelImpl(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+	AbstractMqttChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.handler = handler;
 		this.channel = channel;

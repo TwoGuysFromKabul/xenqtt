@@ -216,7 +216,7 @@ public abstract class MqttMessage {
 	}
 
 	/**
-	 * Sets the duplicate flag on this message. This is used by the {@link MqttChannelImpl} to set this flag before resending this message.
+	 * Sets the duplicate flag on this message. This is used by the {@link AbstractMqttChannel} to set this flag before resending this message.
 	 */
 	final void setDuplicateFlag() {
 		buffer.put(0, (byte) (buffer.get(0) | 0x08));

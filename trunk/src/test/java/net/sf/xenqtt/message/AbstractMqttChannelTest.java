@@ -2,6 +2,7 @@ package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.SelectionKey;
@@ -17,7 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 
-public class MqttChannelImplTest {
+public class AbstractMqttChannelTest {
 
 	ServerSocketChannel ssc;
 	Selector selector;
@@ -103,7 +104,7 @@ public class MqttChannelImplTest {
 	@Test
 	public void testHouseKeeping_ResendMessage_qos0() throws Exception {
 
-		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10);
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
 
 		establishConnection();
 
@@ -121,7 +122,7 @@ public class MqttChannelImplTest {
 	@Test
 	public void testHouseKeeping_ResendMessage_qos1() throws Exception {
 
-		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10);
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
 
 		establishConnection();
 
@@ -151,7 +152,7 @@ public class MqttChannelImplTest {
 	@Test
 	public void testHouseKeeping_ResendMessage_qos2() throws Exception {
 
-		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10);
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
 
 		establishConnection();
 
@@ -288,7 +289,7 @@ public class MqttChannelImplTest {
 
 		PingReqMessage msg = new PingReqMessage();
 
-		clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10000);
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10000);
 		clientChannel.send(now, msg);
 
 		establishConnection();
@@ -432,7 +433,7 @@ public class MqttChannelImplTest {
 	private void establishConnection() throws Exception {
 
 		if (clientChannel == null) {
-			clientChannel = new MqttChannelImpl("localhost", port, clientHandler, selector, 10000);
+			clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10000);
 		}
 
 		assertTrue(clientChannel.isOpen());
@@ -451,7 +452,7 @@ public class MqttChannelImplTest {
 					assertSame(ssc, key.channel());
 					assertTrue(key.isAcceptable());
 					SocketChannel brokerSocketChannel = ssc.accept();
-					brokerChannel = new MqttChannelImpl(brokerSocketChannel, brokerHandler, selector, 10000);
+					brokerChannel = new TestChannel(brokerSocketChannel, brokerHandler, selector, 10000);
 					assertFalse(brokerChannel.isConnectionPending());
 					assertTrue(brokerChannel.isOpen());
 					key.cancel();
@@ -565,6 +566,17 @@ public class MqttChannelImplTest {
 
 		@Override
 		public void channelClosed(MqttChannel channel) {
+		}
+	}
+
+	private static final class TestChannel extends AbstractMqttChannel {
+
+		public TestChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+			super(channel, handler, selector, messageResendIntervalMillis);
+		}
+
+		public TestChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+			super(host, port, handler, selector, messageResendIntervalMillis);
 		}
 	}
 }
