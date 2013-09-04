@@ -3,6 +3,7 @@ package net.sf.xenqtt.message;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -192,6 +193,38 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		assertNull(readWrite(1, 0));
 		assertEquals(0, clientChannel.inFlightMessageCount());
 		assertEquals(0, brokerChannel.inFlightMessageCount());
+	}
+
+	@Test
+	public void testReadFromClosedConnection() throws Exception {
+
+		establishConnection();
+		clientChannel.close();
+
+		assertFalse(clientChannel.read(now));
+	}
+
+	@Test
+	public void testWriteToClosedConnection() throws Exception {
+
+		establishConnection();
+		clientChannel.close();
+
+		// put a value in sendMessageInProgress directly because if we call send(...) it will write directly
+		Field field = AbstractMqttChannel.class.getDeclaredField("sendMessageInProgress");
+		field.setAccessible(true);
+		field.set(clientChannel, new PingReqMessage());
+
+		assertFalse(clientChannel.write(now));
+	}
+
+	@Test
+	public void testSendToClosedConnection() throws Exception {
+
+		establishConnection();
+		clientChannel.close();
+
+		clientChannel.send(now, new PingReqMessage());
 	}
 
 	@Test

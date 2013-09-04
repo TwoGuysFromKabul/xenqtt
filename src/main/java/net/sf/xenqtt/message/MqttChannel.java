@@ -39,7 +39,7 @@ public interface MqttChannel {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return True if the channel is left open. False if it is closed by this method.
+	 * @return True if the channel is left open. False if it is closed by this method or already closed when this method is called.
 	 */
 	boolean read(long now) throws IOException;
 
@@ -58,7 +58,7 @@ public interface MqttChannel {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return True if the channel is left open. False if it is closed by this method.
+	 * @return True if the channel is left open. False if it is closed by this method or already closed when this method is called.
 	 */
 	boolean write(long now) throws IOException;
 
