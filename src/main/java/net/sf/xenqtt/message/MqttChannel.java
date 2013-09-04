@@ -39,7 +39,7 @@ public interface MqttChannel {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return True if the channel is still open. False if it is closed.
+	 * @return True if the channel is left open. False if it is closed by this method.
 	 */
 	boolean read(long now) throws IOException;
 
@@ -58,7 +58,7 @@ public interface MqttChannel {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return True if the channel is still open. False if it is closed.
+	 * @return True if the channel is left open. False if it is closed by this method.
 	 */
 	boolean write(long now) throws IOException;
 
@@ -96,7 +96,8 @@ public interface MqttChannel {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return Maximum millis until this method should be called again. Returns {@link Long#MAX_VALUE} if this method does not need to be called again.
+	 * @return Maximum millis until this method should be called again. This result is only valid when this method is called. Future calls to
+	 *         {@link #read(long)} or {@link #write(long)} may change this value. Returns < 0 if this method closes the channel.
 	 */
 	long houseKeeping(long now) throws IOException;
 
