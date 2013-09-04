@@ -216,6 +216,13 @@ public abstract class MqttMessage {
 	}
 
 	/**
+	 * Sets the duplicate flag on this message. This is used by the {@link MqttChannelImpl} to set this flag before resending this message.
+	 */
+	final void setDuplicateFlag() {
+		buffer.put(0, (byte) (buffer.get(0) | 0x08));
+	}
+
+	/**
 	 * Adds the UTF-8 string in the format required by MQTT to the end of the buffer. If utf8 is null nothing will be added to the buffer. If utf8 is a zero
 	 * length array then a zero length string will be added to the buffer.
 	 */
