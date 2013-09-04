@@ -21,8 +21,7 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_FalseOnAllFlags() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, false, 24) {
-		};
+		MqttMessage message = new TestMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, false, 24);
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -112,6 +111,31 @@ public class MqttMessageTest {
 		assertFalse(new TestMessage(MessageType.SUBSCRIBE, 0).isAck());
 		assertTrue(new TestMessage(MessageType.UNSUBACK, 0).isAck());
 		assertFalse(new TestMessage(MessageType.UNSUBSCRIBE, 0).isAck());
+	}
+
+	@Test
+	public void testSetDuplicateFlag() throws Exception {
+
+		MqttMessage message = new TestMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, false, 24);
+		message.buffer.flip();
+
+		assertEquals(MessageType.CONNECT, message.getMessageType());
+		assertEquals(24, message.getRemainingLength());
+		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(0, message.buffer.get(0) & 0x08);
+		assertEquals(0, message.buffer.get(0) & 0x01);
+		assertFalse(message.isDuplicate());
+		assertFalse(message.isRetain());
+
+		message.setDuplicateFlag();
+
+		assertEquals(MessageType.CONNECT, message.getMessageType());
+		assertEquals(24, message.getRemainingLength());
+		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(0x08, message.buffer.get(0) & 0x08);
+		assertEquals(0, message.buffer.get(0) & 0x01);
+		assertTrue(message.isDuplicate());
+		assertFalse(message.isRetain());
 	}
 
 	private static class TestMessage extends MqttMessage {
