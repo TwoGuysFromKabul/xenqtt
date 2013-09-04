@@ -19,6 +19,8 @@ import java.util.Queue;
  * Default {@link MqttChannel} implementation. This class is NOT thread safe. At construction a {@link SocketChannel} will be registered with the
  * {@link Selector} specified in the constructor. The new instance of this class will be available from {@link SelectionKey#attachment()}.
  */
+// FIXME [jim] - test what happens when we read from or write to a closed channel. probably need to handle ClosedChannelException specially so it doesn't get
+// logged or anything.
 abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
@@ -47,7 +49,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private boolean connected;
 
-	private long lastSentTime;
 	private long lastReceivedTime;
 	private long pingIntervalMillis;
 
@@ -250,7 +251,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		}
 
 		try {
-			long maxKeepAliveTime = keepAlive(now, lastSentTime, lastReceivedTime);
+			long maxKeepAliveTime = keepAlive(now, lastReceivedTime);
 			if (maxKeepAliveTime < maxIdleTime) {
 				maxIdleTime = maxKeepAliveTime;
 			}
@@ -299,23 +300,27 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * 
 	 * @param now
 	 *            The timestamp to use as the "current" time
-	 * @param lastMessageSent
-	 *            The last time a message was sent
 	 * @param lastMessageReceived
 	 *            The last time a message was received
-	 * @return Maximum time in millis until keep alive will have work to do and needs to be called again
+	 * @return Maximum time in millis until keep alive will have work to do and needs to be called again. < 0 if this method closes the channel.
 	 */
-	abstract long keepAlive(long now, long lastMessageSent, long lastMessageReceived) throws Exception;
+	abstract long keepAlive(long now, long lastMessageReceived) throws Exception;
 
 	/**
 	 * Called when a {@link PingReqMessage} is received.
+	 * 
+	 * @param now
+	 *            The timestamp to use as the "current" time
 	 */
-	abstract void pingReq(PingReqMessage message) throws Exception;
+	abstract void pingReq(long now, PingReqMessage message) throws Exception;
 
 	/**
 	 * Called when a {@link PingRespMessage} is received.
+	 * 
+	 * @param now
+	 *            The timestamp to use as the "current" time
 	 */
-	abstract void pingResp(PingRespMessage message) throws Exception;
+	abstract void pingResp(long now, PingRespMessage message) throws Exception;
 
 	/**
 	 * @return False to have the channel closed
@@ -355,8 +360,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				m.nextSendTime = now + messageResendIntervalMillis;
 				inFlightMessages.put(m.getMessageId(), m);
 			}
-
-			lastSentTime = now;
 
 			sendMessageInProgress = writesPending.poll();
 		}
@@ -470,7 +473,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		boolean result = true;
 		try {
-			result = handleMessage(buffer);
+			result = handleMessage(now, buffer);
 		} catch (Exception e) {
 			e.printStackTrace();
 			// FIXME [jim] - need to log this or something
@@ -487,7 +490,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	/**
 	 * @return False to have the channel closed
 	 */
-	private boolean handleMessage(ByteBuffer buffer) throws Exception {
+	private boolean handleMessage(long now, ByteBuffer buffer) throws Exception {
+
 		boolean result = true;
 		MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 		switch (messageType) {
@@ -542,10 +546,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			handler.unsubAck(this, unsubAckMessage);
 			break;
 		case PINGREQ:
-			pingReq(new PingReqMessage(buffer));
+			pingReq(now, new PingReqMessage(buffer));
 			break;
 		case PINGRESP:
-			pingResp(new PingRespMessage(buffer));
+			pingResp(now, new PingRespMessage(buffer));
 			break;
 		case DISCONNECT:
 			result = false;
