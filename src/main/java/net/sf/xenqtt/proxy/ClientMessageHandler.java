@@ -7,8 +7,6 @@ final class ClientMessageHandler {
 	// FIXME [jim] - implement proxy
 	// final class ClientMessageHandler implements MessageHandler {
 	//
-	// // FIXME [jim] - need to add pinging the broker
-	//
 	// // FIXME [jim] - need to deal with what happens if an ID for an inflight message becomes needed again because it is still outstanding after all other IDs
 	// // have been used.
 	// private int nextMessageId = 1;
