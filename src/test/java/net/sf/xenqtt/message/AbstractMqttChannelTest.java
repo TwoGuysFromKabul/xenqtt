@@ -71,7 +71,8 @@ public class AbstractMqttChannelTest {
 		Selector newSelector = Selector.open();
 		assertEquals(0, newSelector.keys().size());
 
-		clientChannel.register(newSelector, new MockMessageHandler(false));
+		clientHandler = new MockMessageHandler(false);
+		clientChannel.register(newSelector, clientHandler);
 		assertEquals(1, newSelector.keys().size());
 
 		closeConnection();
@@ -437,9 +438,11 @@ public class AbstractMqttChannelTest {
 	private void closeConnection() {
 
 		clientChannel.close();
+		assertTrue(clientHandler.closed);
 		assertFalse(clientChannel.isConnected());
 		assertFalse(clientChannel.isOpen());
 		brokerChannel.close();
+		assertTrue(brokerHandler.closed);
 		assertFalse(brokerChannel.isConnected());
 		assertFalse(brokerChannel.isOpen());
 	}
@@ -487,12 +490,16 @@ public class AbstractMqttChannelTest {
 
 		assertFalse(clientChannel.isConnected());
 		assertFalse(brokerChannel.isConnected());
+
+		assertFalse(brokerHandler.closed);
+		assertFalse(clientHandler.closed);
 	}
 
 	private class MockMessageHandler implements MessageHandler {
 
 		private final boolean isBrokerChannel;
 		List<MqttMessage> messagesReceived = new ArrayList<MqttMessage>();
+		boolean closed;
 
 		public MockMessageHandler(boolean isBrokerChannel) {
 			this.isBrokerChannel = isBrokerChannel;
@@ -571,6 +578,8 @@ public class AbstractMqttChannelTest {
 
 		@Override
 		public void channelClosed(MqttChannel channel) {
+			closed = true;
+			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 	}
 

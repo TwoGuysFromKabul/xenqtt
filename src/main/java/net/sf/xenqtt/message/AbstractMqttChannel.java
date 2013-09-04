@@ -19,9 +19,7 @@ import java.util.Queue;
  * Default {@link MqttChannel} implementation. This class is NOT thread safe. At construction a {@link SocketChannel} will be registered with the
  * {@link Selector} specified in the constructor. The new instance of this class will be available from {@link SelectionKey#attachment()}.
  */
-// FIXME [jim] - need to implement qos 2
 // FIXME [jim] - have channel close on any exception
-// FIXME [jim] - call close on the handler when the channel closes
 abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
@@ -230,6 +228,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			channel.close();
 		} catch (Exception ignore) {
 		}
+
+		handler.channelClosed(this);
 	}
 
 	/**

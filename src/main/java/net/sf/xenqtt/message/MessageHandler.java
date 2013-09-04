@@ -72,6 +72,5 @@ public interface MessageHandler {
 	 * @param channel
 	 *            The channel that was closed
 	 */
-	// FIXME [jeremy OR jim] - Call this or die, it is your choice.
 	void channelClosed(MqttChannel channel);
 }
