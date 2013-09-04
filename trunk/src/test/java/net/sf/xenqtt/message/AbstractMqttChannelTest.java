@@ -540,7 +540,9 @@ public class AbstractMqttChannelTest {
 					}
 				}
 				if (key.isWritable()) {
-					channel.write(now);
+					if (!channel.write(now)) {
+						return channel;
+					}
 				}
 				iter.remove();
 			}
