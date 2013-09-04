@@ -19,7 +19,7 @@ import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 
 public class AbstractMqttChannelTest {
-
+	// FIXME [jim] - test write return value
 	ServerSocketChannel ssc;
 	Selector selector;
 	int port;
@@ -240,46 +240,51 @@ public class AbstractMqttChannelTest {
 
 		establishConnection();
 
-		ConnAckMessage connMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
-		clientChannel.send(now, connMsg);
-		assertNull(readWrite(0, 1));
-
-		assertTrue(clientChannel.isConnected());
-		assertTrue(brokerChannel.isConnected());
-
 		DisconnectMessage discMsg = new DisconnectMessage();
 
 		clientChannel.send(now, discMsg);
-		assertNull(readWrite(0, 1));
+		readWrite(0, 1);
 		assertEquals(1, brokerHandler.messagesReceived.size());
 		assertNotSame(discMsg, brokerHandler.messagesReceived.get(0));
 		assertEquals(discMsg, brokerHandler.messagesReceived.get(0));
 
 		assertFalse(clientChannel.isConnected());
+		assertFalse(clientChannel.disconnectedCalled);
 		assertFalse(brokerChannel.isConnected());
+		assertFalse(brokerChannel.disconnectedCalled);
 		assertFalse(clientChannel.isOpen());
-		assertEquals(brokerChannel, readWrite(1, 1));
-		brokerChannel.close();
+		assertFalse(brokerChannel.isOpen());
 	}
 
 	@Test
-	public void testReadWriteSend_ConnAckWithoutAcceptClosesConnection() throws Exception {
+	public void testReadWriteSend_ConnAckWithoutAccept() throws Exception {
 
 		establishConnection();
 
-		ConnAckMessage msg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
+		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
+		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
 
-		clientChannel.send(now, msg);
+		clientChannel.send(now, connMsg);
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
-		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
-		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+		assertNotSame(connMsg, brokerHandler.messagesReceived.get(0));
+		assertEquals(connMsg, brokerHandler.messagesReceived.get(0));
+
+		brokerChannel.send(now, ackMsg);
+		readWrite(1, 0);
+		assertEquals(1, clientHandler.messagesReceived.size());
+		assertNotSame(ackMsg, clientHandler.messagesReceived.get(0));
+		assertEquals(ackMsg, clientHandler.messagesReceived.get(0));
 
 		assertFalse(clientChannel.isConnected());
-		assertFalse(brokerChannel.isConnected());
+		assertFalse(clientChannel.connectedCalled);
+		assertFalse(clientChannel.disconnectedCalled);
 		assertFalse(clientChannel.isOpen());
-		assertEquals(brokerChannel, readWrite(1, 1));
-		brokerChannel.close();
+
+		assertFalse(brokerChannel.isConnected());
+		assertFalse(brokerChannel.connectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+		assertFalse(brokerChannel.isOpen());
 	}
 
 	@Test
@@ -287,18 +292,36 @@ public class AbstractMqttChannelTest {
 
 		establishConnection();
 
-		ConnAckMessage msg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
+		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
+		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		clientChannel.send(now, msg);
+		clientChannel.send(now, connMsg);
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
-		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
-		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+		assertNotSame(connMsg, brokerHandler.messagesReceived.get(0));
+		assertEquals(connMsg, brokerHandler.messagesReceived.get(0));
+
+		brokerChannel.send(now, ackMsg);
+		assertNull(readWrite(1, 0));
+		assertEquals(1, clientHandler.messagesReceived.size());
+		assertNotSame(ackMsg, clientHandler.messagesReceived.get(0));
+		assertEquals(ackMsg, clientHandler.messagesReceived.get(0));
 
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnected());
+		assertTrue(clientChannel.connectedCalled);
+		assertEquals(123000, clientChannel.pingIntervalMillis);
 		assertTrue(brokerChannel.isConnected());
+		assertTrue(brokerChannel.connectedCalled);
+		assertEquals(123000, brokerChannel.pingIntervalMillis);
+
+		assertFalse(clientChannel.disconnectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+
 		closeConnection();
+
+		assertTrue(clientChannel.disconnectedCalled);
+		assertTrue(brokerChannel.disconnectedCalled);
 	}
 
 	@Test
@@ -682,6 +705,9 @@ public class AbstractMqttChannelTest {
 		Exception exceptionToThrow;
 		long lastSent;
 		long lastReceived;
+		boolean connectedCalled;
+		boolean disconnectedCalled;
+		long pingIntervalMillis;
 
 		public TestChannel(SocketChannel channel, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 			super(channel, handler, selector, messageResendIntervalMillis);
@@ -691,6 +717,17 @@ public class AbstractMqttChannelTest {
 		public TestChannel(String host, int port, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 			super(host, port, handler, selector, messageResendIntervalMillis);
 			this.messageHandler = handler;
+		}
+
+		@Override
+		void connected(long pingIntervalMillis) {
+			connectedCalled = true;
+			this.pingIntervalMillis = pingIntervalMillis;
+		}
+
+		@Override
+		void disconnected() {
+			disconnectedCalled = true;
 		}
 
 		@Override

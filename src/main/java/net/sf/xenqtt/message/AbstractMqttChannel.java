@@ -49,6 +49,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private long lastSentTime;
 	private long lastReceivedTime;
+	private long pingIntervalMillis;
 
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
@@ -184,10 +185,16 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#write(long)
 	 */
 	@Override
-	public final void write(long now) throws IOException {
+	public final boolean write(long now) throws IOException {
 
 		try {
-			doWrite(now);
+			if (!doWrite(now)) {
+				close();
+				return false;
+			}
+
+			return true;
+
 		} catch (IOException e) {
 			doClose(e);
 			throw e;
@@ -242,7 +249,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			maxIdleTime = resendMessages(now);
 		}
 
-		// FIXME [jim] - test
 		try {
 			keepAlive(now, lastSentTime, lastReceivedTime);
 		} catch (IOException e) {
@@ -272,6 +278,20 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * Called when a {@link ConnAckMessage} is sent or received where {@link ConnAckMessage#getReturnCode()} == {@link ConnectReturnCode#ACCEPTED}. This will
+	 * only be called once.
+	 * 
+	 * @param pingIntervalMillis
+	 *            The ping interval from the sent or received {@link ConnectMessage} converted to millis
+	 */
+	abstract void connected(long pingIntervalMillis);
+
+	/**
+	 * Called when the channel is closed. Will be called at most once and only after {@link #connected(long)}
+	 */
+	abstract void disconnected();
+
+	/**
 	 * Called during {@link #houseKeeping(long)} to handle keep alive (pinging)
 	 * 
 	 * @param now
@@ -293,29 +313,36 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	abstract void pingResp(PingRespMessage message) throws Exception;
 
-	private void doWrite(long now) throws IOException {
+	/**
+	 * @return False to have the channel closed
+	 */
+	private boolean doWrite(long now) throws IOException {
 
 		while (sendMessageInProgress != null) {
 			int bytesWritten = channel.write(sendMessageInProgress.buffer);
 			if (bytesWritten == 0 || sendMessageInProgress.buffer.hasRemaining()) {
-				return;
+				return true;
 			}
 
 			MessageType type = sendMessageInProgress.getMessageType();
 			if (type == MessageType.DISCONNECT) {
 				sendMessageInProgress = null;
-				close();
-				return;
+				return false;
+			}
+
+			if (type == MessageType.CONNECT) {
+				ConnectMessage m = (ConnectMessage) sendMessageInProgress;
+				pingIntervalMillis = m.getKeepAliveSeconds() * 1000;
 			}
 
 			if (type == MessageType.CONNACK) {
 				ConnAckMessage m = (ConnAckMessage) sendMessageInProgress;
 				if (m.getReturnCode() != ConnectReturnCode.ACCEPTED) {
 					sendMessageInProgress = null;
-					close();
-					return;
+					return false;
 				} else {
 					connected = true;
+					connected(pingIntervalMillis);
 				}
 			}
 
@@ -331,8 +358,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		}
 
 		selectionKey.interestOps(SelectionKey.OP_READ);
+
+		return true;
 	}
 
+	/**
+	 * @return False to have the channel closed
+	 */
 	private boolean doRead(long now) throws IOException {
 		if (readRemaining != null) {
 			return readRemaining(now);
@@ -347,8 +379,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		byte firstLenByte = readHeader1.get(1);
 		if (firstLenByte == 0) {
-			processMessage(now, readHeader1);
-			return true;
+			return processMessage(now, readHeader1);
 		}
 
 		if ((firstLenByte & 0x80) == 0) {
@@ -366,6 +397,14 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	private void doClose(Throwable cause) {
+
+		if (connected) {
+			try {
+				disconnected();
+			} catch (Exception e) {
+				// FIXME [jim] - log
+			}
+		}
 
 		connected = false;
 
@@ -416,14 +455,18 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return maxIdleTime;
 	}
 
-	private void processMessage(long now, ByteBuffer buffer) {
+	/**
+	 * @return False to have the channel closed
+	 */
+	private boolean processMessage(long now, ByteBuffer buffer) {
 
 		lastReceivedTime = now;
 
 		buffer.flip();
 
+		boolean result = true;
 		try {
-			handleMessage(buffer);
+			result = handleMessage(buffer);
 		} catch (Exception e) {
 			e.printStackTrace();
 			// FIXME [jim] - need to log this or something
@@ -433,17 +476,28 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		readHeader2.clear();
 		readRemaining = null;
 		remainingLength = 0;
+
+		return result;
 	}
 
-	private void handleMessage(ByteBuffer buffer) throws Exception {
+	/**
+	 * @return False to have the channel closed
+	 */
+	private boolean handleMessage(ByteBuffer buffer) throws Exception {
+		boolean result = true;
 		MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 		switch (messageType) {
 		case CONNECT:
-			handler.connect(this, new ConnectMessage(buffer, remainingLength));
+			ConnectMessage connectMessage = new ConnectMessage(buffer, remainingLength);
+			pingIntervalMillis = connectMessage.getKeepAliveSeconds() * 1000;
+			handler.connect(this, connectMessage);
 			break;
 		case CONNACK:
 			ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
-			connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
+			result = connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
+			if (connected) {
+				connected(pingIntervalMillis);
+			}
 			handler.connAck(this, connAckMessage);
 			break;
 		case PUBLISH:
@@ -490,12 +544,14 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			pingResp(new PingRespMessage(buffer));
 			break;
 		case DISCONNECT:
-			connected = false;
+			result = false;
 			handler.disconnect(this, new DisconnectMessage(buffer));
 			break;
 		default:
 			throw new IllegalStateException("Unsupported message type: " + messageType);
 		}
+
+		return result;
 	}
 
 	/**
@@ -518,6 +574,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return byteCount;
 	}
 
+	/**
+	 * @return False to have the channel closed
+	 */
 	private boolean readRemaining(long now) throws IOException {
 
 		if (readRemaining == null) {
@@ -538,8 +597,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			return result >= 0;
 		}
 
-		processMessage(now, readRemaining);
-
-		return true;
+		return processMessage(now, readRemaining);
 	}
 }
