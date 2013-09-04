@@ -21,6 +21,7 @@ import java.util.Queue;
  */
 // FIXME [jim] - need to implement qos 2
 // FIXME [jim] - have channel close on any exception
+// FIXME [jim] - call close on the handler when the channel closes
 abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
@@ -46,6 +47,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private final Queue<MqttMessage> writesPending = new ArrayDeque<MqttMessage>();
 
 	private MqttMessage sendMessageInProgress;
+
+	private boolean connected;
 
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
@@ -117,7 +120,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public boolean read(long now) throws IOException {
-		// TODO Auto-generated method stub
 
 		if (readRemaining != null) {
 			return readRemaining();
@@ -155,7 +157,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public void send(long now, MqttMessage message) throws IOException {
-		// TODO Auto-generated method stub
 
 		if (sendMessageInProgress != null) {
 			writesPending.offer(message);
@@ -175,7 +176,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public void write(long now) throws IOException {
-		// TODO Auto-generated method stub
 
 		while (sendMessageInProgress != null) {
 			int bytesWritten = channel.write(sendMessageInProgress.buffer);
@@ -196,6 +196,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 					sendMessageInProgress = null;
 					close();
 					return;
+				} else {
+					connected = true;
 				}
 			}
 
@@ -216,6 +218,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public void close() {
+
+		connected = false;
 
 		try {
 			selectionKey.cancel();
@@ -241,8 +245,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public boolean isConnected() {
-		// TODO Auto-generated method stub
-		return false;
+		return connected;
 	}
 
 	/**
@@ -316,8 +319,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 		}
 
-		// FIXME [jim] - invoke keep alive
-
 		for (IdentifiableMqttMessage msg : messagesToResend) {
 			msg.buffer.rewind();
 			msg.setDuplicateFlag();
@@ -353,7 +354,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			handler.connect(this, new ConnectMessage(buffer, remainingLength));
 			break;
 		case CONNACK:
-			handler.connAck(this, new ConnAckMessage(buffer));
+			ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
+			connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
+			handler.connAck(this, connAckMessage);
 			break;
 		case PUBLISH:
 			handler.publish(this, new PublishMessage(buffer, remainingLength));
@@ -399,6 +402,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			pingResp(new PingRespMessage(buffer));
 			break;
 		case DISCONNECT:
+			connected = false;
 			handler.disconnect(this, new DisconnectMessage(buffer));
 			break;
 		default:
