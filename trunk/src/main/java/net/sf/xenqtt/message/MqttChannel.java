@@ -5,7 +5,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
 /**
- * Sends and receives {@link MqttMessage}s over a channel. This may be client or server side.
+ * Sends and receives {@link MqttMessage}s over a channel. This may be client or server side. Since {@link #read(long)} may generate data to send it should
+ * always be called before {@link #write(long)}. {@link #houseKeeping(long)} should be called after both {@link #read(long)} and {@link #write(long)} as those
+ * methods may change paramaters used to determine what housekeeping is required.
  */
 public interface MqttChannel {
 
@@ -80,4 +82,24 @@ public interface MqttChannel {
 	 *         method
 	 */
 	boolean isConnectionPending();
+
+	/**
+	 * Performs housekeeping: message resends, ping requests, etc
+	 * 
+	 * @param now
+	 *            The timestamp to use as the "current" time
+	 * 
+	 * @return Maximum millis until this method should be called again.
+	 */
+	long houseKeeping(long now) throws IOException;
+
+	/**
+	 * @return The number of messages in the send queue. This does not include any message currently in the process of being sent
+	 */
+	int sendQueueDepth();
+
+	/**
+	 * @return The number of messages currently in flight (QoS level > 0)
+	 */
+	int inFlightMessageCount();
 }
