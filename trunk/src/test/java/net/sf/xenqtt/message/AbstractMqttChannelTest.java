@@ -482,84 +482,72 @@ public class AbstractMqttChannelTest {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, ConnectMessage message) {
+		public void connect(MqttChannel channel, ConnectMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, ConnAckMessage message) {
+		public void connAck(MqttChannel channel, ConnAckMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PublishMessage message) {
+		public void publish(MqttChannel channel, PublishMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubAckMessage message) {
+		public void pubAck(MqttChannel channel, PubAckMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubRecMessage message) {
+		public void pubRec(MqttChannel channel, PubRecMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubRelMessage message) {
+		public void pubRel(MqttChannel channel, PubRelMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubCompMessage message) {
+		public void pubComp(MqttChannel channel, PubCompMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, SubscribeMessage message) {
+		public void subscribe(MqttChannel channel, SubscribeMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, SubAckMessage message) {
+		public void subAck(MqttChannel channel, SubAckMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, UnsubscribeMessage message) {
+		public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
 
 		@Override
-		public void handle(MqttChannel channel, UnsubAckMessage message) {
+		public void unsubAck(MqttChannel channel, UnsubAckMessage message) {
 			throw new RuntimeException();
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PingReqMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
-		}
-
-		@Override
-		public void handle(MqttChannel channel, PingRespMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
-		}
-
-		@Override
-		public void handle(MqttChannel channel, DisconnectMessage message) {
+		public void disconnect(MqttChannel channel, DisconnectMessage message) {
 			messagesReceived.add(message);
 			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
 		}
@@ -569,14 +557,28 @@ public class AbstractMqttChannelTest {
 		}
 	}
 
-	private static final class TestChannel extends AbstractMqttChannel {
+	private final class TestChannel extends AbstractMqttChannel {
 
-		public TestChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+		private final MockMessageHandler messageHandler;
+
+		public TestChannel(SocketChannel channel, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 			super(channel, handler, selector, messageResendIntervalMillis);
+			this.messageHandler = handler;
 		}
 
-		public TestChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+		public TestChannel(String host, int port, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 			super(host, port, handler, selector, messageResendIntervalMillis);
+			this.messageHandler = handler;
+		}
+
+		@Override
+		void pingReq(PingReqMessage message) {
+			messageHandler.messagesReceived.add(message);
+		}
+
+		@Override
+		void pingResp(PingRespMessage message) {
+			messageHandler.messagesReceived.add(message);
 		}
 	}
 }

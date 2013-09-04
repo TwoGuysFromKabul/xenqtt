@@ -287,6 +287,16 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return inFlightMessages.size();
 	}
 
+	/**
+	 * Called when a {@link PingReqMessage} is received.
+	 */
+	abstract void pingReq(PingReqMessage message);
+
+	/**
+	 * Called when a {@link PingRespMessage} is received.
+	 */
+	abstract void pingResp(PingRespMessage message);
+
 	private long resendMessages(long now) throws IOException {
 
 		long maxIdleTime = Long.MAX_VALUE;
@@ -340,56 +350,56 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 		switch (messageType) {
 		case CONNECT:
-			handler.handle(this, new ConnectMessage(buffer, remainingLength));
+			handler.connect(this, new ConnectMessage(buffer, remainingLength));
 			break;
 		case CONNACK:
-			handler.handle(this, new ConnAckMessage(buffer));
+			handler.connAck(this, new ConnAckMessage(buffer));
 			break;
 		case PUBLISH:
-			handler.handle(this, new PublishMessage(buffer, remainingLength));
+			handler.publish(this, new PublishMessage(buffer, remainingLength));
 			break;
 		case PUBACK:
 			PubAckMessage pubAckMessage = new PubAckMessage(buffer);
 			inFlightMessages.remove(pubAckMessage.getMessageId());
-			handler.handle(this, pubAckMessage);
+			handler.pubAck(this, pubAckMessage);
 			break;
 		case PUBREC:
 			PubRecMessage pubRecMessage = new PubRecMessage(buffer);
 			inFlightMessages.remove(pubRecMessage.getMessageId());
-			handler.handle(this, pubRecMessage);
+			handler.pubRec(this, pubRecMessage);
 			break;
 		case PUBREL:
-			handler.handle(this, new PubRelMessage(buffer));
+			handler.pubRel(this, new PubRelMessage(buffer));
 			break;
 		case PUBCOMP:
 			PubCompMessage pubCompMessage = new PubCompMessage(buffer);
 			inFlightMessages.remove(pubCompMessage.getMessageId());
-			handler.handle(this, pubCompMessage);
+			handler.pubComp(this, pubCompMessage);
 			break;
 		case SUBSCRIBE:
-			handler.handle(this, new SubscribeMessage(buffer, remainingLength));
+			handler.subscribe(this, new SubscribeMessage(buffer, remainingLength));
 			break;
 		case SUBACK:
 			SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength);
 			inFlightMessages.remove(subAckMessage.getMessageId());
-			handler.handle(this, subAckMessage);
+			handler.subAck(this, subAckMessage);
 			break;
 		case UNSUBSCRIBE:
-			handler.handle(this, new UnsubscribeMessage(buffer, remainingLength));
+			handler.unsubscribe(this, new UnsubscribeMessage(buffer, remainingLength));
 			break;
 		case UNSUBACK:
 			UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer);
 			inFlightMessages.remove(unsubAckMessage.getMessageId());
-			handler.handle(this, unsubAckMessage);
+			handler.unsubAck(this, unsubAckMessage);
 			break;
 		case PINGREQ:
-			handler.handle(this, new PingReqMessage(buffer));
+			pingReq(new PingReqMessage(buffer));
 			break;
 		case PINGRESP:
-			handler.handle(this, new PingRespMessage(buffer));
+			pingResp(new PingRespMessage(buffer));
 			break;
 		case DISCONNECT:
-			handler.handle(this, new DisconnectMessage(buffer));
+			handler.disconnect(this, new DisconnectMessage(buffer));
 			break;
 		default:
 			throw new IllegalStateException("Unsupported message type: " + messageType);

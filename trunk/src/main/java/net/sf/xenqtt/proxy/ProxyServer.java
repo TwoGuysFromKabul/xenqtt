@@ -19,8 +19,6 @@ import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.DisconnectMessage;
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
-import net.sf.xenqtt.message.PingReqMessage;
-import net.sf.xenqtt.message.PingRespMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubCompMessage;
 import net.sf.xenqtt.message.PubRecMessage;
@@ -226,7 +224,7 @@ public class ProxyServer {
 	private class Handler implements MessageHandler {
 
 		@Override
-		public void handle(MqttChannel channel, ConnectMessage message) throws Exception {
+		public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 
 			try {
 				channel.deregister();
@@ -249,55 +247,47 @@ public class ProxyServer {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, ConnAckMessage message) {
+		public void connAck(MqttChannel channel, ConnAckMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PublishMessage message) {
+		public void publish(MqttChannel channel, PublishMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubAckMessage message) {
+		public void pubAck(MqttChannel channel, PubAckMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubRecMessage message) {
+		public void pubRec(MqttChannel channel, PubRecMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubRelMessage message) {
+		public void pubRel(MqttChannel channel, PubRelMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PubCompMessage message) {
+		public void pubComp(MqttChannel channel, PubCompMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, SubscribeMessage message) {
+		public void subscribe(MqttChannel channel, SubscribeMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, SubAckMessage message) {
+		public void subAck(MqttChannel channel, SubAckMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, UnsubscribeMessage message) {
+		public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, UnsubAckMessage message) {
+		public void unsubAck(MqttChannel channel, UnsubAckMessage message) {
 		}
 
 		@Override
-		public void handle(MqttChannel channel, PingReqMessage message) {
-		}
-
-		@Override
-		public void handle(MqttChannel channel, PingRespMessage message) {
-		}
-
-		@Override
-		public void handle(MqttChannel channel, DisconnectMessage message) {
+		public void disconnect(MqttChannel channel, DisconnectMessage message) {
 		}
 
 		@Override
