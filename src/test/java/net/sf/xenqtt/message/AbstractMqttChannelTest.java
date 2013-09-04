@@ -204,18 +204,27 @@ public class AbstractMqttChannelTest {
 	}
 
 	@Test
-	public void testReadWriteSend_DisconnectClosesConnection() throws Exception {
+	public void testReadWriteSend_Disconnect() throws Exception {
 
 		establishConnection();
 
-		DisconnectMessage msg = new DisconnectMessage();
+		ConnAckMessage connMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
+		clientChannel.send(now, connMsg);
+		assertNull(readWrite(0, 1));
 
-		clientChannel.send(now, msg);
+		assertTrue(clientChannel.isConnected());
+		assertTrue(brokerChannel.isConnected());
+
+		DisconnectMessage discMsg = new DisconnectMessage();
+
+		clientChannel.send(now, discMsg);
 		assertNull(readWrite(0, 1));
 		assertEquals(1, brokerHandler.messagesReceived.size());
-		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
-		assertEquals(msg, brokerHandler.messagesReceived.get(0));
+		assertNotSame(discMsg, brokerHandler.messagesReceived.get(0));
+		assertEquals(discMsg, brokerHandler.messagesReceived.get(0));
 
+		assertFalse(clientChannel.isConnected());
+		assertFalse(brokerChannel.isConnected());
 		assertFalse(clientChannel.isOpen());
 		assertEquals(brokerChannel, readWrite(1, 1));
 		brokerChannel.close();
@@ -234,6 +243,8 @@ public class AbstractMqttChannelTest {
 		assertNotSame(msg, brokerHandler.messagesReceived.get(0));
 		assertEquals(msg, brokerHandler.messagesReceived.get(0));
 
+		assertFalse(clientChannel.isConnected());
+		assertFalse(brokerChannel.isConnected());
 		assertFalse(clientChannel.isOpen());
 		assertEquals(brokerChannel, readWrite(1, 1));
 		brokerChannel.close();
@@ -253,7 +264,8 @@ public class AbstractMqttChannelTest {
 		assertEquals(msg, brokerHandler.messagesReceived.get(0));
 
 		assertTrue(clientChannel.isOpen());
-
+		assertTrue(clientChannel.isConnected());
+		assertTrue(brokerChannel.isConnected());
 		closeConnection();
 	}
 
@@ -425,8 +437,10 @@ public class AbstractMqttChannelTest {
 	private void closeConnection() {
 
 		clientChannel.close();
+		assertFalse(clientChannel.isConnected());
 		assertFalse(clientChannel.isOpen());
 		brokerChannel.close();
+		assertFalse(brokerChannel.isConnected());
 		assertFalse(brokerChannel.isOpen());
 	}
 
@@ -470,6 +484,9 @@ public class AbstractMqttChannelTest {
 				iter.remove();
 			}
 		}
+
+		assertFalse(clientChannel.isConnected());
+		assertFalse(brokerChannel.isConnected());
 	}
 
 	private class MockMessageHandler implements MessageHandler {
