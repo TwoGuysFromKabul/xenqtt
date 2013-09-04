@@ -103,7 +103,38 @@ public class AbstractMqttChannelTest {
 	}
 
 	@Test
-	public void testHouseKeeping_ResendMessage_qos0() throws Exception {
+	public void testHouseKeeping_KeepAlive_ThrowsException() throws Exception {
+
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
+
+		clientChannel.exceptionToThrow = new RuntimeException("crap");
+
+		clientChannel.houseKeeping(now + 100);
+	}
+
+	@Test
+	public void testHouseKeeping_KeepAlive() throws Exception {
+
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
+
+		establishConnection();
+
+		PublishMessage msg = new PublishMessage(false, QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
+
+		clientChannel.send(now, msg);
+		assertNull(readWrite(0, 1));
+
+		clientChannel.houseKeeping(now + 1000);
+		brokerChannel.houseKeeping(now + 1000);
+
+		assertTrue(clientChannel.lastSent >= now && clientChannel.lastSent < now + 100);
+		assertTrue(brokerChannel.lastReceived >= clientChannel.lastSent && brokerChannel.lastReceived < now + 100);
+		assertEquals(0, clientChannel.lastReceived);
+		assertEquals(0, brokerChannel.lastSent);
+	}
+
+	@Test
+	public void testSend_qos0() throws Exception {
 
 		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10);
 
@@ -649,6 +680,8 @@ public class AbstractMqttChannelTest {
 
 		private final MockMessageHandler messageHandler;
 		Exception exceptionToThrow;
+		long lastSent;
+		long lastReceived;
 
 		public TestChannel(SocketChannel channel, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 			super(channel, handler, selector, messageResendIntervalMillis);
@@ -674,6 +707,16 @@ public class AbstractMqttChannelTest {
 				throw exceptionToThrow;
 			}
 			messageHandler.messagesReceived.add(message);
+		}
+
+		@Override
+		void keepAlive(long now, long lastMessageSent, long lastMessageReceived) throws Exception {
+
+			if (exceptionToThrow != null) {
+				throw exceptionToThrow;
+			}
+			lastSent = lastMessageSent;
+			lastReceived = lastMessageReceived;
 		}
 	}
 }
