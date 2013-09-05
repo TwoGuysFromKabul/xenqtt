@@ -291,6 +291,10 @@ public class ProxyServer {
 		}
 
 		@Override
+		public void channelOpened(MqttChannel channel) {
+		}
+
+		@Override
 		public void channelClosed(MqttChannel channel, Throwable cause) {
 		}
 	}

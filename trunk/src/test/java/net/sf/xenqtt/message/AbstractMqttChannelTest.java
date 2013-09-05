@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,11 +33,39 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		assertFalse(clientChannel.isConnectionPending());
 		assertTrue(clientChannel.isOpen());
+		assertTrue(clientHandler.opened);
 
 		assertFalse(brokerChannel.isConnectionPending());
 		assertTrue(brokerChannel.isOpen());
+		assertTrue(brokerHandler.opened);
 
 		closeConnection();
+	}
+
+	@Test
+	public void testCtorInvalidHost() throws Exception {
+
+		try {
+			new TestChannel("foo", 123, clientHandler, selector, 10000);
+			fail("Expected exception");
+		} catch (UnresolvedAddressException e) {
+			assertFalse(clientHandler.opened);
+			assertTrue(clientHandler.closed);
+			assertSame(e, clientHandler.closeCause);
+		}
+	}
+
+	@Test
+	public void testCtorInvalidConnection() throws Exception {
+
+		try {
+			new TestChannel(null, brokerHandler, null, 10000);
+			fail("Expected exception");
+		} catch (NullPointerException e) {
+			assertFalse(brokerHandler.opened);
+			assertTrue(brokerHandler.closed);
+			assertSame(e, brokerHandler.closeCause);
+		}
 	}
 
 	@Test
@@ -424,6 +453,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	public void testReadWriteSend_HandlerThrowsException() throws Exception {
 
 		establishConnection();
+
+		brokerHandler.exceptionToThrow = new RuntimeException();
 
 		UnsubAckMessage msg1 = new UnsubAckMessage(1);
 		PingReqMessage msg2 = new PingReqMessage();

@@ -60,12 +60,21 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	AbstractMqttChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 
-		this.messageResendIntervalMillis = messageResendIntervalMillis;
-		this.channel = SocketChannel.open();
-		this.channel.configureBlocking(false);
 		this.handler = handler;
-		this.selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, this);
-		this.channel.connect(new InetSocketAddress(host, port));
+		this.messageResendIntervalMillis = messageResendIntervalMillis;
+
+		try {
+			this.channel = SocketChannel.open();
+			this.channel.configureBlocking(false);
+			this.selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, this);
+			this.channel.connect(new InetSocketAddress(host, port));
+		} catch (IOException e) {
+			doClose(e);
+			throw e;
+		} catch (RuntimeException e) {
+			doClose(e);
+			throw e;
+		}
 	}
 
 	/**
@@ -75,11 +84,22 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
 	AbstractMqttChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
-		this.messageResendIntervalMillis = messageResendIntervalMillis;
+
 		this.handler = handler;
+		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.channel = channel;
-		this.channel.configureBlocking(false);
-		this.selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
+
+		try {
+			this.channel.configureBlocking(false);
+			this.selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
+			handler.channelOpened(this);
+		} catch (IOException e) {
+			doClose(e);
+			throw e;
+		} catch (RuntimeException e) {
+			doClose(e);
+			throw e;
+		}
 	}
 
 	/**
@@ -122,6 +142,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			if (channel.finishConnect()) {
 				int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
 				selectionKey.interestOps(ops);
+				handler.channelOpened(this);
 			}
 		} catch (IOException e) {
 			doClose(e);
@@ -420,14 +441,18 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		connected = false;
 
-		try {
-			selectionKey.cancel();
-		} catch (Exception ignore) {
+		if (selectionKey != null) {
+			try {
+				selectionKey.cancel();
+			} catch (Exception ignore) {
+			}
 		}
 
-		try {
-			channel.close();
-		} catch (Exception ignore) {
+		if (channel != null) {
+			try {
+				channel.close();
+			} catch (Exception ignore) {
+			}
 		}
 
 		try {
@@ -480,6 +505,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		try {
 			result = handleMessage(now, buffer);
 		} catch (Exception e) {
+			// result = isOpen();
 			e.printStackTrace();
 			// FIXME [jim] - need to log this or something
 		}
