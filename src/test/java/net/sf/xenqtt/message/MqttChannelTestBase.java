@@ -109,6 +109,9 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnectionPending());
 
+		assertFalse(clientHandler.opened);
+		assertFalse(brokerHandler.opened);
+
 		assertEquals(2, selector.keys().size());
 
 		boolean clientConnected = false;
@@ -125,16 +128,19 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 					brokerChannel = newBrokerChannel(brokerSocketChannel);
 					assertFalse(brokerChannel.isConnectionPending());
 					assertTrue(brokerChannel.isOpen());
+					assertTrue(brokerHandler.opened);
 					key.cancel();
 					ssc.close();
 				} else if (key.isConnectable()) {
 					assertSame(clientChannel, key.attachment());
 					assertFalse(key.channel().isBlocking());
 					assertTrue(key.channel().isRegistered());
+					assertFalse(clientHandler.opened);
 					assertTrue(clientChannel.isConnectionPending());
 					clientChannel.finishConnect();
 					assertFalse(clientChannel.isConnectionPending());
 					assertTrue(clientChannel.isOpen());
+					assertTrue(clientHandler.opened);
 					clientConnected = true;
 				}
 				iter.remove();
@@ -143,6 +149,9 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 
 		assertFalse(clientChannel.isConnected());
 		assertFalse(brokerChannel.isConnected());
+
+		assertTrue(clientHandler.opened);
+		assertTrue(brokerHandler.opened);
 
 		assertFalse(brokerHandler.closed);
 		assertFalse(clientHandler.closed);
@@ -200,6 +209,8 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 
 		private final boolean isBrokerChannel;
 		List<MqttMessage> messagesReceived = new ArrayList<MqttMessage>();
+		RuntimeException exceptionToThrow;
+		boolean opened;
 		boolean closed;
 		Throwable closeCause;
 
@@ -208,81 +219,94 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		}
 
 		@Override
-		public void connect(MqttChannel channel, ConnectMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void connAck(MqttChannel channel, ConnAckMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void connAck(MqttChannel channel, ConnAckMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void publish(MqttChannel channel, PublishMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void publish(MqttChannel channel, PublishMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void pubAck(MqttChannel channel, PubAckMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void pubAck(MqttChannel channel, PubAckMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void pubRec(MqttChannel channel, PubRecMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void pubRec(MqttChannel channel, PubRecMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void pubRel(MqttChannel channel, PubRelMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void pubRel(MqttChannel channel, PubRelMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void pubComp(MqttChannel channel, PubCompMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void pubComp(MqttChannel channel, PubCompMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void subscribe(MqttChannel channel, SubscribeMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void subscribe(MqttChannel channel, SubscribeMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void subAck(MqttChannel channel, SubAckMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void subAck(MqttChannel channel, SubAckMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void unsubAck(MqttChannel channel, UnsubAckMessage message) {
-			throw new RuntimeException();
+		public void unsubAck(MqttChannel channel, UnsubAckMessage message) throws Exception {
+			doHandleInvocation(channel, message);
 		}
 
 		@Override
-		public void disconnect(MqttChannel channel, DisconnectMessage message) {
-			messagesReceived.add(message);
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+		public void disconnect(MqttChannel channel, DisconnectMessage message) throws Exception {
+			doHandleInvocation(channel, message);
+		}
+
+		@Override
+		public void channelOpened(MqttChannel channel) {
+			opened = true;
+			doHandleInvocation(channel, null);
 		}
 
 		@Override
 		public void channelClosed(MqttChannel channel, Throwable cause) {
 			closed = true;
 			closeCause = cause;
-			assertSame(isBrokerChannel ? brokerChannel : clientChannel, channel);
+			doHandleInvocation(channel, null);
+		}
+
+		private void doHandleInvocation(MqttChannel channel, MqttMessage message) {
+
+			MqttChannel expectedChannel = isBrokerChannel ? brokerChannel : clientChannel;
+			// need to check for null because this can be invoked during channel construction which is before the expected channel reference is assigned
+			if (expectedChannel != null) {
+				assertSame(expectedChannel, channel);
+			}
+			if (exceptionToThrow != null) {
+				RuntimeException e = exceptionToThrow;
+				exceptionToThrow = null;
+				throw e;
+			}
+
+			if (message != null) {
+				messagesReceived.add(message);
+			}
 		}
 	}
 

@@ -67,6 +67,15 @@ public interface MessageHandler {
 	void disconnect(MqttChannel channel, DisconnectMessage message) throws Exception;
 
 	/**
+	 * Called when a {@link MqttChannel MQTT channel} is opened. Opened is when the connection to the broker or from the client has been established but before
+	 * any messages have been sent.
+	 * 
+	 * @param channel
+	 *            The channel that was opened.
+	 */
+	void channelOpened(MqttChannel channel);
+
+	/**
 	 * Called when a {@link MqttChannel MQTT channel} is formally closed.
 	 * 
 	 * @param channel
