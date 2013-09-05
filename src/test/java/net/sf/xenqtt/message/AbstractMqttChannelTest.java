@@ -10,7 +10,9 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -24,6 +26,45 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	@Override
 	TestChannel newBrokerChannel(SocketChannel brokerSocketChannel) throws Exception {
 		return new TestChannel(brokerSocketChannel, brokerHandler, selector, 10000);
+	}
+
+	@Test
+	public void testGetUnsentMessages_NoUnsentMessages() throws Exception {
+
+		clientChannel = newClientChannel();
+		assertTrue(clientChannel.getUnsentMessages().isEmpty());
+	}
+
+	@Test
+	public void testGetUnsentMessages_UnsentMessages() throws Exception {
+
+		establishConnection();
+
+		clientChannel.send(now, new UnsubscribeMessage(1, new String[] { "foo" }));
+		clientChannel.send(now, new UnsubscribeMessage(2, new String[] { "foo" }));
+
+		readWrite(0, 2);
+
+		// put a value in sendMessageInProgress directly because if we call send(...) it will write directly
+		Field field = AbstractMqttChannel.class.getDeclaredField("sendMessageInProgress");
+		field.setAccessible(true);
+		field.set(clientChannel, new UnsubscribeMessage(3, new String[] { "foo" }));
+
+		clientChannel.send(now, new UnsubscribeMessage(4, new String[] { "foo" }));
+		clientChannel.send(now, new UnsubscribeMessage(5, new String[] { "foo" }));
+
+		List<MqttMessage> unsent = clientChannel.getUnsentMessages();
+
+		Set<Integer> ids = new HashSet<Integer>();
+		for (MqttMessage m : unsent) {
+			ids.add(((IdentifiableMqttMessage) m).getMessageId());
+		}
+
+		assertEquals(5, unsent.size());
+		assertEquals(5, ids.size());
+		for (int i = 1; i <= 5; i++) {
+			assertTrue(ids.contains(i));
+		}
 	}
 
 	@Test

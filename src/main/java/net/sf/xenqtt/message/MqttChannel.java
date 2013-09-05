@@ -3,6 +3,7 @@ package net.sf.xenqtt.message;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.List;
 
 /**
  * <p>
@@ -14,7 +15,7 @@ import java.nio.channels.Selector;
  * If any exception occurs the channel is closed.
  * </p>
  */
-public interface MqttChannel {
+public interface MqttChannel extends MqttChannelRef {
 
 	/**
 	 * Deregisters this channel. Cancels the underlying {@link SelectionKey}.
@@ -110,4 +111,9 @@ public interface MqttChannel {
 	 * @return The number of messages currently in flight (QoS level > 0)
 	 */
 	int inFlightMessageCount();
+
+	/**
+	 * @return All messages that have not been sent. This includes messages queued to be sent, any partially sent message, and all in flight messages.
+	 */
+	List<MqttMessage> getUnsentMessages();
 }
