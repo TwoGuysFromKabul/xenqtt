@@ -80,7 +80,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-						    <mainClass>net.sf.xenqtt.proxy.ProxyServer</mainClass>
+						    <mainClass>net.sf.xenqtt.Xenqtt</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
