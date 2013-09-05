@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import net.sf.xenqtt.Log;
+import net.sf.xenqtt.LoggingLevels;
+
 import org.junit.Before;
 import org.junit.Test;
 

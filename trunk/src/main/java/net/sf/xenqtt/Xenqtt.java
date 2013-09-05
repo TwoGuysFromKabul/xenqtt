@@ -1,14 +1,12 @@
 package net.sf.xenqtt;
 
-import net.sf.xenqtt.util.Log;
-import net.sf.xenqtt.util.LoggingLevels;
 
 /**
  * The entry point into the application when either the proxy or the gateway are run.
  */
 public final class Xenqtt {
 
-	private static final String USAGE = "usage: java -jar xenqtt.jar proxy_or_gateway [-v[v]]\r\n\t-v: Increase logging verbosity. v = info, vv = debug";
+	private static final String USAGE = "usage: java -jar xenqtt.jar proxy|gateway [-v[v]]\n\tproxy - Run the MQTT proxy for clustered clients\n\t\n\t-v: Increase logging verbosity. v = info, vv = debug";
 	private static final String ARG_REGEX = "^\\-(?i:v){1,2}$";
 
 	/**

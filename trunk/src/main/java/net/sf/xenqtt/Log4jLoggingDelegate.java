@@ -1,6 +1,6 @@
-package net.sf.xenqtt.util;
+package net.sf.xenqtt;
 
-import net.sf.xenqtt.util.Log.LoggingDelegate;
+import net.sf.xenqtt.Log.LoggingDelegate;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -34,7 +34,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#trace(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#trace(java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void trace(String message, Object... parameters) {
@@ -42,7 +42,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#debug(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void debug(String message, Object... parameters) {
@@ -50,7 +50,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#info(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void info(String message, Object... parameters) {
@@ -58,7 +58,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#warn(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void warn(String message, Object... parameters) {
@@ -66,7 +66,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#warn(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.Throwable, java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void warn(Throwable t, String message, Object... parameters) {
@@ -74,7 +74,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#error(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void error(String message, Object... parameters) {
@@ -82,7 +82,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#error(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.Throwable, java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void error(Throwable t, String message, Object... parameters) {
@@ -90,7 +90,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#fatal(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void fatal(String message, Object... parameters) {
@@ -98,7 +98,7 @@ final class Log4jLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.util.Log.LoggingDelegate#fatal(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.Throwable, java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void fatal(Throwable t, String message, Object... parameters) {
