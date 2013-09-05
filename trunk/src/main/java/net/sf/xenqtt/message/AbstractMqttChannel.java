@@ -308,6 +308,22 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#getUnsentMessages()
+	 */
+	@Override
+	public List<MqttMessage> getUnsentMessages() {
+
+		List<MqttMessage> unsentMessages = new ArrayList<MqttMessage>(inFlightMessageCount() + sendQueueDepth() + 1);
+		unsentMessages.addAll(inFlightMessages.values());
+		if (sendMessageInProgress != null) {
+			unsentMessages.add(sendMessageInProgress);
+		}
+		unsentMessages.addAll(writesPending);
+
+		return unsentMessages;
+	}
+
+	/**
 	 * Called when a {@link ConnAckMessage} is sent or received where {@link ConnAckMessage#getReturnCode()} == {@link ConnectReturnCode#ACCEPTED}. This will
 	 * only be called once.
 	 * 
