@@ -9,9 +9,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+
+import net.sf.xenqtt.mock.MockMessageHandler;
 
 import org.junit.Before;
 import org.mockito.MockitoAnnotations;
@@ -25,8 +25,8 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	C clientChannel;
 	B brokerChannel;
 
-	MockMessageHandler clientHandler = new MockMessageHandler(false);
-	MockMessageHandler brokerHandler = new MockMessageHandler(true);
+	MockMessageHandler clientHandler = new MockMessageHandler();
+	MockMessageHandler brokerHandler = new MockMessageHandler();
 
 	long now = System.currentTimeMillis();
 
@@ -54,10 +54,10 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	 */
 	MqttChannel readWrite(int clientMessageCount, int brokerMessageCount) throws Exception {
 
-		clientHandler.messagesReceived.clear();
-		brokerHandler.messagesReceived.clear();
+		clientHandler.clearMessages();
+		brokerHandler.clearMessages();
 
-		while (brokerHandler.messagesReceived.size() < brokerMessageCount || clientHandler.messagesReceived.size() < clientMessageCount) {
+		while (brokerHandler.messageCount() < brokerMessageCount || clientHandler.messageCount() < clientMessageCount) {
 
 			selector.select();
 			Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
@@ -88,11 +88,11 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	void closeConnection() {
 
 		clientChannel.close();
-		assertTrue(clientHandler.closed);
+		clientHandler.assertChannelClosedCount(1);
 		assertFalse(clientChannel.isConnected());
 		assertFalse(clientChannel.isOpen());
 		brokerChannel.close();
-		assertTrue(brokerHandler.closed);
+		brokerHandler.assertChannelClosedCount(1);
 		assertFalse(brokerChannel.isConnected());
 		assertFalse(brokerChannel.isOpen());
 	}
@@ -109,8 +109,8 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnectionPending());
 
-		assertFalse(clientHandler.opened);
-		assertFalse(brokerHandler.opened);
+		clientHandler.assertChannelOpenedCount(0);
+		brokerHandler.assertChannelOpenedCount(0);
 
 		assertEquals(2, selector.keys().size());
 
@@ -128,19 +128,19 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 					brokerChannel = newBrokerChannel(brokerSocketChannel);
 					assertFalse(brokerChannel.isConnectionPending());
 					assertTrue(brokerChannel.isOpen());
-					assertTrue(brokerHandler.opened);
+					brokerHandler.assertChannelOpenedCount(1);
 					key.cancel();
 					ssc.close();
 				} else if (key.isConnectable()) {
 					assertSame(clientChannel, key.attachment());
 					assertFalse(key.channel().isBlocking());
 					assertTrue(key.channel().isRegistered());
-					assertFalse(clientHandler.opened);
+					clientHandler.assertChannelOpenedCount(0);
 					assertTrue(clientChannel.isConnectionPending());
 					assertTrue(clientChannel.finishConnect());
 					assertFalse(clientChannel.isConnectionPending());
+					clientHandler.assertChannelOpenedCount(1);
 					assertTrue(clientChannel.isOpen());
-					assertTrue(clientHandler.opened);
 					clientConnected = true;
 				}
 				iter.remove();
@@ -150,11 +150,11 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		assertFalse(clientChannel.isConnected());
 		assertFalse(brokerChannel.isConnected());
 
-		assertTrue(clientHandler.opened);
-		assertTrue(brokerHandler.opened);
+		clientHandler.assertChannelOpenedCount(1);
+		brokerHandler.assertChannelOpenedCount(1);
 
-		assertFalse(brokerHandler.closed);
-		assertFalse(clientHandler.closed);
+		clientHandler.assertChannelClosedCount(0);
+		brokerHandler.assertChannelClosedCount(0);
 	}
 
 	/**
@@ -167,15 +167,11 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 
 		clientChannel.send(now, connMsg);
 		assertNull(readWrite(0, 1));
-		assertEquals(1, brokerHandler.messagesReceived.size());
-		assertNotSame(connMsg, brokerHandler.messagesReceived.get(0));
-		assertEquals(connMsg, brokerHandler.messagesReceived.get(0));
+		brokerHandler.assertMessages(connMsg);
 
 		brokerChannel.send(now, ackMsg);
 		assertNull(readWrite(1, 0));
-		assertEquals(1, clientHandler.messagesReceived.size());
-		assertNotSame(ackMsg, clientHandler.messagesReceived.get(0));
-		assertEquals(ackMsg, clientHandler.messagesReceived.get(0));
+		clientHandler.assertMessages(ackMsg);
 
 		assertTrue(clientChannel.isConnected());
 		assertTrue(brokerChannel.isConnected());
@@ -204,111 +200,6 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	 * @return A new client channel
 	 */
 	abstract C newClientChannel() throws Exception;
-
-	class MockMessageHandler implements MessageHandler {
-
-		private final boolean isBrokerChannel;
-		List<MqttMessage> messagesReceived = new ArrayList<MqttMessage>();
-		RuntimeException exceptionToThrow;
-		boolean opened;
-		boolean closed;
-		Throwable closeCause;
-
-		public MockMessageHandler(boolean isBrokerChannel) {
-			this.isBrokerChannel = isBrokerChannel;
-		}
-
-		@Override
-		public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void connAck(MqttChannel channel, ConnAckMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void publish(MqttChannel channel, PublishMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void pubAck(MqttChannel channel, PubAckMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void pubRec(MqttChannel channel, PubRecMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void pubRel(MqttChannel channel, PubRelMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void pubComp(MqttChannel channel, PubCompMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void subscribe(MqttChannel channel, SubscribeMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void subAck(MqttChannel channel, SubAckMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void unsubAck(MqttChannel channel, UnsubAckMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void disconnect(MqttChannel channel, DisconnectMessage message) throws Exception {
-			doHandleInvocation(channel, message);
-		}
-
-		@Override
-		public void channelOpened(MqttChannel channel) {
-			opened = true;
-			doHandleInvocation(channel, null);
-		}
-
-		@Override
-		public void channelClosed(MqttChannel channel, Throwable cause) {
-			closed = true;
-			closeCause = cause;
-			doHandleInvocation(channel, null);
-		}
-
-		private void doHandleInvocation(MqttChannel channel, MqttMessage message) {
-
-			MqttChannel expectedChannel = isBrokerChannel ? brokerChannel : clientChannel;
-			// need to check for null because this can be invoked during channel construction which is before the expected channel reference is assigned
-			if (expectedChannel != null) {
-				assertSame(expectedChannel, channel);
-			}
-			if (exceptionToThrow != null) {
-				RuntimeException e = exceptionToThrow;
-				exceptionToThrow = null;
-				throw e;
-			}
-
-			if (message != null) {
-				messagesReceived.add(message);
-			}
-		}
-	}
 
 	final class TestChannel extends AbstractMqttChannel {
 
@@ -342,18 +233,12 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 
 		@Override
 		void pingReq(long now, PingReqMessage message) throws Exception {
-			if (exceptionToThrow != null) {
-				throw exceptionToThrow;
-			}
-			messageHandler.messagesReceived.add(message);
+			messageHandler.pingReq(this, message);
 		}
 
 		@Override
 		void pingResp(long now, PingRespMessage message) throws Exception {
-			if (exceptionToThrow != null) {
-				throw exceptionToThrow;
-			}
-			messageHandler.messagesReceived.add(message);
+			messageHandler.pingResp(this, message);
 		}
 
 		@Override

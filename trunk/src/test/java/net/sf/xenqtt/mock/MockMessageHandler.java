@@ -1,0 +1,306 @@
+package net.sf.xenqtt.mock;
+
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import net.sf.xenqtt.message.ConnAckMessage;
+import net.sf.xenqtt.message.ConnectMessage;
+import net.sf.xenqtt.message.DisconnectMessage;
+import net.sf.xenqtt.message.MessageHandler;
+import net.sf.xenqtt.message.MessageType;
+import net.sf.xenqtt.message.MqttChannel;
+import net.sf.xenqtt.message.MqttMessage;
+import net.sf.xenqtt.message.PingReqMessage;
+import net.sf.xenqtt.message.PingRespMessage;
+import net.sf.xenqtt.message.PubAckMessage;
+import net.sf.xenqtt.message.PubCompMessage;
+import net.sf.xenqtt.message.PubRecMessage;
+import net.sf.xenqtt.message.PubRelMessage;
+import net.sf.xenqtt.message.PublishMessage;
+import net.sf.xenqtt.message.SubAckMessage;
+import net.sf.xenqtt.message.SubscribeMessage;
+import net.sf.xenqtt.message.UnsubAckMessage;
+import net.sf.xenqtt.message.UnsubscribeMessage;
+
+/**
+ * Thread safe mock implementation of {@link MessageHandler}
+ */
+public class MockMessageHandler implements MessageHandler {
+
+	private final List<MqttMessage> messagesReceived = new CopyOnWriteArrayList<MqttMessage>();
+	private volatile RuntimeException exceptionToThrow;
+	private volatile int channelOpenedCount;
+	private volatile int channelClosedCount;
+	private volatile Throwable lastChannelClosedCause;
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#connect(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)
+	 */
+	@Override
+	public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#connAck(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnAckMessage)
+	 */
+	@Override
+	public void connAck(MqttChannel channel, ConnAckMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#publish(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.PublishMessage)
+	 */
+	@Override
+	public void publish(MqttChannel channel, PublishMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#pubAck(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.PubAckMessage)
+	 */
+	@Override
+	public void pubAck(MqttChannel channel, PubAckMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#pubRec(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.PubRecMessage)
+	 */
+	@Override
+	public void pubRec(MqttChannel channel, PubRecMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#pubRel(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.PubRelMessage)
+	 */
+	@Override
+	public void pubRel(MqttChannel channel, PubRelMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#pubComp(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.PubCompMessage)
+	 */
+	@Override
+	public void pubComp(MqttChannel channel, PubCompMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#subscribe(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.SubscribeMessage)
+	 */
+	@Override
+	public void subscribe(MqttChannel channel, SubscribeMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#subAck(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.SubAckMessage)
+	 */
+	@Override
+	public void subAck(MqttChannel channel, SubAckMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#unsubscribe(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.UnsubscribeMessage)
+	 */
+	@Override
+	public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#unsubAck(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.UnsubAckMessage)
+	 */
+	@Override
+	public void unsubAck(MqttChannel channel, UnsubAckMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#disconnect(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.DisconnectMessage)
+	 */
+	@Override
+	public void disconnect(MqttChannel channel, DisconnectMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#channelOpened(net.sf.xenqtt.message.MqttChannel)
+	 */
+	@Override
+	public void channelOpened(MqttChannel channel) {
+		channelOpenedCount++;
+		doHandleInvocation(channel, null);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#channelClosed(net.sf.xenqtt.message.MqttChannel, java.lang.Throwable)
+	 */
+	@Override
+	public void channelClosed(MqttChannel channel, Throwable cause) {
+		channelClosedCount++;
+		lastChannelClosedCause = cause;
+		doHandleInvocation(channel, null);
+	}
+
+	/**
+	 * Called by test channels when a {@link PingReqMessage} is received so it can be handled by this mock like other messages.
+	 */
+	public void pingReq(MqttChannel channel, PingReqMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * Called by test channels when a {@link PingRespMessage} is received so it can be handled by this mock like other messages.
+	 */
+	public void pingResp(MqttChannel channel, PingRespMessage message) throws Exception {
+		doHandleInvocation(channel, message);
+	}
+
+	/**
+	 * The specified exception will be thrown the next time a {@link MessageHandler} interface method is invoked. It will not be thrown on the following
+	 * invocation.
+	 */
+	public final void setException(RuntimeException e) {
+		this.exceptionToThrow = e;
+	}
+
+	/**
+	 * @return The number of times {@link #channelOpened(MqttChannel)} has been called
+	 */
+	public final int channelOpenedCalledCount() {
+		return channelOpenedCount;
+	}
+
+	/**
+	 * @return The number of times {@link #channelClosed(MqttChannel, Throwable)} has been called
+	 */
+	public final int channelClosedCalledCount() {
+		return channelClosedCount;
+	}
+
+	/**
+	 * @return the cause from the most recent invocation of {@link #channelClosed(MqttChannel, Throwable)}
+	 */
+	public final Throwable lastChannelClosedCause() {
+		return lastChannelClosedCause;
+	}
+
+	/**
+	 * @return The number of messages received
+	 */
+	public int messageCount() {
+		return messagesReceived.size();
+	}
+
+	/**
+	 * @return The message at the specified index (0=first message, 1=second message,...)
+	 */
+	public final MqttMessage message(int index) {
+		return messagesReceived.get(index);
+	}
+
+	/**
+	 * clears the received messages list
+	 */
+	public final void clearMessages() {
+		messagesReceived.clear();
+	}
+
+	/**
+	 * asserts that {@link #channelOpened(MqttChannel)} has been called the specified number of times
+	 */
+	public final void assertChannelOpenedCount(int value) {
+		assertEquals(value, channelOpenedCount);
+	}
+
+	/**
+	 * asserts that {@link #channelClosed(MqttChannel, Throwable)} has been called the specified number of times
+	 */
+	public final void assertChannelClosedCount(int value) {
+		assertEquals(value, channelClosedCount);
+	}
+
+	/**
+	 * asserts that the cause for the last {@link #channelClosed(MqttChannel, Throwable)} call was the specified type of exception
+	 */
+	public final void assertLastChannelClosedCause(Class<? extends RuntimeException> exceptionClass) {
+		assertTrue(lastChannelClosedCause != null && lastChannelClosedCause.getClass().equals(exceptionClass));
+	}
+
+	/**
+	 * asserts that the cause for the last {@link #channelClosed(MqttChannel, Throwable)} call equals the specified exception (null verifies it is null).
+	 */
+	public final void assertLastChannelClosedCause(RuntimeException e) {
+		assertEquals(e, lastChannelClosedCause);
+	}
+
+	/**
+	 * asserts the specified number of messages was received
+	 */
+	public final void assertMessageCount(int value) {
+		assertEquals(value, messagesReceived.size());
+	}
+
+	/**
+	 * Asserts the specified messages, and only the specified messages, were received in the specified order. Asserts each received message is equal to, but not
+	 * the same object as, the specified message.
+	 */
+	public final void assertMessages(MqttMessage... messages) {
+		assertMessages(Arrays.asList(messages));
+	}
+
+	/**
+	 * Asserts the specified messages, and only the specified messages, were received in the specified order. Asserts each received message is equal to, but not
+	 * the same object as, the specified message.
+	 */
+	public final void assertMessages(List<? extends MqttMessage> messages) {
+		assertEquals(messages, messagesReceived);
+	}
+
+	/**
+	 * Asserts the specified message was received at the specified index (0=first message, 1=second message, ...). Asserts the received message is equal to, but
+	 * not the same object as, the specified message.
+	 */
+	public final void assertMessage(MqttMessage message, int index) {
+
+		assertTrue(messagesReceived.size() > index);
+		assertEquals(message, messagesReceived.get(index));
+		assertNotSame(message, messagesReceived.get(index));
+	}
+
+	/**
+	 * asserts the specified message types, and only the specified types, were received in the specified order
+	 */
+	public final void assertMessageTypes(MessageType... messageTypes) {
+
+		assertEquals(messageTypes.length, messagesReceived.size());
+		for (int i = 0; i < messageTypes.length; i++) {
+			assertEquals(messageTypes[i], messagesReceived.get(i).getMessageType());
+		}
+	}
+
+	/**
+	 * Called by all {@link MessageHandler} interface methods for common behavior.
+	 */
+	protected void doHandleInvocation(MqttChannel channel, MqttMessage message) {
+
+		if (exceptionToThrow != null) {
+			RuntimeException e = exceptionToThrow;
+			exceptionToThrow = null;
+			throw e;
+		}
+
+		if (message != null) {
+			messagesReceived.add(message);
+		}
+	}
+}

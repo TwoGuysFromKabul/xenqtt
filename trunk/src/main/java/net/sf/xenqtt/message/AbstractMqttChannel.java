@@ -53,6 +53,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private long lastReceivedTime;
 	private long pingIntervalMillis;
 
+	private boolean channelCloseCalled;
+
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
 	 * {@link SelectionKey#OP_CONNECT} as a ready op then {@link #finishConnect()} should be called.
@@ -70,6 +72,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			this.channel.configureBlocking(false);
 			this.selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, this);
 			this.channel.connect(new InetSocketAddress(host, port));
+			Log.debug("%s connecting to %s:%s", this, host, port);
 		} catch (IOException e) {
 			doClose(e, "Failed to connect a client MQTT channel to %s:%d", host, port);
 			throw e;
@@ -95,6 +98,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			this.channel.configureBlocking(false);
 			this.selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
 			handler.channelOpened(this);
+			Log.debug("%s opened", this);
 		} catch (IOException e) {
 			doClose(e, "Failed to construct a broker MQTT channel");
 			throw e;
@@ -111,6 +115,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	public final void deregister() {
 
 		selectionKey.cancel();
+		Log.debug("Deregistered %s", this);
 	}
 
 	/**
@@ -126,6 +131,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			selectionKey = channel.register(selector, ops, this);
 			this.handler = handler;
 
+			Log.debug("Registered %s with selector %s", this);
 			return true;
 
 		} catch (Exception e) {
@@ -146,6 +152,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
 				selectionKey.interestOps(ops);
 				handler.channelOpened(this);
+				Log.debug("%s finished connecting", this);
 				return true;
 			}
 		} catch (Exception e) {
@@ -184,6 +191,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	public final boolean send(long now, MqttMessage message) {
 
 		try {
+			Log.debug("%s sending %s", this, message);
 			if (sendMessageInProgress != null) {
 				writesPending.offer(message);
 				return true;
@@ -380,6 +388,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				return true;
 			}
 
+			Log.debug("%s sent %s", this, sendMessageInProgress);
+
 			MessageType type = sendMessageInProgress.getMessageType();
 			if (type == MessageType.DISCONNECT) {
 				sendMessageInProgress = null;
@@ -456,6 +466,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			Log.error(cause, messageFormat, args);
 		}
 
+		Log.debug("Closing %s", this);
+
 		if (connected) {
 			try {
 				disconnected();
@@ -480,10 +492,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 		}
 
-		try {
-			handler.channelClosed(this, cause);
-		} catch (Exception e) {
-			Log.error(e, "Message handler failed in channelClosed for %s", this);
+		if (!channelCloseCalled) {
+			channelCloseCalled = true;
+			try {
+				handler.channelClosed(this, cause);
+			} catch (Exception e) {
+				Log.error(e, "Message handler failed in channelClosed for %s", this);
+			}
 		}
 	}
 
@@ -506,13 +521,17 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 		}
 
-		for (IdentifiableMqttMessage msg : messagesToResend) {
-			msg.buffer.rewind();
-			msg.setDuplicateFlag();
-			send(now, msg);
-		}
+		if (!messagesToResend.isEmpty()) {
+			Log.debug("%s resending %d messages", this, messagesToResend.size());
 
-		messagesToResend.clear();
+			for (IdentifiableMqttMessage msg : messagesToResend) {
+				msg.buffer.rewind();
+				msg.setDuplicateFlag();
+				send(now, msg);
+			}
+
+			messagesToResend.clear();
+		}
 
 		return maxIdleTime;
 	}
@@ -630,6 +649,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			default:
 				throw new IllegalStateException("Unsupported message type: " + messageType);
 			}
+
+			Log.debug("%s received %s", this, msg);
+
 		} catch (Exception e) {
 
 			if (msg != null) {
