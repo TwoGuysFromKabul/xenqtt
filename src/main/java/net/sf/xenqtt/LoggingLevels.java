@@ -1,4 +1,4 @@
-package net.sf.xenqtt.util;
+package net.sf.xenqtt;
 
 /**
  * Exposes the disparate log levels that are currently enabled for Xenqtt.

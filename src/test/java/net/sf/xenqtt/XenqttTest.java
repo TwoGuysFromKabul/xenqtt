@@ -5,9 +5,6 @@ import static org.junit.Assert.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import net.sf.xenqtt.util.Log;
-import net.sf.xenqtt.util.LoggingLevels;
-
 import org.junit.Before;
 import org.junit.Test;
 
