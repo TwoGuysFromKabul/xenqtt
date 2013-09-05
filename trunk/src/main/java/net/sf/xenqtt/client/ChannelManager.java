@@ -1,17 +1,15 @@
 package net.sf.xenqtt.client;
 
-import java.nio.channels.Selector;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
 import net.sf.xenqtt.message.MessageHandler;
-import net.sf.xenqtt.message.MqttChannel;
+import net.sf.xenqtt.message.MqttChannelRef;
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
  * <p>
- * Specifies a type that manages zero or more {@link MqttChannel channels} that communicate via the MQTT protocol. The channel manager is responsible for
- * managing the {@link Selector selector} for IO work. The channel manager facilitates the creation of new channels, assigning selectors as-appropriate, and
- * then the addition of those channels. Sending data as well as disconnecting channels are also provided via the channel manager.
+ * Specifies a type that manages zero or more {@link MqttChannelRef channels} that communicate via the MQTT protocol.
  * </p>
  * 
  * <p>
@@ -21,8 +19,8 @@ import net.sf.xenqtt.message.MqttMessage;
 public interface ChannelManager {
 
 	/**
-	 * Create a new {@link MqttChannel} for use in exchanging data using the MQTT protocol. The implementation is responsible for assigning the {@link Selector}
-	 * as-appropriate.
+	 * Create a new client side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the client end of the connection. The broker
+	 * will have the remote end of the connection.
 	 * 
 	 * @param host
 	 *            The host name to connect to
@@ -31,33 +29,33 @@ public interface ChannelManager {
 	 * @param messageHandler
 	 *            The {@link MessageHandler message handler} to use for all received messages
 	 * 
-	 * @return The newly-created channel
+	 * @return The newly-created channel. The channel may only be safely accessed from the {@link MessageHandler} callback methods.
 	 */
-	MqttChannel newChannel(String host, int port, MessageHandler messageHandler);
+	MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler);
 
 	/**
-	 * Create a new {@link MqttChannel} for use in exchanging data using the MQTT protocol. The implementation is responsible for assigning the {@link Selector}
-	 * as-appropriate.
+	 * Create a new broker side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the broker end of the connection. The client
+	 * will have the remove end of the connection.
 	 * 
 	 * @param channel
 	 *            The {@link SocketChannel channel} to communicate over
 	 * @param messageHandler
 	 *            The {@link MessageHandler message handler} to use for all received messages
 	 * 
-	 * @return The newly-created channel
+	 * @return The newly-created channel.The channel may only be safely accessed from the {@link MessageHandler} callback methods.
 	 */
-	MqttChannel newChannel(SocketChannel channel, MessageHandler messageHandler);
+	MqttChannelRef newBrokerChannel(SocketChannel channel, MessageHandler messageHandler);
 
 	/**
 	 * Send a {@link MqttMessage message} over a specified {@code channel}.
 	 * 
 	 * @param channel
-	 *            The {@link MqttChannel channel} to send the message over. This channel should have been previously created via the
+	 *            The {@link MqttChannelRef channel} to send the message over. This channel should have been previously created via the
 	 *            {@link #newChannel(String, int, MessageHandler)} or {@link #newChannel(SocketChannel, MessageHandler)} methods
 	 * @param message
 	 *            The {@code message} to send. This can be any type of MQTT message
 	 */
-	void send(MqttChannel channel, MqttMessage message);
+	void send(MqttChannelRef channel, MqttMessage message) throws ClosedChannelException;
 
 	/**
 	 * Send a {@link MqttMessage message} to all channels managed by this channel manager.
@@ -68,7 +66,7 @@ public interface ChannelManager {
 	void sendToAll(MqttMessage message);
 
 	/**
-	 * Close this {@link ChannelManager channel manager}. This will close all the channels currently managed within the connection manager. This method blocks
+	 * Close this {@link ChannelManager channel manager}. This will close all the channels currently managed within this channel manager. This method blocks
 	 * until all channels are closed.
 	 */
 	void close();
