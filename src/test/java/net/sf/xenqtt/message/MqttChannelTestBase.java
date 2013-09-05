@@ -137,7 +137,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 					assertTrue(key.channel().isRegistered());
 					assertFalse(clientHandler.opened);
 					assertTrue(clientChannel.isConnectionPending());
-					clientChannel.finishConnect();
+					assertTrue(clientChannel.finishConnect());
 					assertFalse(clientChannel.isConnectionPending());
 					assertTrue(clientChannel.isOpen());
 					assertTrue(clientHandler.opened);

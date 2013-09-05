@@ -7,7 +7,7 @@ import java.nio.channels.Selector;
 /**
  * An {@link MqttChannel} to use for the client side of the connection.
  */
-public final class ClientChannel extends AbstractMqttChannel {
+public final class MqttClientChannel extends AbstractMqttChannel {
 
 	private long pingIntervalMillis;
 	private boolean pingPending;
@@ -19,7 +19,7 @@ public final class ClientChannel extends AbstractMqttChannel {
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public ClientChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+	public MqttClientChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 		super(host, port, handler, selector, messageResendIntervalMillis);
 	}
 

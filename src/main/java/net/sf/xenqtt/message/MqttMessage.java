@@ -9,6 +9,9 @@ import java.util.Arrays;
  */
 public abstract class MqttMessage {
 
+	private static final byte[] HEX_CHAR_TABLE = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8',
+			(byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
+
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private final int remainingLength;
@@ -81,6 +84,34 @@ public abstract class MqttMessage {
 		}
 
 		this.fixedHeaderEndOffset = buffer.position();
+	}
+
+	/**
+	 * @return Space delimited hexadecimal string representation of the specified byte buffer
+	 */
+	public static String byteBufferToHex(ByteBuffer buffer) {
+
+		return bytesToHex(getBytes(buffer));
+	}
+
+	/**
+	 * @return Space delimited hexadecimal string representation of the specified byte array
+	 */
+	public static String bytesToHex(byte[] bytes) {
+
+		final byte[] hex = new byte[(bytes.length - 1) * 3 + 2];
+
+		for (int i = 0, j = 0; i < bytes.length; i++) {
+			final int b = bytes[i] & 0xff;
+
+			if (i != 0) {
+				hex[j++] = ' ';
+			}
+			hex[j++] = HEX_CHAR_TABLE[b >>> 4];
+			hex[j++] = HEX_CHAR_TABLE[b & 0xf];
+		}
+
+		return new String(hex, UTF8);
 	}
 
 	/**
@@ -293,10 +324,14 @@ public abstract class MqttMessage {
 	@Override
 	public String toString() {
 
-		return getClass().getSimpleName() + ": " + Arrays.toString(getBytes());
+		return getClass().getSimpleName() + ": [" + byteBufferToHex(buffer) + "]";
 	}
 
 	private byte[] getBytes() {
+		return getBytes(buffer);
+	}
+
+	private static byte[] getBytes(ByteBuffer buffer) {
 
 		int pos = buffer.position();
 		buffer.rewind();

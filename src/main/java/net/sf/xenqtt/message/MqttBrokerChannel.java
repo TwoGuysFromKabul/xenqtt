@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 /**
  * An {@link MqttChannel} to use for the client side of the connection.
  */
-public final class BrokerChannel extends AbstractMqttChannel {
+public final class MqttBrokerChannel extends AbstractMqttChannel {
 
 	private long maxMessageIntervalMillis;
 
@@ -15,7 +15,7 @@ public final class BrokerChannel extends AbstractMqttChannel {
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	BrokerChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+	public MqttBrokerChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 		super(channel, handler, selector, messageResendIntervalMillis);
 	}
 
