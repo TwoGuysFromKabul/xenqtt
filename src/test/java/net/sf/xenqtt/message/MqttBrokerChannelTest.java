@@ -27,8 +27,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 
 		readWrite(1, 0);
 
-		assertEquals(1, clientHandler.messagesReceived.size());
-		assertEquals(MessageType.PINGRESP, clientHandler.messagesReceived.get(0).getMessageType());
+		clientHandler.assertMessageTypes(MessageType.PINGRESP);
 	}
 
 	@Test

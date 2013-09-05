@@ -100,8 +100,8 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 		clientChannel.send(now, msg);
 
 		readWrite(0, 1);
-		assertEquals(1, brokerHandler.messagesReceived.size());
+		brokerHandler.assertMessageCount(1);
 
-		return brokerHandler.messagesReceived.get(0).getMessageType() == MessageType.PINGREQ;
+		return brokerHandler.message(0).getMessageType() == MessageType.PINGREQ;
 	}
 }

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
+import net.sf.xenqtt.Log;
+
 /**
  * An {@link MqttChannel} to use for the client side of the connection.
  */
@@ -57,6 +59,7 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 		}
 
 		if (pingPending) {
+			Log.warn("%s lost communication with broker, closing channel", this);
 			close();
 			return -1;
 		}

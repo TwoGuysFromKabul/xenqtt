@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import net.sf.xenqtt.Log;
+
 /**
  * An {@link MqttChannel} to use for the client side of the connection.
  */
@@ -51,6 +53,8 @@ public final class MqttBrokerChannel extends AbstractMqttChannel {
 		if (elapsed < maxMessageIntervalMillis) {
 			return maxMessageIntervalMillis - elapsed;
 		}
+
+		Log.warn("%s lost communication with client", this);
 
 		close();
 
