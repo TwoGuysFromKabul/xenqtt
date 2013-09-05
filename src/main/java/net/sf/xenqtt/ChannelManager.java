@@ -1,4 +1,4 @@
-package net.sf.xenqtt.client;
+package net.sf.xenqtt;
 
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
