@@ -1,6 +1,5 @@
 package net.sf.xenqtt.message;
 
-import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.List;
@@ -25,13 +24,17 @@ public interface MqttChannel extends MqttChannelRef {
 	/**
 	 * Registers this channel with the specified selector. The {@link SelectionKey} for the previously registered selector is canceled. The current
 	 * {@link MessageHandler} is replaced with the specified one.
+	 * 
+	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
-	void register(Selector selector, MessageHandler handler) throws IOException;
+	boolean register(Selector selector, MessageHandler handler);
 
 	/**
 	 * Finishes a connection. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_CONNECT} op is ready.
+	 * 
+	 * @return True if and only if this channel is now connected.
 	 */
-	void finishConnect() throws IOException;
+	boolean finishConnect();
 
 	/**
 	 * Reads data. This will read as many messages as it can and pass them to a {@link MessageHandler}.This should be called when a {@link SelectionKey}s
@@ -40,9 +43,10 @@ public interface MqttChannel extends MqttChannelRef {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return True if the channel is left open. False if it is closed by this method or already closed when this method is called.
+	 * @return True if the channel is left open. False if it is closed by this method or already closed when this method is called or the connect hasn't
+	 *         finished yet.
 	 */
-	boolean read(long now) throws IOException;
+	boolean read(long now);
 
 	/**
 	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
@@ -50,8 +54,10 @@ public interface MqttChannel extends MqttChannelRef {
 	 * 
 	 * @param now
 	 *            The timestamp to use as the "current" time
+	 * 
+	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
-	void send(long now, MqttMessage message) throws IOException;
+	boolean send(long now, MqttMessage message);
 
 	/**
 	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.
@@ -59,9 +65,10 @@ public interface MqttChannel extends MqttChannelRef {
 	 * @param now
 	 *            The timestamp to use as the "current" time
 	 * 
-	 * @return True if the channel is left open. False if it is closed by this method or already closed when this method is called.
+	 * @return True if the channel is left open. False if it is closed by this method or already closed when this method is called or the connect hasn't
+	 *         finished yet.
 	 */
-	boolean write(long now) throws IOException;
+	boolean write(long now);
 
 	/**
 	 * Closes the underlying channels, sockets, etc
@@ -100,7 +107,7 @@ public interface MqttChannel extends MqttChannelRef {
 	 * @return Maximum millis until this method should be called again. This result is only valid when this method is called. Future calls to
 	 *         {@link #read(long)} or {@link #write(long)} may change this value. Returns < 0 if this method closes the channel.
 	 */
-	long houseKeeping(long now) throws IOException;
+	long houseKeeping(long now);
 
 	/**
 	 * @return The number of messages in the send queue. This does not include any message currently in the process of being sent

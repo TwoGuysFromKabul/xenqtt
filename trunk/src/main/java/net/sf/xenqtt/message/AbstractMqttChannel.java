@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import net.sf.xenqtt.Log;
+
 /**
  * Default {@link MqttChannel} implementation. This class is NOT thread safe. At construction a {@link SocketChannel} will be registered with the
  * {@link Selector} specified in the constructor. The new instance of this class will be available from {@link SelectionKey#attachment()}.
@@ -69,10 +71,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			this.selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, this);
 			this.channel.connect(new InetSocketAddress(host, port));
 		} catch (IOException e) {
-			doClose(e);
+			doClose(e, "Failed to connect a client MQTT channel to %s:%d", host, port);
 			throw e;
 		} catch (RuntimeException e) {
-			doClose(e);
+			doClose(e, "Failed to connect a client MQTT channel to %s:%d", host, port);
 			throw e;
 		}
 	}
@@ -94,10 +96,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			this.selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
 			handler.channelOpened(this);
 		} catch (IOException e) {
-			doClose(e);
+			doClose(e, "Failed to construct a broker MQTT channel");
 			throw e;
 		} catch (RuntimeException e) {
-			doClose(e);
+			doClose(e, "Failed to construct a broker MQTT channel");
 			throw e;
 		}
 	}
@@ -115,7 +117,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#register(java.nio.channels.Selector, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
-	public final void register(Selector selector, MessageHandler handler) throws IOException {
+	public final boolean register(Selector selector, MessageHandler handler) {
 
 		try {
 			int ops = sendMessageInProgress == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
@@ -123,112 +125,103 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			selectionKey.cancel();
 			selectionKey = channel.register(selector, ops, this);
 			this.handler = handler;
-		} catch (IOException e) {
-			doClose(e);
-			throw e;
-		} catch (RuntimeException e) {
-			doClose(e);
-			throw e;
+
+			return true;
+
+		} catch (Exception e) {
+			doClose(e, "Failed to register selector for %s", this);
 		}
+
+		return false;
 	}
 
 	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#finishConnect()
 	 */
 	@Override
-	public final void finishConnect() throws IOException {
+	public final boolean finishConnect() {
 
 		try {
 			if (channel.finishConnect()) {
 				int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
 				selectionKey.interestOps(ops);
 				handler.channelOpened(this);
+				return true;
 			}
-		} catch (IOException e) {
-			doClose(e);
-			throw e;
-		} catch (RuntimeException e) {
-			doClose(e);
-			throw e;
+		} catch (Exception e) {
+			doClose(e, "Failed to connect %s", this);
 		}
+
+		return false;
 	}
 
 	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#read(long)
 	 */
 	@Override
-	public final boolean read(long now) throws IOException {
+	public final boolean read(long now) {
 
 		try {
-			if (!doRead(now)) {
-				close();
-				return false;
+			if (doRead(now)) {
+				return true;
 			}
 
-			return true;
+			close();
+
 		} catch (ClosedChannelException e) {
-			doClose(null);
-			return false;
-		} catch (IOException e) {
-			doClose(e);
-			throw e;
-		} catch (RuntimeException e) {
-			doClose(e);
-			throw e;
+			close();
+		} catch (Exception e) {
+			doClose(e, "Failed to read from %s", this);
 		}
+
+		return false;
 	}
 
 	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#send(long, net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
-	public final void send(long now, MqttMessage message) throws IOException {
+	public final boolean send(long now, MqttMessage message) {
 
 		try {
 			if (sendMessageInProgress != null) {
 				writesPending.offer(message);
-				return;
+				return true;
 			}
 
 			sendMessageInProgress = message;
 
 			if (selectionKey.isValid() && channel.socket().isConnected()) {
 				selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-				write(now);
+				return write(now);
 			}
-		} catch (IOException e) {
-			doClose(e);
-			throw e;
-		} catch (RuntimeException e) {
-			doClose(e);
-			throw e;
+		} catch (Exception e) {
+			doClose(e, "Failed to send to %s", this);
 		}
+
+		return false;
 	}
 
 	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#write(long)
 	 */
 	@Override
-	public final boolean write(long now) throws IOException {
+	public final boolean write(long now) {
 
 		try {
-			if (!doWrite(now)) {
-				close();
-				return false;
+			if (doWrite(now)) {
+				return true;
 			}
 
-			return true;
+			close();
 
 		} catch (ClosedChannelException e) {
-			doClose(null);
-			return false;
-		} catch (IOException e) {
-			doClose(e);
-			throw e;
-		} catch (RuntimeException e) {
-			doClose(e);
-			throw e;
+			close();
+		} catch (Exception e) {
+			doClose(e, "Failed to write to %s", this);
 		}
+
+		return false;
 	}
 
 	/**
@@ -237,7 +230,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public final void close() {
 
-		doClose(null);
+		doClose(null, null);
 	}
 
 	/**
@@ -268,12 +261,16 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#houseKeeping(long)
 	 */
 	@Override
-	public final long houseKeeping(long now) throws IOException {
+	public final long houseKeeping(long now) {
 
 		long maxIdleTime = Long.MAX_VALUE;
 
 		if (messageResendIntervalMillis > 0) {
-			maxIdleTime = resendMessages(now);
+			try {
+				maxIdleTime = resendMessages(now);
+			} catch (Exception e) {
+				Log.error(e, "Failed to resend unacknowledged messages for %s", this);
+			}
 		}
 
 		try {
@@ -281,10 +278,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			if (maxKeepAliveTime < maxIdleTime) {
 				maxIdleTime = maxKeepAliveTime;
 			}
-		} catch (IOException e) {
-			throw e;
 		} catch (Exception e) {
-			// FIXME [jim] - log
+			Log.error(e, "Failed to handle the keep alive protocol for %s", this);
 		}
 
 		return maxIdleTime;
@@ -321,6 +316,16 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		unsentMessages.addAll(writesPending);
 
 		return unsentMessages;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalSocketAddress() + ",remoteAddress:"
+				+ channel.socket().getRemoteSocketAddress() + "]";
 	}
 
 	/**
@@ -445,13 +450,17 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return readRemaining(now);
 	}
 
-	private void doClose(Throwable cause) {
+	private void doClose(Throwable cause, String messageFormat, Object... args) {
+
+		if (cause != null) {
+			Log.error(cause, messageFormat, args);
+		}
 
 		if (connected) {
 			try {
 				disconnected();
 			} catch (Exception e) {
-				// FIXME [jim] - log
+				Log.error(e, "Disconnect method failed for %s", this);
 			}
 		}
 
@@ -474,11 +483,11 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		try {
 			handler.channelClosed(this, cause);
 		} catch (Exception e) {
-			// FIXME [jim] - log or something
+			Log.error(e, "Message handler failed in channelClosed for %s", this);
 		}
 	}
 
-	private long resendMessages(long now) throws IOException {
+	private long resendMessages(long now) {
 
 		long maxIdleTime = Long.MAX_VALUE;
 		long minSendTime = now + 1000;
@@ -517,14 +526,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		buffer.flip();
 
-		boolean result = true;
-		try {
-			result = handleMessage(now, buffer);
-		} catch (Exception e) {
-			// result = isOpen();
-			e.printStackTrace();
-			// FIXME [jim] - need to log this or something
-		}
+		boolean result = handleMessage(now, buffer);
 
 		readHeader1.clear();
 		readHeader2.clear();
@@ -537,73 +539,105 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	/**
 	 * @return False to have the channel closed
 	 */
-	private boolean handleMessage(long now, ByteBuffer buffer) throws Exception {
+	private boolean handleMessage(long now, ByteBuffer buffer) {
 
 		boolean result = true;
-		MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
-		switch (messageType) {
-		case CONNECT:
-			ConnectMessage connectMessage = new ConnectMessage(buffer, remainingLength);
-			pingIntervalMillis = connectMessage.getKeepAliveSeconds() * 1000;
-			handler.connect(this, connectMessage);
-			break;
-		case CONNACK:
-			ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
-			result = connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
-			if (connected) {
-				connected(pingIntervalMillis);
+		MqttMessage msg = null;
+		try {
+			MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
+			switch (messageType) {
+			case CONNECT:
+				ConnectMessage connectMessage = new ConnectMessage(buffer, remainingLength);
+				msg = connectMessage;
+				pingIntervalMillis = connectMessage.getKeepAliveSeconds() * 1000;
+				handler.connect(this, connectMessage);
+				break;
+			case CONNACK:
+				ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
+				msg = connAckMessage;
+				result = connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
+				if (connected) {
+					connected(pingIntervalMillis);
+				}
+				handler.connAck(this, connAckMessage);
+				break;
+			case PUBLISH:
+				PublishMessage publishMessage = new PublishMessage(buffer, remainingLength);
+				msg = publishMessage;
+				handler.publish(this, publishMessage);
+				break;
+			case PUBACK:
+				PubAckMessage pubAckMessage = new PubAckMessage(buffer);
+				msg = pubAckMessage;
+				inFlightMessages.remove(pubAckMessage.getMessageId());
+				handler.pubAck(this, pubAckMessage);
+				break;
+			case PUBREC:
+				PubRecMessage pubRecMessage = new PubRecMessage(buffer);
+				msg = pubRecMessage;
+				inFlightMessages.remove(pubRecMessage.getMessageId());
+				handler.pubRec(this, pubRecMessage);
+				break;
+			case PUBREL:
+				PubRelMessage pubRelMessage = new PubRelMessage(buffer);
+				msg = pubRelMessage;
+				handler.pubRel(this, pubRelMessage);
+				break;
+			case PUBCOMP:
+				PubCompMessage pubCompMessage = new PubCompMessage(buffer);
+				msg = pubCompMessage;
+				inFlightMessages.remove(pubCompMessage.getMessageId());
+				handler.pubComp(this, pubCompMessage);
+				break;
+			case SUBSCRIBE:
+				SubscribeMessage subscribeMessage = new SubscribeMessage(buffer, remainingLength);
+				msg = subscribeMessage;
+				handler.subscribe(this, subscribeMessage);
+				break;
+			case SUBACK:
+				SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength);
+				msg = subAckMessage;
+				inFlightMessages.remove(subAckMessage.getMessageId());
+				handler.subAck(this, subAckMessage);
+				break;
+			case UNSUBSCRIBE:
+				UnsubscribeMessage unsubscribeMessage = new UnsubscribeMessage(buffer, remainingLength);
+				msg = unsubscribeMessage;
+				handler.unsubscribe(this, unsubscribeMessage);
+				break;
+			case UNSUBACK:
+				UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer);
+				msg = unsubAckMessage;
+				inFlightMessages.remove(unsubAckMessage.getMessageId());
+				handler.unsubAck(this, unsubAckMessage);
+				break;
+			case PINGREQ:
+				PingReqMessage pingReqMessage = new PingReqMessage(buffer);
+				msg = pingReqMessage;
+				pingReq(now, pingReqMessage);
+				break;
+			case PINGRESP:
+				PingRespMessage pingRespMessage = new PingRespMessage(buffer);
+				msg = pingRespMessage;
+				pingResp(now, pingRespMessage);
+				break;
+			case DISCONNECT:
+				result = false;
+				DisconnectMessage disconnectMessage = new DisconnectMessage(buffer);
+				msg = disconnectMessage;
+				handler.disconnect(this, disconnectMessage);
+				break;
+			default:
+				throw new IllegalStateException("Unsupported message type: " + messageType);
 			}
-			handler.connAck(this, connAckMessage);
-			break;
-		case PUBLISH:
-			handler.publish(this, new PublishMessage(buffer, remainingLength));
-			break;
-		case PUBACK:
-			PubAckMessage pubAckMessage = new PubAckMessage(buffer);
-			inFlightMessages.remove(pubAckMessage.getMessageId());
-			handler.pubAck(this, pubAckMessage);
-			break;
-		case PUBREC:
-			PubRecMessage pubRecMessage = new PubRecMessage(buffer);
-			inFlightMessages.remove(pubRecMessage.getMessageId());
-			handler.pubRec(this, pubRecMessage);
-			break;
-		case PUBREL:
-			handler.pubRel(this, new PubRelMessage(buffer));
-			break;
-		case PUBCOMP:
-			PubCompMessage pubCompMessage = new PubCompMessage(buffer);
-			inFlightMessages.remove(pubCompMessage.getMessageId());
-			handler.pubComp(this, pubCompMessage);
-			break;
-		case SUBSCRIBE:
-			handler.subscribe(this, new SubscribeMessage(buffer, remainingLength));
-			break;
-		case SUBACK:
-			SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength);
-			inFlightMessages.remove(subAckMessage.getMessageId());
-			handler.subAck(this, subAckMessage);
-			break;
-		case UNSUBSCRIBE:
-			handler.unsubscribe(this, new UnsubscribeMessage(buffer, remainingLength));
-			break;
-		case UNSUBACK:
-			UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer);
-			inFlightMessages.remove(unsubAckMessage.getMessageId());
-			handler.unsubAck(this, unsubAckMessage);
-			break;
-		case PINGREQ:
-			pingReq(now, new PingReqMessage(buffer));
-			break;
-		case PINGRESP:
-			pingResp(now, new PingRespMessage(buffer));
-			break;
-		case DISCONNECT:
-			result = false;
-			handler.disconnect(this, new DisconnectMessage(buffer));
-			break;
-		default:
-			throw new IllegalStateException("Unsupported message type: " + messageType);
+		} catch (Exception e) {
+
+			if (msg != null) {
+				Log.error(e, "Failed to process message for %s: %s", this, msg);
+			} else {
+				Log.error("Failed to parse message for %s: %s", this, MqttMessage.byteBufferToHex(buffer));
+			}
+			result = isOpen();
 		}
 
 		return result;

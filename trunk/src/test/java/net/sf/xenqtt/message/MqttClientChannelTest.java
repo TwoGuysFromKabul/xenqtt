@@ -6,11 +6,11 @@ import java.nio.channels.SocketChannel;
 
 import org.junit.Test;
 
-public class ClientChannelTest extends MqttChannelTestBase<ClientChannel, MqttChannelTestBase<?, ?>.TestChannel> {
+public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel, MqttChannelTestBase<?, ?>.TestChannel> {
 
 	@Override
-	ClientChannel newClientChannel() throws Exception {
-		return new ClientChannel("localhost", port, clientHandler, selector, 10000);
+	MqttClientChannel newClientChannel() throws Exception {
+		return new MqttClientChannel("localhost", port, clientHandler, selector, 10000);
 	}
 
 	@Override

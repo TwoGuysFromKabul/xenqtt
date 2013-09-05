@@ -6,7 +6,7 @@ import java.nio.channels.SocketChannel;
 
 import org.junit.Test;
 
-public class BrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBase<?, ?>.TestChannel, BrokerChannel> {
+public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBase<?, ?>.TestChannel, MqttBrokerChannel> {
 
 	@Override
 	TestChannel newClientChannel() throws Exception {
@@ -14,8 +14,8 @@ public class BrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBase<?
 	}
 
 	@Override
-	BrokerChannel newBrokerChannel(SocketChannel brokerSocketChannel) throws Exception {
-		return new BrokerChannel(brokerSocketChannel, brokerHandler, selector, 10000);
+	MqttBrokerChannel newBrokerChannel(SocketChannel brokerSocketChannel) throws Exception {
+		return new MqttBrokerChannel(brokerSocketChannel, brokerHandler, selector, 10000);
 	}
 
 	@Test
