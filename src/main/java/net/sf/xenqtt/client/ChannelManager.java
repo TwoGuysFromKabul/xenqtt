@@ -3,8 +3,6 @@ package net.sf.xenqtt.client;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-import net.sf.xenqtt.message.ConnectMessage;
-import net.sf.xenqtt.message.DisconnectMessage;
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttMessage;
@@ -17,7 +15,7 @@ import net.sf.xenqtt.message.MqttMessage;
  * </p>
  * 
  * <p>
- * All of the methods in this specification are thread-safe.
+ * All of the methods in this specification are thread-safe and asynchronous.
  * </p>
  */
 public interface ChannelManager {
@@ -51,17 +49,6 @@ public interface ChannelManager {
 	MqttChannel newChannel(SocketChannel channel, MessageHandler messageHandler);
 
 	/**
-	 * Add a {@link MqttChannel channel} to this {@link ChannelManager manager}. The channel should have been created using the
-	 * {@link #newChannel(String, int, MessageHandler)} or {@link #newChannel(SocketChannel, MessageHandler)} methods.
-	 * 
-	 * @param channel
-	 *            The channel to manage
-	 * @param connectMessage
-	 *            The {@link ConnectMessage connect message} to use in connecting to the broker
-	 */
-	void addClient(MqttChannel channel, ConnectMessage connectMessage);
-
-	/**
 	 * Send a {@link MqttMessage message} over a specified {@code channel}.
 	 * 
 	 * @param channel
@@ -73,23 +60,16 @@ public interface ChannelManager {
 	void send(MqttChannel channel, MqttMessage message);
 
 	/**
-	 * Disconnect a single {@link MqttChannel channel}. The act of disconnecting sends a {@link DisconnectMessage DISCONNECT} to the broker and then closes the
-	 * TCP socket.
+	 * Send a {@link MqttMessage message} to all channels managed by this channel manager.
 	 * 
-	 * @param channel
-	 *            The {@code channel} to disconnect
+	 * @param message
+	 *            The {@code message} to send. This can be any type of MQTT message
 	 */
-	void disconnect(MqttChannel channel);
-
-	/**
-	 * Disconnect every single {@link MqttChannel channel} managed by this {@link ChannelManager manager}. The act of disconnecting sends a
-	 * {@link DisconnectMessage DISCONNECT} to the broker and then closes the TCP socket for every channel managed by the channel manager.
-	 */
-	void disconnectAll();
+	void sendToAll(MqttMessage message);
 
 	/**
 	 * Close this {@link ChannelManager channel manager}. This will close all the channels currently managed within the connection manager. This method blocks
-	 * until all the channels have been closed.
+	 * until all channels are closed.
 	 */
 	void close();
 
