@@ -9,7 +9,7 @@ import org.junit.Test;
 public class SubscribeMessageTest {
 
 	static final byte[] PAYLOAD = new byte[] { -126, 33, 0, 1, 0, 5, 97, 108, 112, 104, 97, 1, 0, 4, 98, 101, 116, 97, 1, 0, 5, 100, 101, 108, 116, 97, 0, 0,
-			5, 103, 97, 109, 109, 97, 2 };
+			5, 103, 97, 109, 109, 97, 1 };
 
 	@Test
 	public void testOutboundCtor() {

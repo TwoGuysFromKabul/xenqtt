@@ -96,7 +96,7 @@ public class ConnectMessageTest {
 		assertEquals("Doh!", message.getWillMessage());
 		assertTrue(message.isWillRetain());
 		assertTrue(message.isWillMessageFlag());
-		assertEquals(2, message.getWillQoSLevel());
+		assertEquals(1, message.getWillQoSLevel());
 		assertEquals(QoS.AT_LEAST_ONCE, message.getWillQoS());
 	}
 
