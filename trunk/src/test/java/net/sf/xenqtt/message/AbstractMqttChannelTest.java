@@ -174,7 +174,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
-		PublishMessage msg = new PublishMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
+		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
 		assertTrue(clientChannel.send(msg));
 		readWrite(0, 1);
@@ -193,7 +193,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
-		PublishMessage msg = new PublishMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
+		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
 		assertTrue(clientChannel.send(msg));
 		readWrite(0, 1);
@@ -209,7 +209,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
-		PublishMessage msg = new PublishMessage(QoS.AT_LEAST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
+		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
 		assertTrue(clientChannel.send(msg));
 		readWrite(0, 1);
@@ -535,7 +535,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 	private void doTestReadWriteSend(int firstRemainingLength, int messageCount) throws Exception {
 
-		List<PublishMessage> messagesSent = new ArrayList<PublishMessage>();
+		List<PubMessage> messagesSent = new ArrayList<PubMessage>();
 
 		establishConnection();
 
@@ -544,7 +544,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 			byte[] payload = new byte[payloadLength];
 			Arrays.fill(payload, (byte) messageCount);
 
-			PublishMessage msg = new PublishMessage(QoS.AT_LEAST_ONCE, false, "abc", 123, payload);
+			PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "abc", 123, payload);
 
 			assertTrue(clientChannel.send(msg));
 			messagesSent.add(msg);

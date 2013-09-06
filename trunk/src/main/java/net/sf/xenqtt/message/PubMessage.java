@@ -9,21 +9,21 @@ import java.nio.ByteBuffer;
  * <p>
  * If a client subscribes to one or more topics, any message published to those topics are sent by the server to the client as a PUBLISH message.
  */
-public final class PublishMessage extends IdentifiableMqttMessage {
+public final class PubMessage extends IdentifiableMqttMessage {
 
 	private int messageIdIndex = -1;
 
 	/**
 	 * Used to construct a received message.
 	 */
-	public PublishMessage(ByteBuffer buffer, int remainingLength) {
+	public PubMessage(ByteBuffer buffer, int remainingLength) {
 		super(buffer, remainingLength);
 	}
 
 	/**
 	 * Used to construct a message for sending
 	 */
-	public PublishMessage(QoS qos, boolean retain, String topicName, int messageId, byte[] payload) {
+	public PubMessage(QoS qos, boolean retain, String topicName, int messageId, byte[] payload) {
 		this(qos, retain, stringToUtf8(topicName), messageId, payload);
 	}
 
@@ -76,7 +76,7 @@ public final class PublishMessage extends IdentifiableMqttMessage {
 		return messageIdIndex;
 	}
 
-	private PublishMessage(QoS qos, boolean retain, byte[] topicNameUtf8, int messageId, byte[] payload) {
+	private PubMessage(QoS qos, boolean retain, byte[] topicNameUtf8, int messageId, byte[] payload) {
 		super(MessageType.PUBLISH, false, qos, retain, 2 + mqttStringSize(topicNameUtf8) + payload.length);
 
 		putString(topicNameUtf8);
