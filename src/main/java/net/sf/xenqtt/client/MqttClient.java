@@ -172,7 +172,12 @@ public interface MqttClient {
 	 * {@link AsyncClientListener#subscribed(MqttClient, Subscription[]) subscribed} method is called after these actions are completed.
 	 * 
 	 * @param subscriptions
-	 *            The topics to subscribe to and the requested QoS for each.
+	 *            The topics to subscribe to and the requested QoS for each. The topics can include wildcards:
+	 *            <ul>
+	 *            <li>'+': Matches a single level in the topic. foo/+ would match foo/bar but not foo/a/b or foo/a/b/c. foo/+/+/c would match foo/a/b/c and
+	 *            foo/d/g/c but not foo/a/c</li>
+	 *            <li>'#': Matches the rest of the topic. Must be the last character in the topic. foo/# would match foo/bar, foo/a/b/c, etc</li>
+	 *            </ul>
 	 * 
 	 * @return The topics subscribed to and the QoS granted for each if the {@link SynchronousMqttClient} is used. Null if the {@link AsyncMqttClient}
 	 *         implementation is used.
