@@ -1,0 +1,29 @@
+   ======================================================================
+   == NOTICE file corresponding to section 4 d of the Apache License,  ==
+   == Version 2.0, in this case for the XENQTT distribution             ==
+   ======================================================================
+
+   The end-user documentation included with a redistribution, if any,
+   must include the following acknowledgment:
+
+     "This product includes software developed by the XENQTT project
+      (http://xenqtt.sourceforge.net)."
+
+   Alternately, this acknowledgment may appear in the software itself,
+   if and wherever such third-party acknowledgments normally appear.
+
+   The name "XENQTT" must not be used to endorse or promote products 
+   derived from this software without prior written permission. For 
+   written permission, please contact impentaj@users.sourceforge.net. 
+   
+   This product includes software developed by the JUnit project
+   (http://junit.sourceforge.net)
+   License URL: http://junit.sourceforge.net/cpl-v10.html
+
+   This product includes software developed by the Google Mockito project 
+   (https://code.google.com/p/mockito)
+   License URL: http://opensource.org/licenses/mit-license.php
+
+   This product includes software developed by Apache's Log4J project 
+   (http://logging.apache.org/log4j/1.2)
+   License URL: http://www.apache.org/licenses/LICENSE-2.0
