@@ -52,7 +52,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		try {
 			selector = Selector.open();
 		} catch (IOException e) {
-			throw new RuntimeException("Failed to open selector", e);
+			throw new MqttException("Failed to open selector", e);
 		}
 	}
 
@@ -412,7 +412,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 				channels.add(channel);
 				return channel;
 			} catch (Exception e) {
-				throw new RuntimeException("MQTT Client channel creation failed", e);
+				throw new MqttException("MQTT Client channel creation failed", e);
 			}
 		}
 	}
@@ -438,7 +438,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 					socketChannel.close();
 				} catch (IOException ignore) {
 				}
-				throw new RuntimeException("MQTT broker channel creation failed", e);
+				throw new MqttException("MQTT broker channel creation failed", e);
 			}
 		}
 	}
