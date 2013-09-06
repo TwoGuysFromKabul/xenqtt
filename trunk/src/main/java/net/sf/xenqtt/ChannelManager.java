@@ -17,7 +17,7 @@ import net.sf.xenqtt.message.MqttMessage;
  * </p>
  */
 public interface ChannelManager {
-	// FIXME [jim] - need to implement qos2 somehow. dont want it implemented for the proxy but need it for the client and broker.
+
 	/**
 	 * Create a new client side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the client end of the connection. The broker
 	 * will have the remote end of the connection. This method only blocks long enough for the channel to be created, not for the TCP connection to happen. This

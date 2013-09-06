@@ -17,13 +17,13 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_NotDuplicateNotRetain() {
-		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
 		assertEquals(1, message.getMessageId());
 		assertEquals("net.sf/message/topic", message.getTopicName());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(2, message.getQoSLevel());
 		assertArrayEquals(PAYLOAD, message.getPayload());
 		assertFalse(message.isDuplicate());
@@ -32,14 +32,14 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_DuplicateNotRetain() {
-		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
 		message.setDuplicateFlag();
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
 		assertEquals(1, message.getMessageId());
 		assertEquals("net.sf/message/topic", message.getTopicName());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(2, message.getQoSLevel());
 		assertArrayEquals(PAYLOAD, message.getPayload());
 		assertTrue(message.isDuplicate());
@@ -48,13 +48,13 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_NotDuplicateRetain() {
-		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
 		assertEquals(1, message.getMessageId());
 		assertEquals("net.sf/message/topic", message.getTopicName());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(2, message.getQoSLevel());
 		assertArrayEquals(PAYLOAD, message.getPayload());
 		assertFalse(message.isDuplicate());
@@ -63,14 +63,14 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_DuplicateRetain() {
-		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
 		message.setDuplicateFlag();
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
 		assertEquals(1, message.getMessageId());
 		assertEquals("net.sf/message/topic", message.getTopicName());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(2, message.getQoSLevel());
 		assertArrayEquals(PAYLOAD, message.getPayload());
 		assertTrue(message.isDuplicate());
@@ -85,7 +85,7 @@ public class PublishMessageTest {
 
 		assertEquals(1, message.getMessageId());
 		assertEquals("net.sf/message/topic", message.getTopicName());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(2, message.getQoSLevel());
 		assertArrayEquals(PAYLOAD, message.getPayload());
 		assertTrue(message.isDuplicate());
@@ -100,7 +100,7 @@ public class PublishMessageTest {
 
 		assertEquals(1, message.getMessageId());
 		assertEquals("net.sf/message/topic", message.getTopicName());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(2, message.getQoSLevel());
 		assertArrayEquals(PAYLOAD, message.getPayload());
 		assertTrue(message.isDuplicate());

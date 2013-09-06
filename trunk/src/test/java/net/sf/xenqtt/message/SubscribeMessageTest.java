@@ -14,7 +14,7 @@ public class SubscribeMessageTest {
 	@Test
 	public void testOutboundCtor() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
-		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.EXACTLY_ONCE };
+		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE };
 		SubscribeMessage message = new SubscribeMessage(1, topics, requestedQoses);
 
 		assertSame(MessageType.SUBSCRIBE, message.getMessageType());
@@ -31,20 +31,20 @@ public class SubscribeMessageTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testOutboundCtor_TooManyTopics() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma", "sigma" };
-		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.EXACTLY_ONCE };
+		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE };
 		new SubscribeMessage(1, topics, requestedQoses);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testOutboundCtor_TooManyQoses() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
-		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.EXACTLY_ONCE, QoS.AT_LEAST_ONCE };
+		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE };
 		new SubscribeMessage(1, topics, requestedQoses);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testOutboundCtor_MissingTopics() {
-		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.EXACTLY_ONCE, QoS.AT_LEAST_ONCE };
+		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE };
 		new SubscribeMessage(1, null, requestedQoses);
 	}
 
@@ -62,7 +62,7 @@ public class SubscribeMessageTest {
 	@Test
 	public void testInboundCtor() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
-		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.EXACTLY_ONCE };
+		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE };
 		SubscribeMessage message = new SubscribeMessage(ByteBuffer.wrap(PAYLOAD), 33);
 
 		assertSame(MessageType.SUBSCRIBE, message.getMessageType());
@@ -81,7 +81,7 @@ public class SubscribeMessageTest {
 	@Test
 	public void testSetMessageId() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
-		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.EXACTLY_ONCE };
+		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE };
 		SubscribeMessage message = new SubscribeMessage(ByteBuffer.wrap(PAYLOAD), 33);
 
 		assertSame(MessageType.SUBSCRIBE, message.getMessageType());

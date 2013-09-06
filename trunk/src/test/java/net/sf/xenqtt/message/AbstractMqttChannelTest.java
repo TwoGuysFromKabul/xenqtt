@@ -236,39 +236,6 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testHouseKeeping_ResendMessage_qos2() throws Exception {
-
-		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 15000);
-
-		establishConnection();
-
-		PublishMessage msg = new PublishMessage(QoS.EXACTLY_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
-
-		assertTrue(clientChannel.send(msg));
-		readWrite(0, 1);
-		brokerHandler.assertMessages(msg);
-		assertFalse(brokerHandler.message(0).isDuplicate());
-		assertEquals(1, clientChannel.inFlightMessageCount());
-
-		// the time hasn't elapsed yet so we should get the time until next resend of the message
-		assertEquals(15000, clientChannel.houseKeeping(now));
-		assertEquals(1, clientChannel.inFlightMessageCount());
-
-		// now the time has elapsed so we resend and get the time until the keep alive
-		assertEquals(25000, clientChannel.houseKeeping(now + 15000));
-		readWrite(0, 1);
-		brokerHandler.assertMessageCount(1);
-		assertEquals(msg.getMessageId(), ((IdentifiableMqttMessage) brokerHandler.message(0)).getMessageId());
-		assertTrue(brokerHandler.message(0).isDuplicate());
-		assertEquals(1, clientChannel.inFlightMessageCount());
-
-		assertTrue(brokerChannel.send(new PubRecMessage(12)));
-		readWrite(1, 0);
-		assertEquals(0, clientChannel.inFlightMessageCount());
-		assertEquals(0, brokerChannel.inFlightMessageCount());
-	}
-
-	@Test
 	public void testReadFromClosedConnection() throws Exception {
 
 		establishConnection();
