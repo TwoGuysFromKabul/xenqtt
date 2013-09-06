@@ -211,6 +211,13 @@ public class MqttMessage {
 	}
 
 	/**
+	 * Sets the duplicate flag on this message. This is called before resending this message.
+	 */
+	public final void setDuplicateFlag() {
+		buffer.put(0, (byte) (buffer.get(0) | 0x08));
+	}
+
+	/**
 	 * @return The string value as UTF-8 bytes. UTF-8 is the character set used for all MQTT strings. Null if the value is null.
 	 */
 	final static byte[] stringToUtf8(String value) {
@@ -254,13 +261,6 @@ public class MqttMessage {
 		}
 
 		return size;
-	}
-
-	/**
-	 * Sets the duplicate flag on this message. This is used by the {@link AbstractMqttChannel} to set this flag before resending this message.
-	 */
-	final void setDuplicateFlag() {
-		buffer.put(0, (byte) (buffer.get(0) | 0x08));
 	}
 
 	/**
