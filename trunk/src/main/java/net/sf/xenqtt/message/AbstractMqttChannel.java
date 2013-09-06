@@ -341,10 +341,11 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		}
 		if (!channel.isOpen()) {
-			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A" + channel.socket().getInetAddress() + "]";
+			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A" + channel.socket().getRemoteSocketAddress() + "]";
 
 		}
-		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalAddress() + ",remoteAddress:" + channel.socket().getInetAddress() + "]";
+		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalSocketAddress() + ",remoteAddress:"
+				+ channel.socket().getRemoteSocketAddress() + "]";
 	}
 
 	/**
