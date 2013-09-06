@@ -5,5 +5,5 @@ package net.sf.xenqtt.client;
  */
 public interface PublishListener {
 
-	void publish(PublishMessage message);
+	void publish(MqttClient client, PublishMessage message);
 }

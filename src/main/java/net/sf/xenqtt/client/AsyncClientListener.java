@@ -4,26 +4,55 @@ import net.sf.xenqtt.message.ConnectReturnCode;
 
 /**
  * <p>
- * A {@link PublishListener} that specifies an implementation contract that requires asynchronous handling of activities related to interacting with an MQTT
- * broker. This includes the following:
+ * Implement this interface to use the {@link AsyncMqttClient}. The client will invoke the methods in this interface when various events happen. A single
+ * instance of this interface may be used with multiple clients.
  * </p>
- * 
- * <ul>
- * <li>Notifications when a connection to the broker has finished</li>
- * <li>Notifications when publish attempts of messages have completed</li>
- * <li>Notifications when subscription requests have completed</li>
- * <li>Notifications when unsubscribe requests have been completed</li>
- * </ul>
  */
 public interface AsyncClientListener extends PublishListener {
 
-	void connectDone(ConnectReturnCode returnCode);
+	/**
+	 * FIXME [jim] - needs javadoc
+	 * 
+	 * @param client
+	 *            The client that is connected
+	 * @param returnCode
+	 */
+	void connected(MqttClient client, ConnectReturnCode returnCode);
 
-	void subscribed(Subscription[] subscriptions);
+	/**
+	 * FIXME [jim] - needs javadoc
+	 * 
+	 * @param client
+	 *            The client that requested the subscriptions
+	 * @param subscriptions
+	 */
+	void subscribed(MqttClient client, Subscription[] subscriptions);
 
-	void unsubscribed(String[] topics);
+	/**
+	 * FIXME [jim] - needs javadoc
+	 * 
+	 * @param client
+	 *            The client that requested the unsubscribe
+	 * @param topics
+	 */
+	void unsubscribed(MqttClient client, String[] topics);
 
-	void published();
+	/**
+	 * FIXME [jim] - needs javadoc
+	 * 
+	 * @param client
+	 *            The client the message was published to
+	 * @param message
+	 */
+	void published(MqttClient client, PublishMessage message);
 
-	void disconnected();
+	/**
+	 * FIXME [jim] - needs javadoc
+	 * 
+	 * @param client
+	 *            The client that was disconnected
+	 * @param cause
+	 * @param reconnecting
+	 */
+	void disconnected(MqttClient client, Throwable cause, boolean reconnecting);
 }
