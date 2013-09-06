@@ -2,12 +2,25 @@ package net.sf.xenqtt.client;
 
 import net.sf.xenqtt.message.QoS;
 
+/**
+ * A message published to this client will implement this interface
+ */
 public interface PublishMessage {
 
+	/**
+	 * @return The topic the message was published to. When received by a client that subscribed using wildcard characters, this string will be the absolute
+	 *         topic specified by the originating publisher and not the subscription string used by the client. This will never contain wildcards.
+	 */
 	String getTopic();
 
+	/**
+	 * @return The message's payload as a byte[]
+	 */
 	byte[] getPayload();
 
+	/**
+	 * @return The message's payload as a string. The payload is converted to a string using the ASCII character set.
+	 */
 	String getPayloadString();
 
 	/**
@@ -26,16 +39,22 @@ public interface PublishMessage {
 	 * Retained messages should be kept over restarts of the server.
 	 * <p>
 	 * A server may delete a retained message if it receives a message with a zero-length payload and the Retain flag set on the same topic.
-	 * 
-	 * @return
 	 */
 	boolean isRetain();
 
+	/**
+	 * @return True if the broker is re-delivering the message and the message's QoS is not {@link QoS#AT_MOST_ONCE}. The recipient should treat this flag as a
+	 *         hint as to whether the message may have been previously received. It should not be relied on to detect duplicates.
+	 */
 	boolean isDuplicate();
 
+	/**
+	 * @return The level of assurance for delivery
+	 */
 	QoS getQoS();
 
-	int getQoSLevel();
-
+	/**
+	 * Sends an acknowledgment to the broker for this message unless {@link #getQoS()} is {@link QoS#AT_MOST_ONCE} in which case this does nothing.
+	 */
 	void ack();
 }
