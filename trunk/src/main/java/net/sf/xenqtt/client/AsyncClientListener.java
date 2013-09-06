@@ -1,11 +1,10 @@
 package net.sf.xenqtt.client;
 
 import net.sf.xenqtt.message.ConnectReturnCode;
-import net.sf.xenqtt.message.QoS;
 
 /**
  * <p>
- * A {@link MqttMessageHandler} that specifies an implementation contract that requires asynchronous handling of activities related to interacting with an MQTT
+ * A {@link PublishListener} that specifies an implementation contract that requires asynchronous handling of activities related to interacting with an MQTT
  * broker. This includes the following:
  * </p>
  * 
@@ -16,13 +15,15 @@ import net.sf.xenqtt.message.QoS;
  * <li>Notifications when unsubscribe requests have been completed</li>
  * </ul>
  */
-public interface AsyncMessageHandler extends MqttMessageHandler {
+public interface AsyncClientListener extends PublishListener {
 
 	void connectDone(ConnectReturnCode returnCode);
 
-	void subscribed(String[] subscribedTopics, QoS[] requestedQoses, QoS[] grantedQoses);
+	void subscribed(Subscription[] subscriptions);
 
-	void unsubscribed();
+	void unsubscribed(String[] topics);
 
 	void published();
+
+	void disconnected();
 }
