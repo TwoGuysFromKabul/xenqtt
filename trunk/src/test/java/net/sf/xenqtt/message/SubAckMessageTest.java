@@ -8,7 +8,7 @@ import org.junit.Test;
 
 public class SubAckMessageTest {
 
-	static final byte[] RECEIVED = new byte[] { -112, 9, 0, 1, 0, 1, 2, 0, 1, 2, 0 };
+	static final byte[] RECEIVED = new byte[] { -112, 9, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
 
 	@Test
 	public void testInboundCtor() {
@@ -24,7 +24,7 @@ public class SubAckMessageTest {
 	public void testInboundCtor_MultipleGrantedQoses() {
 		QoS[] qoses = new QoS[7];
 		for (int i = 0; i < 7; i++) {
-			qoses[i] = QoS.lookup(i % 3);
+			qoses[i] = QoS.lookup(i % 2);
 		}
 		SubAckMessage message = new SubAckMessage(1, qoses);
 
@@ -36,7 +36,7 @@ public class SubAckMessageTest {
 	public void testOutboundCtor() {
 		QoS[] qoses = new QoS[7];
 		for (int i = 0; i < 7; i++) {
-			qoses[i] = QoS.lookup(i % 3);
+			qoses[i] = QoS.lookup(i % 2);
 		}
 		SubAckMessage message = new SubAckMessage(ByteBuffer.wrap(RECEIVED), 9);
 
@@ -48,7 +48,7 @@ public class SubAckMessageTest {
 	public void testSetMessageId() {
 		QoS[] qoses = new QoS[7];
 		for (int i = 0; i < 7; i++) {
-			qoses[i] = QoS.lookup(i % 3);
+			qoses[i] = QoS.lookup(i % 2);
 		}
 		SubAckMessage message = new SubAckMessage(ByteBuffer.wrap(RECEIVED), 9);
 
