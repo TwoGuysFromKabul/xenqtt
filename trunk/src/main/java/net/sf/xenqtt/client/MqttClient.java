@@ -107,7 +107,8 @@ public interface MqttClient {
 	 * @param willRetain
 	 *            The retain value of the Will message. False if either retain is false or there is no Will Message.
 	 * 
-	 * @return The {@link ConnectReturnCode return code} from the broker if the {@link SynchronousMqttClient} is used. Null if the {@link AsyncMqttClient}
+	 * @return The {@link ConnectReturnCode return code} from the broker if the {@link SynchronousMqttClient} is used. Anything other than
+	 *         {@link ConnectReturnCode#ACCEPTED} (or null) will result in the client being immediately disconnected. Null if the {@link AsyncMqttClient}
 	 *         implementation is used.
 	 * 
 	 * @throws MqttTimeoutException
