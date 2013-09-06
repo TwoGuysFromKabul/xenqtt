@@ -17,7 +17,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_NotDuplicateNotRetain() {
-		PublishMessage message = new PublishMessage(false, QoS.EXACTLY_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -32,7 +32,8 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_DuplicateNotRetain() {
-		PublishMessage message = new PublishMessage(true, QoS.EXACTLY_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
+		message.setDuplicateFlag();
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -47,7 +48,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_NotDuplicateRetain() {
-		PublishMessage message = new PublishMessage(false, QoS.EXACTLY_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -62,7 +63,8 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_DuplicateRetain() {
-		PublishMessage message = new PublishMessage(true, QoS.EXACTLY_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
+		PublishMessage message = new PublishMessage(QoS.EXACTLY_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
+		message.setDuplicateFlag();
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 

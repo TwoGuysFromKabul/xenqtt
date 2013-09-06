@@ -268,7 +268,7 @@ public class ChannelManagerImplTest {
 
 		assertTrue(ackTrigger.await(1, TimeUnit.SECONDS));
 
-		manager.send(clientChannel, new PublishMessage(false, QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }));
+		manager.send(clientChannel, new PublishMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }));
 		// give time for 3 resends but there should only be 2 since we ack the second resend
 		Thread.sleep(3500);
 
@@ -279,11 +279,13 @@ public class ChannelManagerImplTest {
 
 		assertTrue(closedTrigger.await(1, TimeUnit.SECONDS));
 
+		PublishMessage dupMsg = new PublishMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 });
+		dupMsg.setDuplicateFlag();
 		brokerHandler.assertMessages( //
 				new ConnectMessage("abc", false, 1), //
-				new PublishMessage(false, QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }), //
-				new PublishMessage(true, QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }), //
-				new PublishMessage(true, QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }), //
+				new PublishMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }), //
+				dupMsg, //
+				dupMsg, //
 				new DisconnectMessage());
 		clientHandler.assertMessages(new ConnAckMessage(ConnectReturnCode.ACCEPTED), new PubAckMessage(123));
 

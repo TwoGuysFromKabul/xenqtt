@@ -23,8 +23,8 @@ public final class PublishMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a message for sending
 	 */
-	public PublishMessage(boolean duplicate, QoS qos, boolean retain, String topicName, int messageId, byte[] payload) {
-		this(duplicate, qos, retain, stringToUtf8(topicName), messageId, payload);
+	public PublishMessage(QoS qos, boolean retain, String topicName, int messageId, byte[] payload) {
+		this(qos, retain, stringToUtf8(topicName), messageId, payload);
 	}
 
 	/**
@@ -76,8 +76,8 @@ public final class PublishMessage extends IdentifiableMqttMessage {
 		return messageIdIndex;
 	}
 
-	private PublishMessage(boolean duplicate, QoS qos, boolean retain, byte[] topicNameUtf8, int messageId, byte[] payload) {
-		super(MessageType.PUBLISH, duplicate, qos, retain, 2 + mqttStringSize(topicNameUtf8) + payload.length);
+	private PublishMessage(QoS qos, boolean retain, byte[] topicNameUtf8, int messageId, byte[] payload) {
+		super(MessageType.PUBLISH, false, qos, retain, 2 + mqttStringSize(topicNameUtf8) + payload.length);
 
 		putString(topicNameUtf8);
 		buffer.putShort((short) messageId);
