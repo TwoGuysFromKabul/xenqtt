@@ -470,6 +470,38 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
+	public void testReadWriteSend_ClientClosesConnection() throws Exception {
+
+		establishConnection();
+
+		clientChannel.close();
+
+		for (int i = 0; i < 100; i++) {
+			if (!brokerChannel.read(now)) {
+				return;
+			}
+		}
+
+		fail("Expected the channel to close");
+	}
+
+	@Test
+	public void testReadWriteSend_BrokerClosesConnection() throws Exception {
+
+		establishConnection();
+
+		brokerChannel.close();
+
+		for (int i = 0; i < 100; i++) {
+			if (!clientChannel.read(now)) {
+				return;
+			}
+		}
+
+		fail("Expected the channel to close");
+	}
+
+	@Test
 	public void testReadWriteSend_IOException() throws Exception {
 
 		establishConnection();
