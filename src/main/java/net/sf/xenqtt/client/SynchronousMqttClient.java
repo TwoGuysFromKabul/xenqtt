@@ -19,7 +19,7 @@ public final class SynchronousMqttClient implements MqttClient {
 	 * @param listener
 	 * @param messageHandlerThreadPoolSize
 	 */
-	public SynchronousMqttClient(PublishListener listener, int messageHandlerThreadPoolSize) {
+	public SynchronousMqttClient(PublishListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize) {
 		// TODO Auto-generated constructor stub
 	}
 
@@ -29,7 +29,7 @@ public final class SynchronousMqttClient implements MqttClient {
 	 * @param listener
 	 * @param executor
 	 */
-	public SynchronousMqttClient(PublishListener listener, Executor executor) {
+	public SynchronousMqttClient(PublishListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor) {
 		// TODO Auto-generated constructor stub
 	}
 
