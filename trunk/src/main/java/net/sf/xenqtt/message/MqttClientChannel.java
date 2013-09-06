@@ -12,7 +12,7 @@ import net.sf.xenqtt.Log;
 public final class MqttClientChannel extends AbstractMqttChannel {
 
 	private long pingIntervalMillis;
-	private boolean pingPending;
+	private long pingTime = Long.MAX_VALUE;
 
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
@@ -58,14 +58,17 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 			return pingIntervalMillis - elapsed;
 		}
 
-		if (pingPending) {
+		long millisSincePing = now - pingTime;
+		if (millisSincePing > pingIntervalMillis) {
 			Log.warn("%s lost communication with broker, closing channel", this);
 			close();
 			return -1;
 		}
 
-		send(new PingReqMessage());
-		pingPending = true;
+		if (pingTime == Long.MAX_VALUE) {
+			send(new PingReqMessage());
+			pingTime = now;
+		}
 
 		return pingIntervalMillis;
 	}
@@ -84,6 +87,6 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 	@Override
 	void pingResp(long now, PingRespMessage message) throws Exception {
 
-		pingPending = false;
+		pingTime = Long.MAX_VALUE;
 	}
 }

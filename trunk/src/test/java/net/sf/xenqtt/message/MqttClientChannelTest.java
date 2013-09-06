@@ -66,8 +66,8 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 		establishConnection();
 
 		clientChannel.connected(1000);
-		assertEquals(1000, clientChannel.keepAlive(now, now - 2000));
-		assertEquals(-1, clientChannel.keepAlive(now, now - 2000));
+		assertEquals(1000, clientChannel.keepAlive(now, now - 1000));
+		assertEquals(-1, clientChannel.keepAlive(now + 1001, now - 2001));
 
 		assertFalse(clientChannel.isOpen());
 	}
