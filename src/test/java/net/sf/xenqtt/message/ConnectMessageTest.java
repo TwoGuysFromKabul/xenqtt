@@ -77,7 +77,7 @@ public class ConnectMessageTest {
 
 	@Test
 	public void testOutboundCtor_WillTopicAndMessage() {
-		ConnectMessage message = new ConnectMessage("mr-burns", true, 3, "net.sf/will/topic", "Doh!", QoS.EXACTLY_ONCE, true);
+		ConnectMessage message = new ConnectMessage("mr-burns", true, 3, "net.sf/will/topic", "Doh!", QoS.AT_LEAST_ONCE, true);
 
 		assertSame(MessageType.CONNECT, message.getMessageType());
 		assertEquals("MQIsdp", message.getProtocolName());
@@ -97,7 +97,7 @@ public class ConnectMessageTest {
 		assertTrue(message.isWillRetain());
 		assertTrue(message.isWillMessageFlag());
 		assertEquals(2, message.getWillQoSLevel());
-		assertEquals(QoS.EXACTLY_ONCE, message.getWillQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getWillQoS());
 	}
 
 	@Test

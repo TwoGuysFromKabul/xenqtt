@@ -23,51 +23,51 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_FalseOnAllFlags() {
-		MqttMessage message = new TestMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, false, 24);
+		MqttMessage message = new TestMessage(MessageType.CONNECT, false, QoS.AT_LEAST_ONCE, false, 24);
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0, message.buffer.get(0) & 0x08);
 		assertEquals(0, message.buffer.get(0) & 0x01);
 	}
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_Duplicate() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.EXACTLY_ONCE, false, 24) {
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.AT_LEAST_ONCE, false, 24) {
 		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0x08, message.buffer.get(0) & 0x08);
 		assertEquals(0, message.buffer.get(0) & 0x01);
 	}
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_Retain() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, true, 24) {
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.AT_LEAST_ONCE, true, 24) {
 		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0, message.buffer.get(0) & 0x08);
 		assertEquals(0x01, message.buffer.get(0) & 0x01);
 	}
 
 	@Test
 	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_AllFlags() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.EXACTLY_ONCE, true, 24) {
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.AT_LEAST_ONCE, true, 24) {
 		};
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0x08, message.buffer.get(0) & 0x08);
 		assertEquals(0x01, message.buffer.get(0) & 0x01);
 	}
@@ -79,7 +79,7 @@ public class MqttMessageTest {
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0x08, message.buffer.get(0) & 0x08);
 		assertEquals(0x01, message.buffer.get(0) & 0x01);
 
@@ -127,12 +127,12 @@ public class MqttMessageTest {
 	@Test
 	public void testSetDuplicateFlag() throws Exception {
 
-		MqttMessage message = new TestMessage(MessageType.CONNECT, false, QoS.EXACTLY_ONCE, false, 24);
+		MqttMessage message = new TestMessage(MessageType.CONNECT, false, QoS.AT_LEAST_ONCE, false, 24);
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0, message.buffer.get(0) & 0x08);
 		assertEquals(0, message.buffer.get(0) & 0x01);
 		assertFalse(message.isDuplicate());
@@ -142,7 +142,7 @@ public class MqttMessageTest {
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
-		assertEquals(QoS.EXACTLY_ONCE, message.getQoS());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0x08, message.buffer.get(0) & 0x08);
 		assertEquals(0, message.buffer.get(0) & 0x01);
 		assertTrue(message.isDuplicate());
