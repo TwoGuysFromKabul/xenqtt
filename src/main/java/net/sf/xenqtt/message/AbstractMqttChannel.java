@@ -2,6 +2,7 @@ package net.sf.xenqtt.message;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -185,12 +186,14 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#send(long, net.sf.xenqtt.message.MqttMessage)
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
-	public final boolean send(long now, MqttMessage message) {
+	public final boolean send(MqttMessage message) {
 
 		try {
+			message.buffer.rewind();
+
 			Log.debug("%s sending %s", this, message);
 			if (sendMessageInProgress != null) {
 				writesPending.offer(message);
@@ -201,7 +204,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			if (selectionKey.isValid() && channel.socket().isConnected()) {
 				selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-				return write(now);
+				return true;
 			}
 		} catch (Exception e) {
 			doClose(e, "Failed to send to %s", this);
@@ -332,8 +335,16 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public String toString() {
 
-		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalSocketAddress() + ",remoteAddress:"
-				+ channel.socket().getRemoteSocketAddress() + "]";
+		Socket socket = channel.socket();
+		if (!socket.isBound()) {
+			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A]";
+
+		}
+		if (!channel.isOpen()) {
+			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A" + channel.socket().getInetAddress() + "]";
+
+		}
+		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalAddress() + ",remoteAddress:" + channel.socket().getInetAddress() + "]";
 	}
 
 	/**
@@ -421,6 +432,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			sendMessageInProgress = writesPending.poll();
 		}
 
+		if (!selectionKey.isValid()) {
+			return isOpen();
+		}
+
 		selectionKey.interestOps(SelectionKey.OP_READ);
 
 		return true;
@@ -465,8 +480,12 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		if (cause != null) {
 			Log.error(cause, messageFormat, args);
 		}
+		if (channelCloseCalled) {
+			return;
+		}
 
 		Log.debug("Closing %s", this);
+		channelCloseCalled = true;
 
 		if (connected) {
 			try {
@@ -492,13 +511,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 		}
 
-		if (!channelCloseCalled) {
-			channelCloseCalled = true;
-			try {
-				handler.channelClosed(this, cause);
-			} catch (Exception e) {
-				Log.error(e, "Message handler failed in channelClosed for %s", this);
-			}
+		try {
+			handler.channelClosed(this, cause);
+		} catch (Exception e) {
+			Log.error(e, "Message handler failed in channelClosed for %s", this);
 		}
 	}
 
@@ -525,9 +541,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			Log.debug("%s resending %d messages", this, messagesToResend.size());
 
 			for (IdentifiableMqttMessage msg : messagesToResend) {
-				msg.buffer.rewind();
 				msg.setDuplicateFlag();
-				send(now, msg);
+				send(msg);
 			}
 
 			messagesToResend.clear();

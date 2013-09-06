@@ -82,9 +82,9 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 		assertTrue(checkForPing());
 
 		// send the response
-		brokerChannel.send(now, new PingRespMessage());
+		brokerChannel.send(new PingRespMessage());
 		// send this message to force the ping to flush
-		brokerChannel.send(now, new PubAckMessage(1));
+		brokerChannel.send(new PubAckMessage(1));
 		readWrite(1, 0);
 
 		// validate another ping was sent instead of the channel being closed
@@ -97,7 +97,7 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 	private boolean checkForPing() throws Exception {
 
 		PubAckMessage msg = new PubAckMessage(1);
-		clientChannel.send(now, msg);
+		clientChannel.send(msg);
 
 		readWrite(0, 1);
 		brokerHandler.assertMessageCount(1);

@@ -48,11 +48,9 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	}
 
 	/**
-	 * reads and writes until the specified number of client and broker messages are received or until a channel is closed
-	 * 
-	 * @return null if the requested message counts were received. Otherwise, the connection that was closed (read op hit end of stream)
+	 * reads and writes until the specified number of client and broker messages are received
 	 */
-	MqttChannel readWrite(int clientMessageCount, int brokerMessageCount) throws Exception {
+	void readWrite(int clientMessageCount, int brokerMessageCount) throws Exception {
 
 		clientHandler.clearMessages();
 		brokerHandler.clearMessages();
@@ -65,21 +63,15 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 			while (iter.hasNext()) {
 				SelectionKey key = iter.next();
 				MqttChannel channel = (MqttChannel) key.attachment();
-				if (key.isReadable()) {
-					if (!channel.read(now)) {
-						return channel;
-					}
+				if (key.isValid() && key.isReadable()) {
+					channel.read(now);
 				}
-				if (key.isWritable()) {
-					if (!channel.write(now)) {
-						return channel;
-					}
+				if (key.isValid() && key.isWritable()) {
+					channel.write(now);
 				}
 				iter.remove();
 			}
 		}
-
-		return null;
 	}
 
 	/**
@@ -165,12 +157,12 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 10000);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		clientChannel.send(now, connMsg);
-		assertNull(readWrite(0, 1));
+		clientChannel.send(connMsg);
+		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		brokerChannel.send(now, ackMsg);
-		assertNull(readWrite(1, 0));
+		brokerChannel.send(ackMsg);
+		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
 		assertTrue(clientChannel.isConnected());
@@ -182,7 +174,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	 */
 	void disconnect() throws Exception {
 
-		clientChannel.send(now, new DisconnectMessage());
+		clientChannel.send(new DisconnectMessage());
 		readWrite(0, 1);
 
 		assertFalse(clientChannel.isConnected());

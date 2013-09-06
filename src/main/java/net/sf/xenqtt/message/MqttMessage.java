@@ -7,7 +7,7 @@ import java.util.Arrays;
 /**
  * This is a generic MQTT message. Extending classes support more specific message types
  */
-public abstract class MqttMessage {
+public class MqttMessage {
 
 	private static final byte[] HEX_CHAR_TABLE = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8',
 			(byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
@@ -28,6 +28,16 @@ public abstract class MqttMessage {
 	final int fixedHeaderEndOffset;
 
 	private MessageType messageType;
+
+	/**
+	 * Creates a copy of the copyFrom message.
+	 */
+	public MqttMessage(MqttMessage copyFrom) {
+		this.buffer = copyFrom.buffer.asReadOnlyBuffer();
+		this.fixedHeaderEndOffset = copyFrom.fixedHeaderEndOffset;
+		this.messageType = copyFrom.messageType;
+		this.remainingLength = copyFrom.remainingLength;
+	}
 
 	/**
 	 * Creates the message from a {@link ByteBuffer}. This is typically used for received messages. The buffer will be read to the end of the fixed header. This
