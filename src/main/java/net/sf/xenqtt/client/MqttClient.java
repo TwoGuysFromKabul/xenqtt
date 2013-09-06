@@ -25,13 +25,17 @@ public interface MqttClient {
 
 	void disconnect();
 
-	QoS[] subscribe(String[] subscribeToTopics, QoS[] requestedQoses);
+	Subscription[] subscribe(Subscription[] subscriptions);
 
-	void unsubscribe();
+	void unsubscribe(String[] topics);
 
-	void publish();
+	void publish(String topicName, QoS qos, byte[] payload);
 
-	void pubRelease();
+	void publish(String topicName, QoS qos, byte[] payload, boolean retain);
+
+	void publish(String topicName, QoS qos, String payload);
+
+	void publish(String topicName, QoS qos, String payload, boolean retain);
 
 	MqttClient newConnection();
 }
