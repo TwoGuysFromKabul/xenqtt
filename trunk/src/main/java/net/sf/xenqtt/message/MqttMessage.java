@@ -166,7 +166,7 @@ public class MqttMessage {
 	}
 
 	/**
-	 * The level of assurance for delivery of a PUBLISH message.
+	 * The level of assurance for delivery of an {@link IdentifiableMqttMessage}.
 	 */
 	public final QoS getQoS() {
 		return QoS.lookup(getQoSLevel());

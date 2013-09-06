@@ -123,15 +123,16 @@ public final class ConnectMessage extends MqttMessage {
 
 	/**
 	 * The Client Identifier (Client ID) is between 1 and 23 characters long, and uniquely identifies the client to the server. It must be unique across all
-	 * clients connecting to a single server, and is the key in handling Message IDs messages with QoS levels 1 and 2. If the Client ID contains more than 23
-	 * characters, the server responds to the CONNECT message with a CONNACK return code 2: Identifier Rejected.
+	 * clients connecting to a single server, and is the key in handling messages with QoS levels 1 and 2. If the Client ID contains more than 23 characters,
+	 * the server responds to the CONNECT message with a CONNACK return code 2: Identifier Rejected.
 	 */
 	public String getClientId() {
 		return clientId;
 	}
 
 	/**
-	 * The Will Message is published to the Will Topic. The QoS level is {@link QoS#AT_LEAST_ONCE}, and the RETAIN status is defined by {@link #isWillRetain()}.
+	 * The Will Message is published to the Will Topic. The QoS level is defined by {@link #getWillQoS()} and the RETAIN status is defined by
+	 * {@link #isWillRetain()}.
 	 * <p>
 	 * Null if there is no Will Message.
 	 */
