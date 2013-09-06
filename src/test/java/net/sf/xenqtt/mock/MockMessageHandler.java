@@ -22,7 +22,7 @@ import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubCompMessage;
 import net.sf.xenqtt.message.PubRecMessage;
 import net.sf.xenqtt.message.PubRelMessage;
-import net.sf.xenqtt.message.PublishMessage;
+import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.SubAckMessage;
 import net.sf.xenqtt.message.SubscribeMessage;
 import net.sf.xenqtt.message.UnsubAckMessage;
@@ -57,10 +57,10 @@ public class MockMessageHandler implements MessageHandler {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MessageHandler#publish(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.PublishMessage)
+	 * @see net.sf.xenqtt.message.MessageHandler#publish(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.PubMessage)
 	 */
 	@Override
-	public void publish(MqttChannel channel, PublishMessage message) throws Exception {
+	public void publish(MqttChannel channel, PubMessage message) throws Exception {
 		doHandleInvocation(channel, message);
 	}
 

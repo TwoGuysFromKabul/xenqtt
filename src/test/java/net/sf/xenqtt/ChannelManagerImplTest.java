@@ -14,7 +14,7 @@ import net.sf.xenqtt.message.MessageType;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttChannelRef;
 import net.sf.xenqtt.message.PubAckMessage;
-import net.sf.xenqtt.message.PublishMessage;
+import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
 import net.sf.xenqtt.mock.MockMessageHandler;
 import net.sf.xenqtt.mock.MockServer;
@@ -246,7 +246,7 @@ public class ChannelManagerImplTest {
 			}
 
 			@Override
-			public void publish(MqttChannel channel, PublishMessage message) throws Exception {
+			public void publish(MqttChannel channel, PubMessage message) throws Exception {
 
 				if (++publishCount == 3) {
 					channel.send(new PubAckMessage(message.getMessageId()));
@@ -268,7 +268,7 @@ public class ChannelManagerImplTest {
 
 		assertTrue(ackTrigger.await(1, TimeUnit.SECONDS));
 
-		manager.send(clientChannel, new PublishMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }));
+		manager.send(clientChannel, new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }));
 		// give time for 3 resends but there should only be 2 since we ack the second resend
 		Thread.sleep(3500);
 
@@ -279,11 +279,11 @@ public class ChannelManagerImplTest {
 
 		assertTrue(closedTrigger.await(1, TimeUnit.SECONDS));
 
-		PublishMessage dupMsg = new PublishMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 });
+		PubMessage dupMsg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 });
 		dupMsg.setDuplicateFlag();
 		brokerHandler.assertMessages( //
 				new ConnectMessage("abc", false, 1), //
-				new PublishMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }), //
+				new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 123, new byte[] { 1, 2, 3 }), //
 				dupMsg, //
 				dupMsg, //
 				new DisconnectMessage());

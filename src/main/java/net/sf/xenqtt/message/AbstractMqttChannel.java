@@ -597,7 +597,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				handler.connAck(this, connAckMessage);
 				break;
 			case PUBLISH:
-				PublishMessage publishMessage = new PublishMessage(buffer, remainingLength);
+				PubMessage publishMessage = new PubMessage(buffer, remainingLength);
 				msg = publishMessage;
 				handler.publish(this, publishMessage);
 				break;

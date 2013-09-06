@@ -17,7 +17,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_NotDuplicateNotRetain() {
-		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
+		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -32,7 +32,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_DuplicateNotRetain() {
-		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
+		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, PAYLOAD);
 		message.setDuplicateFlag();
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
@@ -48,7 +48,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_NotDuplicateRetain() {
-		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
+		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -63,7 +63,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testInboundCtor_DuplicateRetain() {
-		PublishMessage message = new PublishMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
+		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, PAYLOAD);
 		message.setDuplicateFlag();
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
@@ -79,7 +79,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testOutboundCtor() {
-		PublishMessage message = new PublishMessage(ByteBuffer.wrap(RECEIVED), 90);
+		PubMessage message = new PubMessage(ByteBuffer.wrap(RECEIVED), 90);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -94,7 +94,7 @@ public class PublishMessageTest {
 
 	@Test
 	public void testSetMessageId() {
-		PublishMessage message = new PublishMessage(ByteBuffer.wrap(RECEIVED), 90);
+		PubMessage message = new PubMessage(ByteBuffer.wrap(RECEIVED), 90);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 

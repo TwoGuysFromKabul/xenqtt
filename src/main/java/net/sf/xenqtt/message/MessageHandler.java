@@ -17,9 +17,9 @@ public interface MessageHandler {
 	void connAck(MqttChannel channel, ConnAckMessage message) throws Exception;
 
 	/**
-	 * Called when a {@link PublishMessage} is received through the specified channel
+	 * Called when a {@link PubMessage} is received through the specified channel
 	 */
-	void publish(MqttChannel channel, PublishMessage message) throws Exception;
+	void publish(MqttChannel channel, PubMessage message) throws Exception;
 
 	/**
 	 * Called when a {@link PubAckMessage} is received through the specified channel
