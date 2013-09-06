@@ -1,15 +1,18 @@
 package net.sf.xenqtt.client;
 
 /**
- * FIXME [jim] - needs javadoc
+ * Implementations are strategies used by {@link MqttClient} implementation to reconnect to the broker if the connection is lost. Implementations must be thread
+ * safe.
  */
 public interface ReconnectionStrategy {
 
 	/**
-	 * FIXME [jim] - needs javadoc
+	 * Called by an {@link MqttClient} each time the connection to the broker is lost other than by an intentional disconnect.
 	 * 
 	 * @param cause
-	 * @return
+	 *            The exception that cause the connection to close or resulted from the connection closing. May be null.
+	 * 
+	 * @return Milliseconds the client should wait before trying to connect to the broker again. If < 0 the client will stop trying to connect to the broker.
 	 */
 	long connectionLost(MqttClient client, Throwable cause);
 }
