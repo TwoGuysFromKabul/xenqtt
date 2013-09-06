@@ -5,7 +5,8 @@ package net.sf.xenqtt;
  */
 public final class Xenqtt {
 
-	private static final String USAGE = "usage: java -jar xenqtt.jar proxy|gateway [-v[v]]\n\tproxy - Run the MQTT proxy for clustered clients\n\tgateway - Run the MQTT gateway that facilitates HTTP <-> MQTT communication\n\t-v: Increase logging verbosity. v = info, vv = debug";
+	// TODO [jeremy] - Add a help feature.
+	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] proxy|gateway\n\tproxy - Run the MQTT proxy for clustered clients\n\tgateway - Run the MQTT gateway that facilitates HTTP <-> MQTT communication\n\t-v: Increase logging verbosity. v = info, vv = debug";
 	private static final String ARG_REGEX = "^\\-(?i:v){1,2}$";
 
 	/**
@@ -54,7 +55,12 @@ public final class Xenqtt {
 		}
 
 		Log.setLoggingLevels(arguments.levels);
-		// TODO [jeremy] - Startup either the proxy or the gateway.
+		Log.info("The following mode is not presently supported: %s", arguments.mode.mode);
+
+		try {
+			Thread.currentThread().join();
+		} catch (InterruptedException ignore) {
+		}
 	}
 
 	private static Arguments extractArguments(String[] args) {

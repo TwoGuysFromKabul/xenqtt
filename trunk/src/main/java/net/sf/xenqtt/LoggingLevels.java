@@ -5,12 +5,20 @@ package net.sf.xenqtt;
  */
 public final class LoggingLevels {
 
+	public static final int TRACE_FLAG = 0x01;
+	public static final int DEBUG_FLAG = 0x02;
+	public static final int INFO_FLAG = 0x04;
+	public static final int WARN_FLAG = 0x08;
+	public static final int ERROR_FLAG = 0x10;
+	public static final int FATAL_FLAG = 0x20;
+
 	public final boolean traceEnabled;
 	public final boolean debugEnabled;
 	public final boolean infoEnabled;
 	public final boolean warnEnabled;
 	public final boolean errorEnabled;
 	public final boolean fatalEnabled;
+	private final int flags;
 
 	/**
 	 * Create a new instance of this class.
@@ -35,6 +43,7 @@ public final class LoggingLevels {
 		this.warnEnabled = warnEnabled;
 		this.errorEnabled = errorEnabled;
 		this.fatalEnabled = fatalEnabled;
+		flags = flags();
 	}
 
 	/**
@@ -58,6 +67,7 @@ public final class LoggingLevels {
 	 * </pre>
 	 */
 	public LoggingLevels(int flags) {
+		this.flags = flags;
 		traceEnabled = (flags & 0x01) != 0;
 		debugEnabled = (flags & 0x02) != 0;
 		infoEnabled = (flags & 0x04) != 0;
@@ -93,6 +103,10 @@ public final class LoggingLevels {
 		flags |= fatalEnabled ? 0x20 : 0x00;
 
 		return flags;
+	}
+
+	public boolean isLoggable(int flag) {
+		return (flags & flag) != 0;
 	}
 
 }
