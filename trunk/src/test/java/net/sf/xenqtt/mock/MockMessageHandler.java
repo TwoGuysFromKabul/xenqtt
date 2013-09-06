@@ -4,7 +4,10 @@ import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
@@ -30,6 +33,7 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 public class MockMessageHandler implements MessageHandler {
 
+	private final Map<Object, CountDownLatch> triggers = new ConcurrentHashMap<Object, CountDownLatch>();
 	private final List<MqttMessage> messagesReceived = new CopyOnWriteArrayList<MqttMessage>();
 	private volatile RuntimeException exceptionToThrow;
 	private volatile int channelOpenedCount;
@@ -138,7 +142,7 @@ public class MockMessageHandler implements MessageHandler {
 	@Override
 	public void channelOpened(MqttChannel channel) {
 		channelOpenedCount++;
-		doHandleInvocation(channel, null);
+		doHandleInvocation(channel, "channelOpened");
 	}
 
 	/**
@@ -148,7 +152,7 @@ public class MockMessageHandler implements MessageHandler {
 	public void channelClosed(MqttChannel channel, Throwable cause) {
 		channelClosedCount++;
 		lastChannelClosedCause = cause;
-		doHandleInvocation(channel, null);
+		doHandleInvocation(channel, "channelClosed");
 	}
 
 	/**
@@ -232,14 +236,14 @@ public class MockMessageHandler implements MessageHandler {
 	/**
 	 * asserts that the cause for the last {@link #channelClosed(MqttChannel, Throwable)} call was the specified type of exception
 	 */
-	public final void assertLastChannelClosedCause(Class<? extends RuntimeException> exceptionClass) {
+	public final void assertLastChannelClosedCause(Class<? extends Throwable> exceptionClass) {
 		assertTrue(lastChannelClosedCause != null && lastChannelClosedCause.getClass().equals(exceptionClass));
 	}
 
 	/**
 	 * asserts that the cause for the last {@link #channelClosed(MqttChannel, Throwable)} call equals the specified exception (null verifies it is null).
 	 */
-	public final void assertLastChannelClosedCause(RuntimeException e) {
+	public final void assertLastChannelClosedCause(Throwable e) {
 		assertEquals(e, lastChannelClosedCause);
 	}
 
@@ -289,9 +293,41 @@ public class MockMessageHandler implements MessageHandler {
 	}
 
 	/**
+	 * Counts down the trigger when {@link #channelOpened(MqttChannel)} is invoked
+	 */
+	public final void onChannelOpened(CountDownLatch trigger) {
+		triggers.put("channelOpened", trigger);
+	}
+
+	/**
+	 * Counts down the trigger when {@link #channelClosed(MqttChannel, Throwable)} is invoked
+	 */
+	public final void onChannelClosed(CountDownLatch trigger) {
+		triggers.put("channelClosed", trigger);
+	}
+
+	/**
+	 * Counts down the trigger when a message of the specified type is received
+	 */
+	public final void onMessage(MessageType messageType, CountDownLatch trigger) {
+		triggers.put(messageType, trigger);
+	}
+
+	/**
+	 * Called by all {@link MessageHandler} interface methods for common behavior.
+	 */
+	protected void doHandleInvocation(MqttChannel channel, String action) {
+		doHandleInvocation(channel, null, action);
+	}
+
+	/**
 	 * Called by all {@link MessageHandler} interface methods for common behavior.
 	 */
 	protected void doHandleInvocation(MqttChannel channel, MqttMessage message) {
+		doHandleInvocation(channel, message, null);
+	}
+
+	private void doHandleInvocation(MqttChannel channel, MqttMessage message, String action) {
 
 		if (exceptionToThrow != null) {
 			RuntimeException e = exceptionToThrow;
@@ -299,8 +335,15 @@ public class MockMessageHandler implements MessageHandler {
 			throw e;
 		}
 
+		Object key = action;
 		if (message != null) {
 			messagesReceived.add(message);
+			key = message.getMessageType();
+		}
+
+		CountDownLatch latch = triggers.get(key);
+		if (latch != null) {
+			latch.countDown();
 		}
 	}
 }

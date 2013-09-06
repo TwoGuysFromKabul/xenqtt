@@ -23,7 +23,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 
 		establishConnection();
 
-		clientChannel.send(now, new PingReqMessage());
+		clientChannel.send(new PingReqMessage());
 
 		readWrite(1, 0);
 

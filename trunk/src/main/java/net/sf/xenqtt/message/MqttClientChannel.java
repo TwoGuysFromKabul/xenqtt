@@ -64,7 +64,7 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 			return -1;
 		}
 
-		send(now, new PingReqMessage());
+		send(new PingReqMessage());
 		pingPending = true;
 
 		return pingIntervalMillis;
