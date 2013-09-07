@@ -1,12 +1,9 @@
 package net.sf.xenqtt.client;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 import net.sf.xenqtt.ChannelManager;
-import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttChannelRef;
-import net.sf.xenqtt.message.MqttMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
@@ -98,15 +95,5 @@ public class PublishMessageImplTest {
 		message.ack();
 		verify(channelManager).send(channel, new PubAckMessage(123));
 		assertFalse(Thread.interrupted());
-	}
-
-	@Test
-	public void testAck_Interrupted() throws Exception {
-
-		when(channelManager.send(any(MqttChannel.class), any(MqttMessage.class))).thenThrow(new InterruptedException());
-
-		message.ack();
-
-		assertTrue(Thread.interrupted());
 	}
 }
