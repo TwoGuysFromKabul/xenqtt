@@ -1,5 +1,6 @@
 package net.sf.xenqtt;
 
+import java.net.URI;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 
@@ -23,6 +24,34 @@ public interface ChannelManager {
 	 * will have the remote end of the connection. This method only blocks long enough for the channel to be created, not for the TCP connection to happen. This
 	 * will throw a {@link RuntimeException} wrapping any exception thrown while initializing the connection like {@link UnresolvedAddressException}
 	 * 
+	 * @param brokerUri
+	 *            URI of the broker to connect to. For example, tcp://q.m2m.io:1883.
+	 * @param messageHandler
+	 *            The {@link MessageHandler message handler} to use for all received messages
+	 * 
+	 * @return The newly-created channel. The channel may only be safely accessed from the {@link MessageHandler} callback methods.
+	 */
+	MqttChannelRef newClientChannel(String brokerUri, MessageHandler messageHandler) throws MqttInterruptedException;
+
+	/**
+	 * Create a new client side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the client end of the connection. The broker
+	 * will have the remote end of the connection. This method only blocks long enough for the channel to be created, not for the TCP connection to happen. This
+	 * will throw a {@link RuntimeException} wrapping any exception thrown while initializing the connection like {@link UnresolvedAddressException}
+	 * 
+	 * @param brokerUri
+	 *            URI of the broker to connect to. For example, tcp://q.m2m.io:1883.
+	 * @param messageHandler
+	 *            The {@link MessageHandler message handler} to use for all received messages
+	 * 
+	 * @return The newly-created channel. The channel may only be safely accessed from the {@link MessageHandler} callback methods.
+	 */
+	MqttChannelRef newClientChannel(URI brokerUri, MessageHandler messageHandler) throws MqttInterruptedException;
+
+	/**
+	 * Create a new client side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the client end of the connection. The broker
+	 * will have the remote end of the connection. This method only blocks long enough for the channel to be created, not for the TCP connection to happen. This
+	 * will throw a {@link RuntimeException} wrapping any exception thrown while initializing the connection like {@link UnresolvedAddressException}
+	 * 
 	 * @param host
 	 *            The host name to connect to
 	 * @param port
@@ -32,7 +61,7 @@ public interface ChannelManager {
 	 * 
 	 * @return The newly-created channel. The channel may only be safely accessed from the {@link MessageHandler} callback methods.
 	 */
-	MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws InterruptedException;
+	MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws MqttInterruptedException;
 
 	/**
 	 * Create a new broker side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the broker end of the connection. The client
@@ -46,7 +75,7 @@ public interface ChannelManager {
 	 * 
 	 * @return The newly-created channel.The channel may only be safely accessed from the {@link MessageHandler} callback methods.
 	 */
-	MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws InterruptedException;
+	MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws MqttInterruptedException;
 
 	/**
 	 * Send a {@link MqttMessage message} over a specified {@code channel}. This method only blocks until the message is queued to send to the channel.
@@ -58,7 +87,7 @@ public interface ChannelManager {
 	 *            The {@code message} to send. This can be any type of MQTT message
 	 * @return true if the message was sent, false if it was not (typically this means the channes is closed).
 	 */
-	boolean send(MqttChannelRef channel, MqttMessage message) throws InterruptedException;
+	boolean send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException;
 
 	/**
 	 * Send a {@link MqttMessage message} to all channels managed by this channel manager. Any exceptions sending to any channel will be logged but not
@@ -68,12 +97,17 @@ public interface ChannelManager {
 	 * @param message
 	 *            The {@code message} to send. This can be any type of MQTT message
 	 */
-	void sendToAll(MqttMessage message) throws InterruptedException;
+	void sendToAll(MqttMessage message) throws MqttInterruptedException;
 
 	/**
 	 * Closes the specified channel. This method blocks until the channel is closed.
 	 */
-	void close(MqttChannelRef channel) throws InterruptedException;
+	void close(MqttChannelRef channel) throws MqttInterruptedException;
+
+	/**
+	 * FIXME [jim] - needs javadoc
+	 */
+	void closeAll();
 
 	/**
 	 * Starts this channel manager. Must be called before any other methods
