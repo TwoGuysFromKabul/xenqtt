@@ -80,12 +80,7 @@ final class PublishMessageImpl implements PublishMessage {
 	public void ack() {
 
 		if (pubMessage.getQoSLevel() > 0) {
-			try {
-				manager.send(channel, new PubAckMessage(pubMessage.getMessageId()));
-			} catch (InterruptedException e) {
-				// reset the thread's interrupted flag
-				Thread.currentThread().interrupt();
-			}
+			manager.send(channel, new PubAckMessage(pubMessage.getMessageId()));
 		}
 	}
 }
