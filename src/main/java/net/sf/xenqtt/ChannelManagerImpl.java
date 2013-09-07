@@ -1,6 +1,8 @@
 package net.sf.xenqtt;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -100,11 +102,38 @@ public final class ChannelManagerImpl implements ChannelManager {
 		return ioThread.isAlive();
 	}
 
+	// FIXME [jim] - test
+	/**
+	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.lang.String, net.sf.xenqtt.message.MessageHandler)
+	 */
+	@Override
+	public MqttChannelRef newClientChannel(String brokerUri, MessageHandler messageHandler) throws MqttInterruptedException {
+		try {
+			return newClientChannel(new URI(brokerUri), messageHandler);
+		} catch (URISyntaxException e) {
+			throw new MqttException("Failed to parse broker URI: " + brokerUri, e);
+		}
+	}
+
+	// FIXME [jim] - test
+	/**
+	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.net.URI, net.sf.xenqtt.message.MessageHandler)
+	 */
+	@Override
+	public MqttChannelRef newClientChannel(URI brokerUri, MessageHandler messageHandler) throws MqttInterruptedException {
+
+		if (!"tcp".equals(brokerUri.getScheme())) {
+			throw new MqttException("Invalid broker URI (scheme must be 'tcp'): " + brokerUri);
+		}
+
+		return newClientChannel(brokerUri.getHost(), brokerUri.getPort(), messageHandler);
+	}
+
 	/**
 	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.lang.String, int, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
-	public MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws InterruptedException {
+	public MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws MqttInterruptedException {
 
 		return new NewClientChannelCommand(host, port, messageHandler).await();
 	}
@@ -113,7 +142,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 * @see net.sf.xenqtt.ChannelManager#newBrokerChannel(java.nio.channels.SocketChannel, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
-	public MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws InterruptedException {
+	public MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws MqttInterruptedException {
 
 		return new NewBrokerChannelCommand(socketChannel, messageHandler).await();
 	}
@@ -122,7 +151,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 * @see net.sf.xenqtt.ChannelManager#send(net.sf.xenqtt.message.MqttChannelRef, net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
-	public boolean send(MqttChannelRef channel, MqttMessage message) throws InterruptedException {
+	public boolean send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
 
 		SendCommand cmd = new SendCommand(channel, message);
 		cmd.await();
@@ -130,11 +159,11 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @throws InterruptedException
+	 * @throws MqttInterruptedException
 	 * @see net.sf.xenqtt.ChannelManager#sendToAll(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
-	public void sendToAll(MqttMessage message) throws InterruptedException {
+	public void sendToAll(MqttMessage message) throws MqttInterruptedException {
 
 		new SendToAllCommand(message).await();
 	}
@@ -143,9 +172,25 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 * @see net.sf.xenqtt.ChannelManager#close(net.sf.xenqtt.message.MqttChannelRef)
 	 */
 	@Override
-	public void close(MqttChannelRef channel) throws InterruptedException {
+	public void close(MqttChannelRef channel) throws MqttInterruptedException {
 
 		new CloseCommand(channel).await();
+	}
+
+	// FIXME [jim] - test
+	/**
+	 * @see net.sf.xenqtt.ChannelManager#closeAll()
+	 */
+	@Override
+	public void closeAll() {
+
+		Log.debug("Channel manager closing all channels");
+		for (MqttChannel channel : channels) {
+			try {
+				channel.close();
+			} catch (Exception ignore) {
+			}
+		}
 	}
 
 	private void doIO() {
@@ -184,17 +229,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		closeAll();
-	}
-
-	private void closeAll() {
-
-		Log.debug("Channel manager closing all channels");
-		for (MqttChannel channel : channels) {
-			try {
-				channel.close();
-			} catch (Exception ignore) {
-			}
-		}
 	}
 
 	private void doConnect(long now, Set<SelectionKey> keys) {
@@ -283,7 +317,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		/**
 		 * Adds this command to the list of commands then wakes up the selector and waits for the command to be executed
 		 */
-		final T await() throws InterruptedException {
+		final T await() throws MqttInterruptedException {
 
 			commandsLock.lock();
 			try {
@@ -294,7 +328,14 @@ public final class ChannelManagerImpl implements ChannelManager {
 			}
 
 			selector.wakeup();
-			done.await();
+			try {
+				done.await();
+			} catch (InterruptedException e) {
+				// FIXME [jim] - test that the interrupted flag gets reset, or maybe it shouldn't?
+				// reset the thread's interrupted flag
+				Thread.currentThread().interrupt();
+				throw new MqttInterruptedException(e);
+			}
 
 			if (failCause != null) {
 				if (failCause instanceof RuntimeException) {
