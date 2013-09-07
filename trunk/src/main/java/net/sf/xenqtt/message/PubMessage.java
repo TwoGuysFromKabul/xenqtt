@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
  */
 public final class PubMessage extends IdentifiableMqttMessage {
 
+	// FIXME [jim] - message ID field should not be present for messages with qos 0!!
 	private int messageIdIndex = -1;
 
 	/**
