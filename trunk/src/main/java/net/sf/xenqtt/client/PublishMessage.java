@@ -19,7 +19,7 @@ public interface PublishMessage {
 	byte[] getPayload();
 
 	/**
-	 * @return The message's payload as a string. The payload is converted to a string using the ASCII character set.
+	 * @return The message's payload as a string. The payload is converted to a string using the UTF8 character set.
 	 */
 	String getPayloadString();
 
@@ -54,7 +54,8 @@ public interface PublishMessage {
 	QoS getQoS();
 
 	/**
-	 * Sends an acknowledgment to the broker for this message unless {@link #getQoS()} is {@link QoS#AT_MOST_ONCE} in which case this does nothing.
+	 * Sends an acknowledgment to the broker for this message unless {@link #getQoS()} is {@link QoS#AT_MOST_ONCE} in which case this does nothing. This method
+	 * is always asynchronous.
 	 */
 	void ack();
 }

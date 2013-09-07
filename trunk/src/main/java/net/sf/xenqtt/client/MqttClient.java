@@ -261,15 +261,15 @@ public interface MqttClient {
 	void publish(String topicName, QoS qos, byte[] payload, boolean retain) throws MqttTimeoutException, InterruptedException;
 
 	/**
-	 * Publishes a message with a string as the payload with retain set to false. The string is converted to a byte[] using ASCII encoding and used as the
-	 * binary message payload. Delegates to {@link #publish(String, QoS, byte[], boolean)}.
+	 * Publishes a message with a string as the payload with retain set to false. The string is converted to a byte[] using UTF8 encoding and used as the binary
+	 * message payload. Delegates to {@link #publish(String, QoS, byte[], boolean)}.
 	 * 
 	 * @see MqttClient#publish(String, QoS, byte[], boolean)
 	 */
 	void publish(String topicName, QoS qos, String payload) throws MqttTimeoutException, InterruptedException;
 
 	/**
-	 * Publishes a message with a string as the payload. The string is converted to a byte[] using ASCII encoding and used as the binary message payload.
+	 * Publishes a message with a string as the payload. The string is converted to a byte[] using UTF8 encoding and used as the binary message payload.
 	 * Delegates to {@link #publish(String, QoS, byte[], boolean)}.
 	 * 
 	 * @see MqttClient#publish(String, QoS, byte[], boolean)
