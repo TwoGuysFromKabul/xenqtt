@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 
 import org.junit.Test;
 
-public class PublishMessageTest {
+public class PubMessageTest {
 
 	static final byte[] PAYLOAD = "To alcohol - the cause of, and solution to, all of life's problems".getBytes(Charset.forName("UTF-8"));
 	static final byte[] RECEIVED = new byte[] { 59, 90, 0, 20, 110, 101, 116, 46, 115, 102, 47, 109, 101, 115, 115, 97, 103, 101, 47, 116, 111, 112, 105, 99,
