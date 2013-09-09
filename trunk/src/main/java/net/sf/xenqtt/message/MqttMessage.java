@@ -3,6 +3,7 @@ package net.sf.xenqtt.message;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * This is a generic MQTT message. Extending classes support more specific message types
@@ -26,6 +27,12 @@ public class MqttMessage {
 	 * length > 127.
 	 */
 	final int fixedHeaderEndOffset;
+
+	/**
+	 * If not null then {@link CountDownLatch#countDown() countDown()} is invoked when the ack to this message is received. Used by {@link AbstractMqttChannel}
+	 * to enable blocking.
+	 */
+	CountDownLatch ackReceivedLatch;
 
 	private MessageType messageType;
 
@@ -125,7 +132,7 @@ public class MqttMessage {
 	}
 
 	/**
-	 * @return True if this is a message that requires an ack and qos > 0
+	 * @return True if {@link #getQoSLevel()} > 0
 	 */
 	public final boolean isAckable() {
 

@@ -3,14 +3,15 @@ package net.sf.xenqtt.message;
 import static org.junit.Assert.*;
 
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
 
 public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBase<?, ?>.TestChannel, MqttBrokerChannel> {
 
 	@Override
-	TestChannel newClientChannel() throws Exception {
-		return new TestChannel("localhost", port, clientHandler, selector, 10000);
+	TestChannel newClientChannel(CountDownLatch connectCompleteLatch) throws Exception {
+		return new TestChannel("localhost", port, clientHandler, selector, 10000, connectCompleteLatch);
 	}
 
 	@Override
@@ -23,7 +24,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 
 		establishConnection();
 
-		clientChannel.send(new PingReqMessage());
+		clientChannel.send(new PingReqMessage(), null);
 
 		readWrite(1, 0);
 

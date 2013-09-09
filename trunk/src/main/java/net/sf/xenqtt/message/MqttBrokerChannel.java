@@ -67,7 +67,7 @@ public final class MqttBrokerChannel extends AbstractMqttChannel {
 	@Override
 	void pingReq(long now, PingReqMessage message) throws Exception {
 
-		send(new PingRespMessage());
+		send(new PingRespMessage(), null);
 	}
 
 	/**

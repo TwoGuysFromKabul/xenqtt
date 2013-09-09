@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.Log;
 
@@ -28,6 +29,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
 	private final List<IdentifiableMqttMessage> messagesToResend = new ArrayList<IdentifiableMqttMessage>();
 	private final long messageResendIntervalMillis;
+	private final CountDownLatch connectionCompleteLatch;
 
 	private final SocketChannel channel;
 	private SelectionKey selectionKey;
@@ -62,17 +64,23 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * 
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
+	 * @param connectionCompleteLatch
+	 *            If not null then this latch is {@link CountDownLatch#countDown() triggered} when the {@link ConnAckMessage} is received.
 	 */
-	AbstractMqttChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+	AbstractMqttChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis,
+			CountDownLatch connectionCompleteLatch) throws IOException {
 
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
+		this.connectionCompleteLatch = connectionCompleteLatch;
 
 		try {
 			this.channel = SocketChannel.open();
 			this.channel.configureBlocking(false);
 			this.selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, this);
-			this.channel.connect(new InetSocketAddress(host, port));
+			if (this.channel.connect(new InetSocketAddress(host, port))) {
+				connectFinished();
+			}
 			Log.debug("%s connecting to %s:%s", this, host, port);
 		} catch (IOException e) {
 			doClose(e, "Failed to connect a client MQTT channel to %s:%d", host, port);
@@ -93,6 +101,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
+		this.connectionCompleteLatch = null;
 		this.channel = channel;
 
 		try {
@@ -150,9 +159,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		try {
 			if (channel.finishConnect()) {
-				int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
-				selectionKey.interestOps(ops);
-				handler.channelOpened(this);
+				connectFinished();
 				Log.debug("%s finished connecting", this);
 				return true;
 			}
@@ -186,31 +193,12 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, java.util.concurrent.CountDownLatch)
 	 */
 	@Override
-	public final boolean send(MqttMessage message) {
-
-		try {
-			message.buffer.rewind();
-
-			Log.debug("%s sending %s", this, message);
-			if (sendMessageInProgress != null) {
-				writesPending.offer(message);
-				return true;
-			}
-
-			sendMessageInProgress = message;
-
-			if (selectionKey.isValid() && channel.socket().isConnected()) {
-				selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-				return true;
-			}
-		} catch (Exception e) {
-			doClose(e, "Failed to send to %s", this);
-		}
-
-		return false;
+	public boolean send(MqttMessage message, CountDownLatch ackReceivedLatch) {
+		message.ackReceivedLatch = ackReceivedLatch;
+		return doSend(message);
 	}
 
 	/**
@@ -389,6 +377,36 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	abstract void pingResp(long now, PingRespMessage message) throws Exception;
 
+	private void connectFinished() {
+		int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
+		selectionKey.interestOps(ops);
+		handler.channelOpened(this);
+	}
+
+	private boolean doSend(MqttMessage message) {
+
+		try {
+			message.buffer.rewind();
+
+			Log.debug("%s sending %s", this, message);
+			if (sendMessageInProgress != null) {
+				writesPending.offer(message);
+				return true;
+			}
+
+			sendMessageInProgress = message;
+
+			if (selectionKey.isValid() && channel.socket().isConnected()) {
+				selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+				return true;
+			}
+		} catch (Exception e) {
+			doClose(e, "Failed to send to %s", this);
+		}
+
+		return false;
+	}
+
 	/**
 	 * @return False to have the channel closed
 	 */
@@ -404,6 +422,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			MessageType type = sendMessageInProgress.getMessageType();
 			if (type == MessageType.DISCONNECT) {
+				countDown(sendMessageInProgress.ackReceivedLatch);
 				sendMessageInProgress = null;
 				return false;
 			}
@@ -424,7 +443,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				}
 			}
 
-			if (messageResendIntervalMillis > 0 && sendMessageInProgress.isAckable() && sendMessageInProgress.getQoSLevel() > 0) {
+			if (!sendMessageInProgress.isAckable()) {
+				countDown(sendMessageInProgress.ackReceivedLatch);
+			} else if (messageResendIntervalMillis > 0) {
 				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
 				m.nextSendTime = now + messageResendIntervalMillis;
 				inFlightMessages.put(m.getMessageId(), m);
@@ -440,6 +461,12 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		selectionKey.interestOps(SelectionKey.OP_READ);
 
 		return true;
+	}
+
+	private void countDown(CountDownLatch latch) {
+		if (latch != null) {
+			latch.countDown();
+		}
 	}
 
 	/**
@@ -543,7 +570,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			for (IdentifiableMqttMessage msg : messagesToResend) {
 				msg.setDuplicateFlag();
-				send(msg);
+				doSend(msg);
 			}
 
 			messagesToResend.clear();
@@ -589,6 +616,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				break;
 			case CONNACK:
 				ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
+				countDown(connectionCompleteLatch);
 				msg = connAckMessage;
 				result = connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
 				if (connected) {
@@ -604,13 +632,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case PUBACK:
 				PubAckMessage pubAckMessage = new PubAckMessage(buffer);
 				msg = pubAckMessage;
-				inFlightMessages.remove(pubAckMessage.getMessageId());
+				ackReceived(pubAckMessage);
 				handler.pubAck(this, pubAckMessage);
 				break;
 			case PUBREC:
 				PubRecMessage pubRecMessage = new PubRecMessage(buffer);
 				msg = pubRecMessage;
-				inFlightMessages.remove(pubRecMessage.getMessageId());
+				ackReceived(pubRecMessage);
 				handler.pubRec(this, pubRecMessage);
 				break;
 			case PUBREL:
@@ -621,7 +649,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case PUBCOMP:
 				PubCompMessage pubCompMessage = new PubCompMessage(buffer);
 				msg = pubCompMessage;
-				inFlightMessages.remove(pubCompMessage.getMessageId());
+				ackReceived(pubCompMessage);
 				handler.pubComp(this, pubCompMessage);
 				break;
 			case SUBSCRIBE:
@@ -632,7 +660,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case SUBACK:
 				SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength);
 				msg = subAckMessage;
-				inFlightMessages.remove(subAckMessage.getMessageId());
+				ackReceived(subAckMessage);
 				handler.subAck(this, subAckMessage);
 				break;
 			case UNSUBSCRIBE:
@@ -643,7 +671,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case UNSUBACK:
 				UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer);
 				msg = unsubAckMessage;
-				inFlightMessages.remove(unsubAckMessage.getMessageId());
+				ackReceived(unsubAckMessage);
 				handler.unsubAck(this, unsubAckMessage);
 				break;
 			case PINGREQ:
@@ -679,6 +707,14 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		}
 
 		return result;
+	}
+
+	private void ackReceived(IdentifiableMqttMessage ackMessage) {
+
+		IdentifiableMqttMessage ackedMessage = inFlightMessages.remove(ackMessage.getMessageId());
+		if (ackedMessage != null) {
+			countDown(ackedMessage.ackReceivedLatch);
+		}
 	}
 
 	/**

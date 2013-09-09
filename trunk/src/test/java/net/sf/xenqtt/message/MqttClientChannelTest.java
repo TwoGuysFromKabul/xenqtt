@@ -3,14 +3,15 @@ package net.sf.xenqtt.message;
 import static org.junit.Assert.*;
 
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
 
 public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel, MqttChannelTestBase<?, ?>.TestChannel> {
 
 	@Override
-	MqttClientChannel newClientChannel() throws Exception {
-		return new MqttClientChannel("localhost", port, clientHandler, selector, 10000);
+	MqttClientChannel newClientChannel(CountDownLatch connectCompleteLatch) throws Exception {
+		return new MqttClientChannel("localhost", port, clientHandler, selector, 10000, connectCompleteLatch);
 	}
 
 	@Override
@@ -82,9 +83,9 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 		assertTrue(checkForPing());
 
 		// send the response
-		brokerChannel.send(new PingRespMessage());
+		brokerChannel.send(new PingRespMessage(), null);
 		// send this message to force the ping to flush
-		brokerChannel.send(new PubAckMessage(1));
+		brokerChannel.send(new PubAckMessage(1), null);
 		readWrite(1, 0);
 
 		// validate another ping was sent instead of the channel being closed
@@ -97,7 +98,7 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 	private boolean checkForPing() throws Exception {
 
 		PubAckMessage msg = new PubAckMessage(1);
-		clientChannel.send(msg);
+		clientChannel.send(msg, null);
 
 		readWrite(0, 1);
 		brokerHandler.assertMessageCount(1);
