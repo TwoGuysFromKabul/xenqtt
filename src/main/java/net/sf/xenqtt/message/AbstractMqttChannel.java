@@ -196,8 +196,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, java.util.concurrent.CountDownLatch)
 	 */
 	@Override
-	public boolean send(MqttMessage message, CountDownLatch ackReceivedLatch) {
-		message.ackReceivedLatch = ackReceivedLatch;
+	public boolean send(MqttMessage message, CountDownLatch blockingLatch) {
+		message.blockingLatch = blockingLatch;
 		return doSend(message);
 	}
 
@@ -422,7 +422,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			MessageType type = sendMessageInProgress.getMessageType();
 			if (type == MessageType.DISCONNECT) {
-				countDown(sendMessageInProgress.ackReceivedLatch);
+				countDown(sendMessageInProgress.blockingLatch);
 				sendMessageInProgress = null;
 				return false;
 			}
@@ -444,7 +444,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			if (!sendMessageInProgress.isAckable()) {
-				countDown(sendMessageInProgress.ackReceivedLatch);
+				countDown(sendMessageInProgress.blockingLatch);
 			} else if (messageResendIntervalMillis > 0) {
 				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
 				m.nextSendTime = now + messageResendIntervalMillis;
@@ -713,7 +713,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		IdentifiableMqttMessage ackedMessage = inFlightMessages.remove(ackMessage.getMessageId());
 		if (ackedMessage != null) {
-			countDown(ackedMessage.ackReceivedLatch);
+			countDown(ackedMessage.blockingLatch);
 		}
 	}
 

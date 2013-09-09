@@ -29,10 +29,11 @@ public class MqttMessage {
 	final int fixedHeaderEndOffset;
 
 	/**
-	 * If not null then {@link CountDownLatch#countDown() countDown()} is invoked when the ack to this message is received. Used by {@link AbstractMqttChannel}
-	 * to enable blocking.
+	 * If not null then {@link CountDownLatch#countDown() countDown()} is invoked when this message is "complete". The definition of "complete" varies by
+	 * message type. If the message is ackable then it is complete when the ack message is received. Otherwise, it is complete when it is written to the socket.
+	 * Used by {@link AbstractMqttChannel} to enable blocking.
 	 */
-	CountDownLatch ackReceivedLatch;
+	CountDownLatch blockingLatch;
 
 	private MessageType messageType;
 

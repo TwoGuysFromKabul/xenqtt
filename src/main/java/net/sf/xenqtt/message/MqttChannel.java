@@ -49,14 +49,13 @@ public interface MqttChannel extends MqttChannelRef {
 	 */
 	boolean read(long now);
 
-	// FIXME [jim] - need a latch in channel ctor to trigger when connected
 	/**
 	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
 	 * not {@link ConnectReturnCode#ACCEPTED} is sent the channel is closed automatically.
 	 * 
 	 * @param message
 	 *            The message to send
-	 * @param ackReceivedLatch
+	 * @param blockingLatch
 	 *            If not null then this latch is {@link CountDownLatch#countDown() triggered} when processing the message is complete. The definition of
 	 *            complete is:
 	 *            <ul>
@@ -66,7 +65,7 @@ public interface MqttChannel extends MqttChannelRef {
 	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
-	boolean send(MqttMessage message, CountDownLatch ackReceivedLatch);
+	boolean send(MqttMessage message, CountDownLatch blockingLatch);
 
 	/**
 	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.
