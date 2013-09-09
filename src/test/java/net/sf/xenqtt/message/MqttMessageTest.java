@@ -11,9 +11,8 @@ public class MqttMessageTest {
 	static final byte[] PAYLOAD = new byte[] { 27, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 	@Test
-	public void testInboundCtor_MessageTypeAndRemainingLength() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, 24) {
-		};
+	public void testOutboundCtor_MessageTypeAndRemainingLength() {
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, 24);
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -22,7 +21,7 @@ public class MqttMessageTest {
 	}
 
 	@Test
-	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_FalseOnAllFlags() {
+	public void testOutboundCtor_MessageTypeAndRemainingLengthAndFlags_FalseOnAllFlags() {
 		MqttMessage message = new TestMessage(MessageType.CONNECT, false, QoS.AT_LEAST_ONCE, false, 24);
 		message.buffer.flip();
 
@@ -34,9 +33,8 @@ public class MqttMessageTest {
 	}
 
 	@Test
-	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_Duplicate() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.AT_LEAST_ONCE, false, 24) {
-		};
+	public void testOutboundCtor_MessageTypeAndRemainingLengthAndFlags_Duplicate() {
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.AT_LEAST_ONCE, false, 24);
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -47,9 +45,8 @@ public class MqttMessageTest {
 	}
 
 	@Test
-	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_Retain() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.AT_LEAST_ONCE, true, 24) {
-		};
+	public void testOutboundCtor_MessageTypeAndRemainingLengthAndFlags_Retain() {
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, false, QoS.AT_LEAST_ONCE, true, 24);
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -60,9 +57,8 @@ public class MqttMessageTest {
 	}
 
 	@Test
-	public void testInboundCtor_MessageTypeAndRemainingLengthAndFlags_AllFlags() {
-		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.AT_LEAST_ONCE, true, 24) {
-		};
+	public void testOutboundCtor_MessageTypeAndRemainingLengthAndFlags_AllFlags() {
+		MqttMessage message = new MqttMessage(MessageType.CONNECT, true, QoS.AT_LEAST_ONCE, true, 24);
 		message.buffer.flip();
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
@@ -88,21 +84,13 @@ public class MqttMessageTest {
 	@Test
 	public void testIsAckable() throws Exception {
 
-		assertFalse(new TestMessage(MessageType.CONNACK, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.CONNECT, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.DISCONNECT, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.PINGREQ, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.PINGRESP, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.PUBACK, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.PUBCOMP, 0).isAckable());
-		assertTrue(new TestMessage(MessageType.PUBLISH, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.PUBREC, 0).isAckable());
-		assertTrue(new TestMessage(MessageType.PUBREL, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.SUBACK, 0).isAckable());
-		assertTrue(new TestMessage(MessageType.SUBSCRIBE, 0).isAckable());
-		assertFalse(new TestMessage(MessageType.UNSUBACK, 0).isAckable());
-		assertTrue(new TestMessage(MessageType.UNSUBSCRIBE, 0).isAckable());
+		// QOS 0 is not ackable
+		assertFalse(new TestMessage(MessageType.PUBLISH, 0).isAckable());
 
+		// QOS 1 is ackable
+		TestMessage msg = new TestMessage(MessageType.PUBLISH, 0);
+		msg.buffer.put(0, (byte) (msg.buffer.get(0) | 0x02));
+		assertTrue(msg.isAckable());
 	}
 
 	@Test

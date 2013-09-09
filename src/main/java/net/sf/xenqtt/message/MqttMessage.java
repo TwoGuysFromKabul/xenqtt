@@ -125,12 +125,11 @@ public class MqttMessage {
 	}
 
 	/**
-	 * @return True if this is a message that requires an ack at qos > 1
+	 * @return True if this is a message that requires an ack and qos > 0
 	 */
 	public final boolean isAckable() {
 
-		MessageType type = getMessageType();
-		return type == MessageType.PUBLISH || type == MessageType.PUBREL || type == MessageType.SUBSCRIBE || type == MessageType.UNSUBSCRIBE;
+		return getQoSLevel() > 0;
 	}
 
 	/**
@@ -289,8 +288,11 @@ public class MqttMessage {
 	 */
 	final String getString(int index) {
 
+		int pos = buffer.position();
 		buffer.position(index);
-		return getString();
+		String value = getString();
+		buffer.position(pos);
+		return value;
 	}
 
 	/**
