@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 public final class PubMessage extends IdentifiableMqttMessage {
 
 	// FIXME [jim] - message ID field should not be present for messages with qos 0!!
-	private int messageIdIndex = -1;
+	private int payloadIndex = -1;
 
 	/**
 	 * Used to construct a received message.
@@ -43,7 +43,7 @@ public final class PubMessage extends IdentifiableMqttMessage {
 	 */
 	@Override
 	public int getMessageId() {
-		return buffer.getShort(getMessageIdIndex()) & 0xffff;
+		return getQoSLevel() == 0 ? 0 : buffer.getShort(getPayloadIndex() - 2) & 0xffff;
 	}
 
 	/**
@@ -51,7 +51,10 @@ public final class PubMessage extends IdentifiableMqttMessage {
 	 */
 	@Override
 	public void setMessageId(int messageId) {
-		buffer.putShort(getMessageIdIndex(), (short) messageId);
+		if (getQoSLevel() == 0) {
+			throw new UnsupportedOperationException("Message ID is not supported at QoS 0 (AT_MOST_ONCE)");
+		}
+		buffer.putShort(getPayloadIndex() - 2, (short) messageId);
 	}
 
 	/**
@@ -60,7 +63,7 @@ public final class PubMessage extends IdentifiableMqttMessage {
 	public byte[] getPayload() {
 
 		int pos = buffer.position();
-		buffer.position(getMessageIdIndex() + 2);
+		buffer.position(getPayloadIndex());
 		byte[] payload = new byte[buffer.limit() - buffer.position()];
 		buffer.get(payload);
 		buffer.position(pos);
@@ -68,20 +71,25 @@ public final class PubMessage extends IdentifiableMqttMessage {
 		return payload;
 	}
 
-	private int getMessageIdIndex() {
+	private int getPayloadIndex() {
 
-		if (messageIdIndex == -1) {
-			messageIdIndex = fixedHeaderEndOffset + 2 + (buffer.getShort(fixedHeaderEndOffset) & 0xffff);
+		if (payloadIndex == -1) {
+			payloadIndex = fixedHeaderEndOffset + 2 + (buffer.getShort(fixedHeaderEndOffset) & 0xffff);
+			if (getQoSLevel() > 0) {
+				payloadIndex += 2;
+			}
 		}
 
-		return messageIdIndex;
+		return payloadIndex;
 	}
 
 	private PubMessage(QoS qos, boolean retain, byte[] topicNameUtf8, int messageId, byte[] payload) {
-		super(MessageType.PUBLISH, false, qos, retain, 2 + mqttStringSize(topicNameUtf8) + payload.length);
+		super(MessageType.PUBLISH, false, qos, retain, (qos.ordinal() == 0 ? 0 : 2) + mqttStringSize(topicNameUtf8) + payload.length);
 
 		putString(topicNameUtf8);
-		buffer.putShort((short) messageId);
+		if (qos.ordinal() > 0) {
+			buffer.putShort((short) messageId);
+		}
 		buffer.put(payload);
 		buffer.flip();
 	}
