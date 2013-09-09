@@ -1,0 +1,49 @@
+Xenqtt - Facilitates advanced communication strategies for MQTT-based communication systems. Xenqtt
+provides the following:
+
+	An MQTT proxy for clustered clients
+	An MQTT gateway allowing for HTTP <-> MQTT communication
+	An MQTT client that operates in either synchronous or asynchronous mode
+
+The following sections provide more information on each of these features.
+
+Xenqtt Client:
+
+The xenqtt client comes bundled with the JAR file. Include the JAR file in your applications to
+make use of the client. For more information on how to use the client please see the Xenqtt
+project page for Javadoc, an overview, details, and example code.
+
+Xenqtt Gateway:
+
+The xenqtt gateway transforms HTTP messages into MQTT and MQTT messages to HTTP. The gateway is
+useful for clients that already use HTTP and will not or cannot be converted to support MQTT. When
+launched in gateway mode Xenqtt will allow HTTP-based clients to publish messages to a broker as
+well as subscribe for, and receive, messages from a broker. The client using the gateway need not
+know or understand anything about MQTT as the protocol itself is obfuscated from them.
+
+Xenqtt Proxy:
+
+The proxy supports the concept of clustered clients in an MQTT architecture. The proxy groups
+connecting clients by client ID. Each client ID is treated as a single client for all intents and
+purposes to the broker. All publish messages go through as-normal; however, messages pushed to the
+"client" from topics subscribed to are routed to just a single client. The proxy keeps track of who
+is connected and routes traffic to clients appropriately. In this way the proxy acts as a load
+balancer. Load is intelligently distributed to connected clients.
+
+The proxy manages certain MQTT housekeeping procedures as well. Client PINGREQ messages are bit
+bucketed as the proxy handles the keepalive process. All CONNECT messages, after the first one,
+from the same client ID are also not forwarded through to the broker. All DISCONNECT messages are
+similarly eaten except the last one from the final client, which is allowed through to the broker.
+
+Logging
+
+Xenqtt uses Java logging (commonly called JUL) by default. It does respect a client's choice of the
+log4j framework though. If log4j is detected on the classpath all logging is deferred to a logger
+called "xenqtt" that is used in the application. Otherwise all logging is done to a file called
+xenqtt.log.# in the directory hosting the JAR. Most commonly an application using it as a client
+will have a logging solution in-place so that should take precedence. The JUL logging is mainly
+used for the standalone proxy or gateway solutions.
+
+By default logging is done at the WARN (warning in JUL) level. To increase the verbosity of logging
+in the proxy and gateway solutions the command-line switch -v can be used. A single -v will enable
+INFO logging. Two -v switches (or a single -vv switch) will enabled DEBUG logging.
