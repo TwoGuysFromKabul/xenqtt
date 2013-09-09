@@ -3,6 +3,7 @@ package net.sf.xenqtt.message;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * <p>
@@ -22,7 +23,7 @@ public interface MqttChannel extends MqttChannelRef {
 	void deregister();
 
 	/**
-	 * Registers this channel with the specified selector. The {@link SelectionKey} for the previously registered selector is canceled. The current
+	 * Registers this channel with the specified selector. The {@link SelectionKey} for the previously registered selector, if any, is canceled. The current
 	 * {@link MessageHandler} is replaced with the specified one.
 	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
@@ -48,13 +49,24 @@ public interface MqttChannel extends MqttChannelRef {
 	 */
 	boolean read(long now);
 
+	// FIXME [jim] - need a latch in channel ctor to trigger when connected
 	/**
 	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
 	 * not {@link ConnectReturnCode#ACCEPTED} is sent the channel is closed automatically.
 	 * 
+	 * @param message
+	 *            The message to send
+	 * @param ackReceivedLatch
+	 *            If not null then this latch is {@link CountDownLatch#countDown() triggered} when processing the message is complete. The definition of
+	 *            complete is:
+	 *            <ul>
+	 *            <li>If the message is {@link MqttMessage#isAckable() ackable} processing is complete when the ack is received.</li>
+	 *            <li>If none of the above is true then processing is complete when the message is written to the socket.</li>
+	 *            </ul>
+	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
-	boolean send(MqttMessage message);
+	boolean send(MqttMessage message, CountDownLatch ackReceivedLatch);
 
 	/**
 	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.

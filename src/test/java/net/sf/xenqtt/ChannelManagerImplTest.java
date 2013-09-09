@@ -183,7 +183,7 @@ public class ChannelManagerImplTest {
 			@Override
 			public void channelOpened(MqttChannel channel) {
 				super.channelOpened(channel);
-				channel.send(new ConnectMessage("abc", false, 1));
+				channel.send(new ConnectMessage("abc", false, 1), null);
 			}
 		};
 
@@ -191,7 +191,7 @@ public class ChannelManagerImplTest {
 			@Override
 			public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 				super.connect(channel, message);
-				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED));
+				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null);
 			}
 		};
 
@@ -231,7 +231,7 @@ public class ChannelManagerImplTest {
 			@Override
 			public void channelOpened(MqttChannel channel) {
 				super.channelOpened(channel);
-				channel.send(new ConnectMessage("abc", false, 1));
+				channel.send(new ConnectMessage("abc", false, 1), null);
 			}
 		};
 
@@ -242,14 +242,14 @@ public class ChannelManagerImplTest {
 			@Override
 			public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 				super.connect(channel, message);
-				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED));
+				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null);
 			}
 
 			@Override
 			public void publish(MqttChannel channel, PubMessage message) throws Exception {
 
 				if (++publishCount == 3) {
-					channel.send(new PubAckMessage(message.getMessageId()));
+					channel.send(new PubAckMessage(message.getMessageId()), null);
 				}
 
 				super.publish(channel, message);

@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.mock.MockMessageHandler;
 
@@ -19,9 +21,11 @@ import org.junit.Test;
 
 public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTestBase<?, ?>.TestChannel, MqttChannelTestBase<?, ?>.TestChannel> {
 
+	CountDownLatch latch = new CountDownLatch(1);
+
 	@Override
-	TestChannel newClientChannel() throws Exception {
-		return new TestChannel("localhost", port, clientHandler, selector, 10000);
+	TestChannel newClientChannel(CountDownLatch connectionCompleteLatch) throws Exception {
+		return new TestChannel("localhost", port, clientHandler, selector, 10000, connectionCompleteLatch);
 	}
 
 	@Override
@@ -32,7 +36,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	@Test
 	public void testGetUnsentMessages_NoUnsentMessages() throws Exception {
 
-		clientChannel = newClientChannel();
+		clientChannel = newClientChannel(null);
 		assertTrue(clientChannel.getUnsentMessages().isEmpty());
 	}
 
@@ -41,8 +45,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
-		assertTrue(clientChannel.send(new UnsubscribeMessage(1, new String[] { "foo" })));
-		assertTrue(clientChannel.send(new UnsubscribeMessage(2, new String[] { "foo" })));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(1, new String[] { "foo" }), null));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(2, new String[] { "foo" }), null));
 
 		readWrite(0, 2);
 
@@ -51,8 +55,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		field.setAccessible(true);
 		field.set(clientChannel, new UnsubscribeMessage(3, new String[] { "foo" }));
 
-		assertTrue(clientChannel.send(new UnsubscribeMessage(4, new String[] { "foo" })));
-		assertTrue(clientChannel.send(new UnsubscribeMessage(5, new String[] { "foo" })));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(4, new String[] { "foo" }), null));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(5, new String[] { "foo" }), null));
 
 		List<MqttMessage> unsent = clientChannel.getUnsentMessages();
 
@@ -176,7 +180,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
-		assertTrue(clientChannel.send(msg));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 
 		assertEquals(25000, clientChannel.houseKeeping(now + 1000));
@@ -195,7 +199,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
-		assertTrue(clientChannel.send(msg));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 		assertFalse(brokerHandler.message(0).isDuplicate());
@@ -211,7 +215,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
-		assertTrue(clientChannel.send(msg));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 		assertFalse(brokerHandler.message(0).isDuplicate());
@@ -229,7 +233,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		assertTrue(brokerHandler.message(0).isDuplicate());
 		assertEquals(1, clientChannel.inFlightMessageCount());
 
-		assertTrue(brokerChannel.send(new PubAckMessage(12)));
+		assertTrue(brokerChannel.send(new PubAckMessage(12), null));
 		readWrite(1, 0);
 		assertEquals(0, clientChannel.inFlightMessageCount());
 		assertEquals(0, brokerChannel.inFlightMessageCount());
@@ -264,7 +268,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		establishConnection();
 		clientChannel.close();
 
-		assertFalse(clientChannel.send(new PingReqMessage()));
+		assertFalse(clientChannel.send(new PingReqMessage(), null));
 	}
 
 	@Test
@@ -274,7 +278,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		DisconnectMessage discMsg = new DisconnectMessage();
 
-		assertTrue(clientChannel.send(discMsg));
+		assertTrue(clientChannel.send(discMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(discMsg);
 
@@ -287,18 +291,18 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testReadWriteSend_ConnAckWithoutAccept() throws Exception {
+	public void testReadWriteSend_ConnAckWithoutAccept_NoLatch() throws Exception {
 
 		establishConnection();
 
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
 
-		assertTrue(clientChannel.send(connMsg));
+		assertTrue(clientChannel.send(connMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		assertTrue(brokerChannel.send(ackMsg));
+		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
@@ -314,20 +318,88 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testReadWriteSend_ConnAckWithAccept() throws Exception {
+	public void testReadWriteSend_ConnAckWithoutAccept_WithLatch() throws Exception {
+
+		establishConnection(latch);
+
+		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
+		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
+
+		assertTrue(clientChannel.send(connMsg, null));
+		readWrite(0, 1);
+		brokerHandler.assertMessages(connMsg);
+
+		assertFalse(latch.await(10, TimeUnit.MILLISECONDS));
+
+		assertTrue(brokerChannel.send(ackMsg, null));
+		readWrite(1, 0);
+		clientHandler.assertMessages(ackMsg);
+
+		assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+
+		assertFalse(clientChannel.isConnected());
+		assertFalse(clientChannel.connectedCalled);
+		assertFalse(clientChannel.disconnectedCalled);
+		assertFalse(clientChannel.isOpen());
+
+		assertFalse(brokerChannel.isConnected());
+		assertFalse(brokerChannel.connectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+		assertFalse(brokerChannel.isOpen());
+	}
+
+	@Test
+	public void testReadWriteSend_ConnAckWithAccept_NoLatch() throws Exception {
 
 		establishConnection();
 
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		assertTrue(clientChannel.send(connMsg));
+		assertTrue(clientChannel.send(connMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		assertTrue(brokerChannel.send(ackMsg));
+		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
+
+		assertTrue(clientChannel.isOpen());
+		assertTrue(clientChannel.isConnected());
+		assertTrue(clientChannel.connectedCalled);
+		assertEquals(123000, clientChannel.pingIntervalMillis);
+		assertTrue(brokerChannel.isConnected());
+		assertTrue(brokerChannel.connectedCalled);
+		assertEquals(123000, brokerChannel.pingIntervalMillis);
+
+		assertFalse(clientChannel.disconnectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+
+		closeConnection();
+
+		assertTrue(clientChannel.disconnectedCalled);
+		assertTrue(brokerChannel.disconnectedCalled);
+	}
+
+	@Test
+	public void testReadWriteSend_ConnAckWithAccept_WithLatch() throws Exception {
+
+		establishConnection(latch);
+
+		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
+		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
+
+		assertTrue(clientChannel.send(connMsg, null));
+		readWrite(0, 1);
+		brokerHandler.assertMessages(connMsg);
+
+		assertFalse(latch.await(10, TimeUnit.MILLISECONDS));
+
+		assertTrue(brokerChannel.send(ackMsg, null));
+		readWrite(1, 0);
+		clientHandler.assertMessages(ackMsg);
+
+		assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
 
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnected());
@@ -354,11 +426,11 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingReqMessage pingReqMsg = new PingReqMessage();
 		PingRespMessage pingRespMsg = new PingRespMessage();
 
-		assertTrue(clientChannel.send(pingReqMsg));
+		assertTrue(clientChannel.send(pingReqMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(pingReqMsg);
 
-		assertTrue(brokerChannel.send(pingRespMsg));
+		assertTrue(brokerChannel.send(pingRespMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(pingRespMsg);
 
@@ -376,8 +448,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingReqMessage pingReqMsg = new PingReqMessage();
 		PubAckMessage msg2 = new PubAckMessage(1);
 
-		assertTrue(clientChannel.send(pingReqMsg));
-		assertTrue(clientChannel.send(msg2));
+		assertTrue(clientChannel.send(pingReqMsg, null));
+		assertTrue(clientChannel.send(msg2, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg2);
 
@@ -394,8 +466,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingRespMessage pingRespMsg = new PingRespMessage();
 		PubAckMessage msg2 = new PubAckMessage(1);
 
-		assertTrue(clientChannel.send(pingRespMsg));
-		assertTrue(clientChannel.send(msg2));
+		assertTrue(clientChannel.send(pingRespMsg, null));
+		assertTrue(clientChannel.send(msg2, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg2);
 
@@ -408,13 +480,149 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingReqMessage msg = new PingReqMessage();
 
 		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10000);
-		assertFalse(clientChannel.send(msg));
+		assertFalse(clientChannel.send(msg, null));
 
 		establishConnection();
 
 		readWrite(0, 1);
 
 		closeConnection();
+	}
+
+	@Test
+	public void testReadWriteSend_PublishAndAck_Qos1_NoLatch() throws Exception {
+
+		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
+		PubAckMessage ack = new PubAckMessage(1);
+		doTestReadWriteSend_NoLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_PublishAndAck_Qos1_WithLatch() throws Exception {
+
+		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
+		PubAckMessage ack = new PubAckMessage(1);
+		doTestReadWriteSend_WithLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_Publish_Qos0_NoLatch() throws Exception {
+
+		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 0, new byte[] {});
+		doTestReadWriteSend_NoLatch(msg, null);
+	}
+
+	@Test
+	public void testReadWriteSend_Publish_Qos0_WithLatch() throws Exception {
+
+		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 0, new byte[] {});
+		doTestReadWriteSend_WithLatch(msg, null);
+	}
+
+	@Test
+	public void testReadWriteSend_PublishAndPubRec_NoLatch() throws Exception {
+
+		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
+		PubRecMessage ack = new PubRecMessage(1);
+		doTestReadWriteSend_NoLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_PublishAndPubRec_WithLatch() throws Exception {
+
+		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
+		PubRecMessage ack = new PubRecMessage(1);
+		doTestReadWriteSend_WithLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_PubRelAndPubComp_NoLatch() throws Exception {
+
+		PubRelMessage msg = new PubRelMessage(1);
+		PubCompMessage ack = new PubCompMessage(1);
+		doTestReadWriteSend_NoLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_PubRelAndPubComp_WithLatch() throws Exception {
+
+		PubRelMessage msg = new PubRelMessage(1);
+		PubCompMessage ack = new PubCompMessage(1);
+		doTestReadWriteSend_WithLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_SubscribeAndAck_NoLatch() throws Exception {
+
+		SubscribeMessage msg = new SubscribeMessage(1, new String[] {}, new QoS[] {});
+		SubAckMessage ack = new SubAckMessage(1, new QoS[] {});
+		doTestReadWriteSend_NoLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_SubscribeAndAck_WithLatch() throws Exception {
+
+		SubscribeMessage msg = new SubscribeMessage(1, new String[] {}, new QoS[] {});
+		SubAckMessage ack = new SubAckMessage(1, new QoS[] {});
+		doTestReadWriteSend_WithLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_UnsubscribeAndAck_NoLatch() throws Exception {
+
+		UnsubscribeMessage msg = new UnsubscribeMessage(1, new String[] {});
+		UnsubAckMessage ack = new UnsubAckMessage(1);
+		doTestReadWriteSend_NoLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_UnsubscribeAndAck_WithLatch() throws Exception {
+
+		UnsubscribeMessage msg = new UnsubscribeMessage(1, new String[] {});
+		UnsubAckMessage ack = new UnsubAckMessage(1);
+		doTestReadWriteSend_WithLatch(msg, ack);
+	}
+
+	@Test
+	public void testReadWriteSend_PingReq_NoLatch() throws Exception {
+
+		PingReqMessage msg = new PingReqMessage();
+		doTestReadWriteSend_NoLatch(msg, null);
+	}
+
+	@Test
+	public void testReadWriteSend_PingReq_WithLatch() throws Exception {
+
+		PingReqMessage msg = new PingReqMessage();
+		doTestReadWriteSend_WithLatch(msg, null);
+	}
+
+	@Test
+	public void testReadWriteSend_PingResp_NoLatch() throws Exception {
+
+		PingRespMessage msg = new PingRespMessage();
+		doTestReadWriteSend_NoLatch(msg, null);
+	}
+
+	@Test
+	public void testReadWriteSend_PingResp_WithLatch() throws Exception {
+
+		PingRespMessage msg = new PingRespMessage();
+		doTestReadWriteSend_WithLatch(msg, null);
+	}
+
+	@Test
+	public void testReadWriteSend_Disconnect_NoLatch() throws Exception {
+
+		DisconnectMessage msg = new DisconnectMessage();
+		doTestReadWriteSend_NoLatch(msg, null);
+	}
+
+	@Test
+	public void testReadWriteSend_Disconnect_WithLatch() throws Exception {
+
+		DisconnectMessage msg = new DisconnectMessage();
+		doTestReadWriteSend_WithLatch(msg, null);
 	}
 
 	@Test
@@ -427,8 +635,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		UnsubAckMessage msg1 = new UnsubAckMessage(1);
 		PingReqMessage msg2 = new PingReqMessage();
 
-		assertTrue(clientChannel.send(msg1));
-		assertTrue(clientChannel.send(msg2));
+		assertTrue(clientChannel.send(msg1, null));
+		assertTrue(clientChannel.send(msg2, null));
 
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg2);
@@ -476,7 +684,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		brokerChannel.close();
 
 		for (int i = 0; i < 1000; i++) {
-			clientChannel.send(new PingReqMessage());
+			clientChannel.send(new PingReqMessage(), null);
 		}
 
 		assertFalse(clientChannel.write(now));
@@ -493,7 +701,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PingReqMessage msg = new PingReqMessage();
 
-		assertTrue(clientChannel.send(msg));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 
 		closeConnection();
@@ -506,7 +714,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubAckMessage msg = new PubAckMessage(123);
 
-		assertTrue(clientChannel.send(msg));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 
 		closeConnection();
@@ -546,13 +754,50 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 			PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "abc", 123, payload);
 
-			assertTrue(clientChannel.send(msg));
+			assertTrue(clientChannel.send(msg, null));
 			messagesSent.add(msg);
 		}
 
 		readWrite(0, messageCount);
 
 		brokerHandler.assertMessages(messagesSent);
+
+		closeConnection();
+	}
+
+	private void doTestReadWriteSend_NoLatch(MqttMessage msg, MqttMessage ack) throws Exception {
+		establishConnection();
+
+		clientChannel.send(msg, null);
+		readWrite(0, 1);
+		brokerHandler.assertMessages(msg);
+
+		if (ack != null) {
+			brokerChannel.send(ack, null);
+			readWrite(1, 0);
+			clientHandler.assertMessages(ack);
+		}
+
+		closeConnection();
+	}
+
+	private void doTestReadWriteSend_WithLatch(MqttMessage msg, MqttMessage ack) throws Exception {
+
+		establishConnection();
+
+		clientChannel.send(msg, latch);
+		readWrite(0, 1);
+		brokerHandler.assertMessages(msg);
+
+		if (ack != null) {
+			assertFalse(latch.await(10, TimeUnit.MILLISECONDS));
+
+			brokerChannel.send(ack, null);
+			readWrite(1, 0);
+			clientHandler.assertMessages(ack);
+		}
+
+		assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
 
 		closeConnection();
 	}

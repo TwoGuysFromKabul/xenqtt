@@ -10,6 +10,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.mock.MockMessageHandler;
 
@@ -90,12 +91,22 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	}
 
 	/**
-	 * Establishes a socket connection. Creates the client and/or broker channels if they do not exist
+	 * Establishes a socket connection. Creates the client and/or broker channels if they do not exist with no connection complete latch
 	 */
 	void establishConnection() throws Exception {
+		establishConnection(null);
+	}
+
+	/**
+	 * Establishes a socket connection. Creates the client and/or broker channels if they do not exist
+	 * 
+	 * @param connectCompleteLatch
+	 *            The latch passed to the client channel's constructor
+	 */
+	void establishConnection(CountDownLatch connectCompleteLatch) throws Exception {
 
 		if (clientChannel == null) {
-			clientChannel = newClientChannel();
+			clientChannel = newClientChannel(connectCompleteLatch);
 		}
 
 		assertTrue(clientChannel.isOpen());
@@ -157,11 +168,11 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 10000);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		clientChannel.send(connMsg);
+		clientChannel.send(connMsg, null);
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		brokerChannel.send(ackMsg);
+		brokerChannel.send(ackMsg, null);
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
@@ -174,7 +185,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	 */
 	void disconnect() throws Exception {
 
-		clientChannel.send(new DisconnectMessage());
+		clientChannel.send(new DisconnectMessage(), null);
 		readWrite(0, 1);
 
 		assertFalse(clientChannel.isConnected());
@@ -191,7 +202,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	/**
 	 * @return A new client channel
 	 */
-	abstract C newClientChannel() throws Exception;
+	abstract C newClientChannel(CountDownLatch connectCompleteLatch) throws Exception;
 
 	final class TestChannel extends AbstractMqttChannel {
 
@@ -208,7 +219,12 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		}
 
 		public TestChannel(String host, int port, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
-			super(host, port, handler, selector, messageResendIntervalMillis);
+			this(host, port, handler, selector, messageResendIntervalMillis, null);
+		}
+
+		public TestChannel(String host, int port, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis,
+				CountDownLatch connectCompleteLatch) throws IOException {
+			super(host, port, handler, selector, messageResendIntervalMillis, connectCompleteLatch);
 			this.messageHandler = handler;
 		}
 

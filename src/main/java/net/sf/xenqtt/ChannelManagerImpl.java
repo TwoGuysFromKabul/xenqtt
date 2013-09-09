@@ -390,7 +390,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		@Override
 		Boolean doExecute(long now) {
-			return channel.send(message);
+			return channel.send(message, null);
 		}
 	}
 
@@ -408,7 +408,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			for (MqttChannel channel : channels) {
 				try {
 					MqttMessage msg = new MqttMessage(message);
-					channel.send(msg);
+					channel.send(msg, null);
 				} catch (Exception e) {
 					Log.error(e, "Failed to send message to %s: %s", channel, message);
 				}
@@ -439,6 +439,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		private final String host;
 		private final int port;
 		private final MessageHandler messageHandler;
+		private MqttClientChannel channel;
 
 		public NewClientChannelCommand(String host, int port, MessageHandler messageHandler) {
 			this.host = host;
@@ -449,7 +450,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		@Override
 		MqttClientChannel doExecute(long now) {
 			try {
-				MqttClientChannel channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis);
+				channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, null);
 				channels.add(channel);
 				return channel;
 			} catch (Exception e) {
