@@ -13,27 +13,10 @@ import net.sf.xenqtt.MqttTimeoutException;
  */
 public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 
-	private final CountDownLatch done;
+	private final CountDownLatch done = new CountDownLatch(1);
 
 	private T returnValue;
 	private Throwable failCause;
-
-	/**
-	 * Constructs an instance with a count of 1
-	 * 
-	 * @see #AbstractBlockingCommand(int)
-	 */
-	public AbstractBlockingCommand() {
-		this(1);
-	}
-
-	/**
-	 * @param count
-	 *            The number of times {@link #complete(Throwable)} must be invoked before {@link #await()} or {@link #await(long, TimeUnit)} can return
-	 */
-	public AbstractBlockingCommand(int count) {
-		this.done = new CountDownLatch(count);
-	}
 
 	/**
 	 * @see net.sf.xenqtt.message.BlockingCommand#await()
@@ -49,7 +32,7 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	@Override
 	public final T await(long timeout, TimeUnit unit) throws MqttInterruptedException, MqttTimeoutException {
 		try {
-			if (timeout == Long.MAX_VALUE && unit == TimeUnit.DAYS) {
+			if (timeout == Long.MAX_VALUE) {
 				done.await();
 			} else {
 				if (!done.await(timeout, unit)) {
@@ -81,30 +64,32 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	public final void execute() {
 		try {
 			returnValue = doExecute();
-		} catch (RuntimeException e) {
-			failCause = e;
-		} catch (Exception e) {
-			failCause = new MqttException(e);
-		} catch (Error e) {
-			failCause = e;
+		} catch (Throwable t) {
+			setFailureCause(t);
+			complete();
 		}
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.BlockingCommand#complete(java.lang.Throwable)
+	 * @see net.sf.xenqtt.message.BlockingCommand#setFailureCause(java.lang.Throwable)
 	 */
 	@Override
-	public final void complete(Throwable failCause) {
+	public void setFailureCause(Throwable cause) {
 
-		if (this.failCause == null && failCause != null) {
-			if (failCause instanceof RuntimeException) {
-				this.failCause = failCause;
-			} else if (failCause instanceof Exception) {
-				this.failCause = new MqttException(failCause);
-			} else {
-				this.failCause = failCause;
-			}
+		if (cause instanceof RuntimeException) {
+			this.failCause = cause;
+		} else if (cause instanceof Exception) {
+			this.failCause = new MqttException(cause);
+		} else {
+			this.failCause = cause;
 		}
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.BlockingCommand#complete()
+	 */
+	@Override
+	public void complete() {
 
 		done.countDown();
 	}
@@ -115,11 +100,8 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	@Override
 	public void cancel() {
 
-		this.failCause = new MqttCommandCancelledException("Command cancelled: " + getClass().getSimpleName());
-
-		while (done.getCount() > 0) {
-			done.countDown();
-		}
+		this.failCause = new MqttCommandCancelledException("Command cancelled: " + getClass().getSimpleName(), this.failCause);
+		done.countDown();
 	}
 
 	/**

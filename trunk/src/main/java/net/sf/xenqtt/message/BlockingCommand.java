@@ -36,9 +36,10 @@ public interface BlockingCommand<T> {
 	 * Waits for the specified amount of time for the command to complete
 	 * 
 	 * @param timeout
-	 *            the maximum time to wait
+	 *            The maximum time to wait. If this is {@link Long#MAX_VALUE} is used then the unit arg is ignored and this is the same as invoking
+	 *            {@link #await()}.
 	 * @param unit
-	 *            the time unit of the timeout argument
+	 *            The time unit of the timeout argument
 	 * 
 	 * @return The result of the command, if any.
 	 * 
@@ -56,18 +57,22 @@ public interface BlockingCommand<T> {
 	T await(long timeout, TimeUnit unit) throws MqttCommandCancelledException, MqttInterruptedException, MqttTimeoutException, MqttException, RuntimeException;
 
 	/**
-	 * Executes the command. This is called by the thread responsible for processing the command, not the thread creating or waiting on the command.
+	 * Executes the command. This is called by the thread responsible for processing the command, not the thread creating or waiting on the command. If an
+	 * exception occurs {@link #setFailureCause(Throwable)} is called with the thrown exception and {@link #complete()} is invoked to complete the command.
 	 */
 	void execute();
 
 	/**
+	 * @param cause
+	 *            Cause of the command failure. Null to clear any existing cause
+	 */
+	void setFailureCause(Throwable cause);
+
+	/**
 	 * Called when the command is complete. Causes {@link #await()} or {@link #await(long, TimeUnit)} to return. This must be called as many times as the count
 	 * specified in the constructor before the methods return.
-	 * 
-	 * @param failCause
-	 *            Thrown by the command execution but not in the execution path of the original thread. Null if there was no exception.
 	 */
-	void complete(Throwable failCause);
+	void complete();
 
 	/**
 	 * Cancels the command causes {@link #await()} or {@link #await(long, TimeUnit)} to throw an {@link MqttCommandCancelledException}.

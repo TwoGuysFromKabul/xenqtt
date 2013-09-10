@@ -19,37 +19,39 @@ public class AbstractBlockingCommandTest {
 	@Test
 	public void testDefaultCtor() throws Exception {
 
-		cmd.complete(null);
+		cmd.complete();
+		cmd.await(0, TimeUnit.MILLISECONDS);
+	}
+
+	@Test(expected = MqttCommandCancelledException.class)
+	public void testAwait_Cancelled_NoException() throws Exception {
+
+		cmd = new TestBlockingCommand();
+		cmd.cancel();
 		cmd.await(0, TimeUnit.MILLISECONDS);
 	}
 
 	@Test
-	public void testCtorWithCount() throws Exception {
+	public void testAwait_Cancelled_WithException() throws Exception {
 
-		cmd = new TestBlockingCommand(2);
+		Exception exception = new IllegalStateException();
+
+		cmd = new TestBlockingCommand();
+		cmd.setFailureCause(exception);
+		cmd.cancel();
 
 		try {
-			cmd.complete(null);
 			cmd.await(0, TimeUnit.MILLISECONDS);
 			fail("expected exception");
-		} catch (MqttTimeoutException e) {
-			cmd.complete(null);
-			cmd.await(0, TimeUnit.MILLISECONDS);
+		} catch (MqttCommandCancelledException e) {
+			assertSame(exception, e.getCause());
 		}
-	}
-
-	@Test(expected = MqttCommandCancelledException.class)
-	public void testAwait_Cancelled() throws Exception {
-
-		cmd = new TestBlockingCommand(25);
-		cmd.cancel();
-		cmd.await(0, TimeUnit.MILLISECONDS);
 	}
 
 	@Test(expected = MqttCommandCancelledException.class)
 	public void testAwaitLongTimeUnit_Cancelled() throws Exception {
 
-		cmd = new TestBlockingCommand(25);
+		cmd = new TestBlockingCommand();
 		cmd.cancel();
 		cmd.await(10, TimeUnit.MILLISECONDS);
 	}
@@ -58,21 +60,23 @@ public class AbstractBlockingCommandTest {
 	public void testAwait_Success() {
 
 		cmd.execute();
-		cmd.complete(null);
+		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testAwait_ThrowsRuntimeException() {
 		cmd.execute();
-		cmd.complete(new IllegalStateException());
+		cmd.setFailureCause(new IllegalStateException());
+		cmd.complete();
 		cmd.await();
 	}
 
 	@Test(expected = Error.class)
 	public void testAwait_ThrowsError() {
 		cmd.execute();
-		cmd.complete(new Error());
+		cmd.setFailureCause(new Error());
+		cmd.complete();
 		cmd.await();
 	}
 
@@ -86,21 +90,23 @@ public class AbstractBlockingCommandTest {
 	@Test
 	public void testAwaitLongTimeUnit_Success() {
 		cmd.execute();
-		cmd.complete(null);
+		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await(10, TimeUnit.MILLISECONDS));
 	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testAwaitLongTimeUnit_ThrowsRuntimeException() {
 		cmd.execute();
-		cmd.complete(new IllegalStateException());
+		cmd.setFailureCause(new IllegalStateException());
+		cmd.complete();
 		cmd.await(10, TimeUnit.MILLISECONDS);
 	}
 
 	@Test(expected = Error.class)
 	public void testAwaitLongTimeUnit_ThrowsError() {
 		cmd.execute();
-		cmd.complete(new Error());
+		cmd.setFailureCause(new Error());
+		cmd.complete();
 		cmd.await(10, TimeUnit.MILLISECONDS);
 	}
 
@@ -119,7 +125,7 @@ public class AbstractBlockingCommandTest {
 	@Test
 	public void testExecute_Success() {
 		cmd.execute();
-		cmd.complete(null);
+		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
@@ -127,7 +133,7 @@ public class AbstractBlockingCommandTest {
 	public void testExecute_RuntimeException() {
 		cmd.exceptionToThrow = new IllegalStateException();
 		cmd.execute();
-		cmd.complete(null);
+		cmd.complete();
 		cmd.await();
 	}
 
@@ -136,7 +142,7 @@ public class AbstractBlockingCommandTest {
 
 		cmd.exceptionToThrow = new IOException();
 		cmd.execute();
-		cmd.complete(null);
+		cmd.complete();
 
 		try {
 			cmd.await();
@@ -151,86 +157,26 @@ public class AbstractBlockingCommandTest {
 
 		cmd.errorToThrow = new Error();
 		cmd.execute();
-		cmd.complete(null);
+		cmd.complete();
 		cmd.await();
 	}
 
 	@Test
-	public void testComplete_Success_ExecuteSucceeded() {
+	public void testComplete_NoException() {
 		cmd.execute();
-		cmd.complete(null);
+		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
 	@Test(expected = IllegalStateException.class)
-	public void testComplete_RuntimeException_ExecuteSucceeded() {
+	public void testComplete_WithException() {
 		cmd.execute();
-		cmd.complete(new IllegalStateException());
-		cmd.await();
-	}
-
-	@Test
-	public void testComplete_CheckedException_ExecuteSucceeded() {
-
-		Exception exception = new IOException();
-		cmd.execute();
-		cmd.complete(exception);
-
-		try {
-			cmd.await();
-			fail("expected exception");
-		} catch (MqttException e) {
-			assertSame(exception, e.getCause());
-		}
-	}
-
-	@Test(expected = Error.class)
-	public void testComplete_Error_ExecuteSucceeded() {
-		cmd.execute();
-		cmd.complete(new Error());
-		cmd.await();
-	}
-
-	@Test(expected = IllegalStateException.class)
-	public void testComplete_Success_ExecuteFailed() {
-		cmd.exceptionToThrow = new IllegalStateException();
-		cmd.execute();
-		cmd.complete(null);
-		cmd.await();
-	}
-
-	@Test(expected = Error.class)
-	public void testComplete_RuntimeException_ExecuteFailed() {
-		cmd.errorToThrow = new Error();
-		cmd.execute();
-		cmd.complete(new IllegalStateException());
-		cmd.await();
-	}
-
-	@Test(expected = Error.class)
-	public void testComplete_CheckedException_ExecuteFailed() {
-		cmd.errorToThrow = new Error();
-		cmd.execute();
-		cmd.complete(new IOException());
-		cmd.await();
-	}
-
-	@Test(expected = Exception.class)
-	public void testComplete_Error_ExecuteFailed() {
-		cmd.exceptionToThrow = new IllegalStateException();
-		cmd.execute();
-		cmd.complete(new Error());
+		cmd.setFailureCause(new IllegalStateException());
+		cmd.complete();
 		cmd.await();
 	}
 
 	private static class TestBlockingCommand extends AbstractBlockingCommand<Object> {
-
-		public TestBlockingCommand() {
-		}
-
-		public TestBlockingCommand(int count) {
-			super(count);
-		}
 
 		final Object returnValue = new Object();
 		Exception exceptionToThrow;
