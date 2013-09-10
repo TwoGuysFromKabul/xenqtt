@@ -9,6 +9,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
@@ -34,6 +35,8 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final Thread ioThread;
 	private final Selector selector;
 	private final boolean blocking;
+
+	// FIXME [jim] - need to deal with reconnection and handling unsent messages when all reconnect tries fail
 
 	/**
 	 * @param messageResendIntervalSeconds
@@ -246,7 +249,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			if (key.isReadable()) {
 				MqttChannel channel = (MqttChannel) key.attachment();
 				if (!channel.read(now)) {
-					channels.remove(channel);
+					channelClosed(channel);
 					iter.remove();
 				}
 			}
@@ -261,7 +264,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			if (key.isWritable()) {
 				MqttChannel channel = (MqttChannel) key.attachment();
 				if (!channel.write(now)) {
-					channels.remove(channel);
+					channelClosed(channel);
 					iter.remove();
 				}
 			}
@@ -276,7 +279,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			MqttChannel channel = (MqttChannel) key.attachment();
 			long time = channel.houseKeeping(now);
 			if (time < 0) {
-				channels.remove(channel);
+				channelClosed(channel);
 			} else if (time < maxIdleTime) {
 				maxIdleTime = time;
 			}
@@ -285,13 +288,25 @@ public final class ChannelManagerImpl implements ChannelManager {
 		return maxIdleTime;
 	}
 
+	private void channelClosed(MqttChannel channel) {
+
+		// FIXME [jim] - test that unsent messages' blocking commands are completed
+		channels.remove(channel);
+		List<MqttMessage> messages = channel.getUnsentMessages();
+		for (MqttMessage message : messages) {
+			if (message.blockingCommand != null) {
+				message.blockingCommand.complete(null);
+			}
+		}
+	}
+
 	private void executeCommands(long now) {
 
 		commandsLock.lock();
 		try {
 			while (firstCommand != null) {
 				firstCommand.execute();
-				if (!blocking) {
+				if (firstCommand.unblockImmediately) {
 					firstCommand.complete(null);
 				}
 				firstCommand = firstCommand.next;
@@ -319,6 +334,11 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private abstract class Command<T> extends AbstractBlockingCommand<T> {
 
 		private Command<?> next;
+		private final boolean unblockImmediately;
+
+		public Command(boolean unblockImmediately) {
+			this.unblockImmediately = unblockImmediately;
+		}
 	}
 
 	private final class SendCommand extends Command<Boolean> {
@@ -327,6 +347,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		private final MqttChannel channel;
 
 		public SendCommand(MqttChannelRef channel, MqttMessage message) {
+			super(!blocking);
 			this.message = message;
 			this.channel = (MqttChannel) channel;
 		}
@@ -342,6 +363,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		private final MqttMessage message;
 
 		public SendToAllCommand(MqttMessage message) {
+			super(!blocking);
 			this.message = message;
 		}
 
@@ -366,6 +388,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		private final MqttChannel channel;
 
 		public CloseCommand(MqttChannelRef channel) {
+			super(true);
 			this.channel = (MqttChannel) channel;
 		}
 
@@ -385,6 +408,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		private MqttClientChannel channel;
 
 		public NewClientChannelCommand(String host, int port, MessageHandler messageHandler) {
+			super(!blocking);
 			this.host = host;
 			this.port = port;
 			this.messageHandler = messageHandler;
@@ -393,7 +417,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		@Override
 		public MqttClientChannel doExecute() {
 			try {
-				channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, null);
+				channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this);
 				channels.add(channel);
 				return channel;
 			} catch (Exception e) {
@@ -408,6 +432,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		private final MessageHandler messageHandler;
 
 		public NewBrokerChannelCommand(SocketChannel socketChannel, MessageHandler messageHandler) {
+			super(true);
 			this.socketChannel = socketChannel;
 			this.messageHandler = messageHandler;
 		}

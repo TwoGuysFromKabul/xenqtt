@@ -283,6 +283,52 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
+	public void testEstabishConnection_NoLatch() throws Exception {
+
+		establishConnection();
+
+		assertTrue(clientChannel.isOpen());
+		assertFalse(clientChannel.isConnected());
+		assertFalse(clientChannel.connectedCalled);
+		assertEquals(0, clientChannel.pingIntervalMillis);
+		assertFalse(brokerChannel.isConnected());
+		assertFalse(brokerChannel.connectedCalled);
+		assertEquals(0, brokerChannel.pingIntervalMillis);
+
+		assertFalse(clientChannel.disconnectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+
+		closeConnection();
+
+		assertFalse(clientChannel.disconnectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+	}
+
+	@Test
+	public void testEstabishConnection_WithLatch() throws Exception {
+
+		establishConnection(blockingCommand);
+
+		verify(blockingCommand).complete(null);
+
+		assertTrue(clientChannel.isOpen());
+		assertFalse(clientChannel.isConnected());
+		assertFalse(clientChannel.connectedCalled);
+		assertEquals(0, clientChannel.pingIntervalMillis);
+		assertFalse(brokerChannel.isConnected());
+		assertFalse(brokerChannel.connectedCalled);
+		assertEquals(0, brokerChannel.pingIntervalMillis);
+
+		assertFalse(clientChannel.disconnectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+
+		closeConnection();
+
+		assertFalse(clientChannel.disconnectedCalled);
+		assertFalse(brokerChannel.disconnectedCalled);
+	}
+
+	@Test
 	public void testReadWriteSend_Disconnect() throws Exception {
 
 		establishConnection();
@@ -331,12 +377,12 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	@Test
 	public void testReadWriteSend_ConnAckWithoutAccept_WithLatch() throws Exception {
 
-		establishConnection(blockingCommand);
+		establishConnection();
 
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
 
-		assertTrue(clientChannel.send(connMsg, null));
+		assertTrue(clientChannel.send(connMsg, blockingCommand));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
@@ -395,12 +441,12 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	@Test
 	public void testReadWriteSend_ConnAckWithAccept_WithLatch() throws Exception {
 
-		establishConnection(blockingCommand);
+		establishConnection();
 
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		assertTrue(clientChannel.send(connMsg, null));
+		assertTrue(clientChannel.send(connMsg, blockingCommand));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 

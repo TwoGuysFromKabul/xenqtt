@@ -58,8 +58,9 @@ public interface MqttChannel extends MqttChannelRef {
 	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when processing the message is complete. The definition of
 	 *            complete is:
 	 *            <ul>
-	 *            <li>If the message is {@link MqttMessage#isAckable() ackable} processing is complete when the ack is received.</li>
-	 *            <li>If the message is not {@link MqttMessage#isAckable() ackable} processing is complete when the message is written to the socket.</li>
+	 *            <li>If the message is a {@link ConnectMessage} processing is complete when the {@link ConnAckMessage} is received.</li>
+	 *            <li>else if the message is {@link MqttMessage#isAckable() ackable} processing is complete when the ack is received.</li>
+	 *            <li>else processing is complete when the message is written to the socket.</li>
 	 *            <li>If any exception occurs or the channel is closed all in flight messages are complete</li>
 	 *            </ul>
 	 * 
