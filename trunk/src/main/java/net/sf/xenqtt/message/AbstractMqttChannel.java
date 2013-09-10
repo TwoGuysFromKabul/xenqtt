@@ -16,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.Log;
 
@@ -29,7 +28,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
 	private final List<IdentifiableMqttMessage> messagesToResend = new ArrayList<IdentifiableMqttMessage>();
 	private final long messageResendIntervalMillis;
-	private final CountDownLatch connectionCompleteLatch;
 
 	private final SocketChannel channel;
 	private SelectionKey selectionKey;
@@ -49,6 +47,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final Queue<MqttMessage> writesPending = new ArrayDeque<MqttMessage>();
 
+	private BlockingCommand<?> connectionCompleteCommand;
+
 	private MqttMessage sendMessageInProgress;
 
 	private boolean connected;
@@ -64,15 +64,15 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * 
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
-	 * @param connectionCompleteLatch
-	 *            If not null then this latch is {@link CountDownLatch#countDown() triggered} when the {@link ConnAckMessage} is received.
+	 * @param connectionCompleteCommand
+	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when the {@link ConnAckMessage} is received.
 	 */
 	AbstractMqttChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis,
-			CountDownLatch connectionCompleteLatch) throws IOException {
+			BlockingCommand<?> connectionCompleteCommand) throws IOException {
 
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
-		this.connectionCompleteLatch = connectionCompleteLatch;
+		this.connectionCompleteCommand = connectionCompleteCommand;
 
 		try {
 			this.channel = SocketChannel.open();
@@ -101,7 +101,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
-		this.connectionCompleteLatch = null;
+		this.connectionCompleteCommand = null;
 		this.channel = channel;
 
 		try {
@@ -193,11 +193,11 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, java.util.concurrent.CountDownLatch)
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand)
 	 */
 	@Override
-	public boolean send(MqttMessage message, CountDownLatch blockingLatch) {
-		message.blockingLatch = blockingLatch;
+	public boolean send(MqttMessage message, BlockingCommand<?> blockingCommand) {
+		message.blockingCommand = blockingCommand;
 		return doSend(message);
 	}
 
@@ -290,7 +290,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public final int sendQueueDepth() {
 
-		return writesPending.size();
+		return sendMessageInProgress == null ? writesPending.size() : writesPending.size() + 1;
 	}
 
 	/**
@@ -307,7 +307,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public List<MqttMessage> getUnsentMessages() {
 
-		List<MqttMessage> unsentMessages = new ArrayList<MqttMessage>(inFlightMessageCount() + sendQueueDepth() + 1);
+		List<MqttMessage> unsentMessages = new ArrayList<MqttMessage>(messagesToResend.size() + inFlightMessageCount() + sendQueueDepth());
+		unsentMessages.addAll(messagesToResend);
 		unsentMessages.addAll(inFlightMessages.values());
 		if (sendMessageInProgress != null) {
 			unsentMessages.add(sendMessageInProgress);
@@ -422,7 +423,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			MessageType type = sendMessageInProgress.getMessageType();
 			if (type == MessageType.DISCONNECT) {
-				countDown(sendMessageInProgress.blockingLatch);
+				commandComplete(sendMessageInProgress.blockingCommand);
 				sendMessageInProgress = null;
 				return false;
 			}
@@ -444,7 +445,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			if (!sendMessageInProgress.isAckable()) {
-				countDown(sendMessageInProgress.blockingLatch);
+				commandComplete(sendMessageInProgress.blockingCommand);
 			} else if (messageResendIntervalMillis > 0) {
 				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
 				m.nextSendTime = now + messageResendIntervalMillis;
@@ -463,9 +464,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return true;
 	}
 
-	private void countDown(CountDownLatch latch) {
-		if (latch != null) {
-			latch.countDown();
+	private void commandComplete(BlockingCommand<?> blockingCommand) {
+		if (blockingCommand != null) {
+			blockingCommand.complete(null);
 		}
 	}
 
@@ -616,7 +617,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				break;
 			case CONNACK:
 				ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
-				countDown(connectionCompleteLatch);
+				commandComplete(connectionCompleteCommand);
+				connectionCompleteCommand = null;
 				msg = connAckMessage;
 				result = connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
 				if (connected) {
@@ -713,7 +715,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		IdentifiableMqttMessage ackedMessage = inFlightMessages.remove(ackMessage.getMessageId());
 		if (ackedMessage != null) {
-			countDown(ackedMessage.blockingLatch);
+			commandComplete(ackedMessage.blockingCommand);
 		}
 	}
 

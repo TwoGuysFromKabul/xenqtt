@@ -36,12 +36,17 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final CountDownLatch readyLatch = new CountDownLatch(1);
 	private final Thread ioThread;
 	private final Selector selector;
+	private final boolean blocking;
 
 	/**
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
+	 * @param blocking
+	 *            If true then this channel manager operates in blocking mode. See the {@link ChannelManager} javadoc for explanations of how blocking mode
+	 *            affects the various methods.
 	 */
-	public ChannelManagerImpl(long messageResendIntervalSeconds) {
+	public ChannelManagerImpl(long messageResendIntervalSeconds, boolean blocking) {
+		this.blocking = blocking;
 		this.messageResendIntervalMillis = messageResendIntervalSeconds * 1000;
 		ioThread = new Thread(new Runnable() {
 
@@ -102,7 +107,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 		return ioThread.isAlive();
 	}
 
-	// FIXME [jim] - test
 	/**
 	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.lang.String, net.sf.xenqtt.message.MessageHandler)
 	 */
@@ -115,7 +119,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 	}
 
-	// FIXME [jim] - test
 	/**
 	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.net.URI, net.sf.xenqtt.message.MessageHandler)
 	 */
@@ -336,7 +339,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 				Thread.currentThread().interrupt();
 				throw new MqttInterruptedException(e);
 			}
-
+			// FIXME [jim] - need to release all waiting threads in the event the channel closes and preferably propogate exceptions?
 			if (failCause != null) {
 				if (failCause instanceof RuntimeException) {
 					throw (RuntimeException) failCause;
@@ -365,7 +368,9 @@ public final class ChannelManagerImpl implements ChannelManager {
 				firstCommand.failCause = e;
 			}
 
-			done.countDown();
+			if (!blocking) {
+				done.countDown();
+			}
 
 			if (next != null) {
 				next.execute(now);

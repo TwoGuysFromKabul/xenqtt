@@ -10,7 +10,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.mock.MockMessageHandler;
 
@@ -100,13 +99,13 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	/**
 	 * Establishes a socket connection. Creates the client and/or broker channels if they do not exist
 	 * 
-	 * @param connectCompleteLatch
-	 *            The latch passed to the client channel's constructor
+	 * @param blockingCommand
+	 *            The blocking command passed to the client channel's constructor
 	 */
-	void establishConnection(CountDownLatch connectCompleteLatch) throws Exception {
+	void establishConnection(BlockingCommand<Void> blockingCommand) throws Exception {
 
 		if (clientChannel == null) {
-			clientChannel = newClientChannel(connectCompleteLatch);
+			clientChannel = newClientChannel(blockingCommand);
 		}
 
 		assertTrue(clientChannel.isOpen());
@@ -202,7 +201,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	/**
 	 * @return A new client channel
 	 */
-	abstract C newClientChannel(CountDownLatch connectCompleteLatch) throws Exception;
+	abstract C newClientChannel(BlockingCommand<?> connectionCompleteCommand) throws Exception;
 
 	final class TestChannel extends AbstractMqttChannel {
 
@@ -223,8 +222,8 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		}
 
 		public TestChannel(String host, int port, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis,
-				CountDownLatch connectCompleteLatch) throws IOException {
-			super(host, port, handler, selector, messageResendIntervalMillis, connectCompleteLatch);
+				BlockingCommand<?> connectionCompleteCommand) throws IOException {
+			super(host, port, handler, selector, messageResendIntervalMillis, connectionCompleteCommand);
 			this.messageHandler = handler;
 		}
 
