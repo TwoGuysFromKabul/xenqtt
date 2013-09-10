@@ -16,6 +16,28 @@ public class AbstractBlockingCommandTest {
 	TestBlockingCommand cmd = new TestBlockingCommand();
 
 	@Test
+	public void testDefaultCtor() throws Exception {
+
+		cmd.complete(null);
+		cmd.await(0, TimeUnit.MILLISECONDS);
+	}
+
+	@Test
+	public void testCtorWithCount() throws Exception {
+
+		cmd = new TestBlockingCommand(2);
+
+		try {
+			cmd.complete(null);
+			cmd.await(0, TimeUnit.MILLISECONDS);
+			fail("expected exception");
+		} catch (MqttTimeoutException e) {
+			cmd.complete(null);
+			cmd.await(0, TimeUnit.MILLISECONDS);
+		}
+	}
+
+	@Test
 	public void testAwait_Success() {
 
 		cmd.execute();
@@ -185,6 +207,13 @@ public class AbstractBlockingCommandTest {
 	}
 
 	private static class TestBlockingCommand extends AbstractBlockingCommand<Object> {
+
+		public TestBlockingCommand() {
+		}
+
+		public TestBlockingCommand(int count) {
+			super(count);
+		}
 
 		final Object returnValue = new Object();
 		Exception exceptionToThrow;

@@ -12,10 +12,27 @@ import net.sf.xenqtt.MqttTimeoutException;
  */
 public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 
-	private final CountDownLatch done = new CountDownLatch(1);
+	private final CountDownLatch done;
 
 	private T returnValue;
 	private Throwable failCause;
+
+	/**
+	 * Constructs an instance with a count of 1
+	 * 
+	 * @see #AbstractBlockingCommand(int)
+	 */
+	public AbstractBlockingCommand() {
+		this(1);
+	}
+
+	/**
+	 * @param count
+	 *            The number of times {@link #complete(Throwable)} must be invoked before {@link #await()} or {@link #await(long, TimeUnit)} can return
+	 */
+	public AbstractBlockingCommand(int count) {
+		this.done = new CountDownLatch(count);
+	}
 
 	/**
 	 * @see net.sf.xenqtt.message.BlockingCommand#await()
