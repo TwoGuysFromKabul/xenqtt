@@ -3,7 +3,6 @@ package net.sf.xenqtt.message;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.Log;
 
@@ -21,12 +20,12 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 	 * 
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
-	 * @param connectionCompleteLatch
-	 *            If not null then this latch is {@link CountDownLatch#countDown() triggered} when the {@link ConnAckMessage} is received.
+	 * @param connectionCompleteCommand
+	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when the {@link ConnAckMessage} is received.
 	 */
 	public MqttClientChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis,
-			CountDownLatch connectionCompleteLatch) throws IOException {
-		super(host, port, handler, selector, messageResendIntervalMillis, connectionCompleteLatch);
+			BlockingCommand<?> connectionCompleteCommand) throws IOException {
+		super(host, port, handler, selector, messageResendIntervalMillis, connectionCompleteCommand);
 	}
 
 	/**

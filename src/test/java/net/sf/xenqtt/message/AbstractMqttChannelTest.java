@@ -1,6 +1,7 @@
 package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Field;
 import java.nio.channels.SelectionKey;
@@ -12,20 +13,29 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.mock.MockMessageHandler;
 
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTestBase<?, ?>.TestChannel, MqttChannelTestBase<?, ?>.TestChannel> {
 
-	CountDownLatch latch = new CountDownLatch(1);
+	@Mock BlockingCommand<Void> blockingCommand;
 
+	@Before
+	public void before() {
+		MockitoAnnotations.initMocks(this);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannelTestBase#newClientChannel(net.sf.xenqtt.message.BlockingCommand)
+	 */
 	@Override
-	TestChannel newClientChannel(CountDownLatch connectionCompleteLatch) throws Exception {
-		return new TestChannel("localhost", port, clientHandler, selector, 10000, connectionCompleteLatch);
+	TestChannel newClientChannel(BlockingCommand<?> connectionCompleteCommand) throws Exception {
+		return new TestChannel("localhost", port, clientHandler, selector, 10000, connectionCompleteCommand);
 	}
 
 	@Override
@@ -260,6 +270,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		field.set(clientChannel, new PingReqMessage());
 
 		assertFalse(clientChannel.write(now));
+		clientHandler.assertChannelClosedCount(1);
 	}
 
 	@Test
@@ -320,7 +331,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	@Test
 	public void testReadWriteSend_ConnAckWithoutAccept_WithLatch() throws Exception {
 
-		establishConnection(latch);
+		establishConnection(blockingCommand);
 
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
@@ -329,13 +340,13 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		assertFalse(latch.await(10, TimeUnit.MILLISECONDS));
+		verifyZeroInteractions(blockingCommand);
 
 		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
-		assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+		verify(blockingCommand).complete(null);
 
 		assertFalse(clientChannel.isConnected());
 		assertFalse(clientChannel.connectedCalled);
@@ -384,7 +395,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	@Test
 	public void testReadWriteSend_ConnAckWithAccept_WithLatch() throws Exception {
 
-		establishConnection(latch);
+		establishConnection(blockingCommand);
 
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
@@ -393,13 +404,13 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		assertFalse(latch.await(10, TimeUnit.MILLISECONDS));
+		verifyZeroInteractions(blockingCommand);
 
 		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
-		assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+		verify(blockingCommand).complete(null);
 
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnected());
@@ -785,19 +796,19 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
-		clientChannel.send(msg, latch);
+		clientChannel.send(msg, blockingCommand);
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 
 		if (ack != null) {
-			assertFalse(latch.await(10, TimeUnit.MILLISECONDS));
+			verifyZeroInteractions(blockingCommand);
 
 			brokerChannel.send(ack, null);
 			readWrite(1, 0);
 			clientHandler.assertMessages(ack);
 		}
 
-		assertTrue(latch.await(10, TimeUnit.MILLISECONDS));
+		verify(blockingCommand).complete(null);
 
 		closeConnection();
 	}

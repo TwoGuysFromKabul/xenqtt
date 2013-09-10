@@ -8,6 +8,7 @@ import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannelRef;
 import net.sf.xenqtt.message.MqttMessage;
 
+// FIXME [jim] - update javadoc to describe blocking and non-blocking mode
 /**
  * <p>
  * Specifies a type that manages zero or more {@link MqttChannelRef channels} that communicate via the MQTT protocol.
@@ -105,7 +106,7 @@ public interface ChannelManager {
 	void close(MqttChannelRef channel) throws MqttInterruptedException;
 
 	/**
-	 * FIXME [jim] - needs javadoc
+	 * Closes all channels
 	 */
 	void closeAll();
 

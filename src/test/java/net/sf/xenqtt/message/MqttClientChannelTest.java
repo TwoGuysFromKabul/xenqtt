@@ -3,15 +3,14 @@ package net.sf.xenqtt.message;
 import static org.junit.Assert.*;
 
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
 
 public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel, MqttChannelTestBase<?, ?>.TestChannel> {
 
 	@Override
-	MqttClientChannel newClientChannel(CountDownLatch connectCompleteLatch) throws Exception {
-		return new MqttClientChannel("localhost", port, clientHandler, selector, 10000, connectCompleteLatch);
+	MqttClientChannel newClientChannel(BlockingCommand<?> connectionCompleteCommand) throws Exception {
+		return new MqttClientChannel("localhost", port, clientHandler, selector, 10000, connectionCompleteCommand);
 	}
 
 	@Override

@@ -3,7 +3,6 @@ package net.sf.xenqtt.message;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * <p>
@@ -55,17 +54,18 @@ public interface MqttChannel extends MqttChannelRef {
 	 * 
 	 * @param message
 	 *            The message to send
-	 * @param blockingLatch
-	 *            If not null then this latch is {@link CountDownLatch#countDown() triggered} when processing the message is complete. The definition of
+	 * @param blockingCommand
+	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when processing the message is complete. The definition of
 	 *            complete is:
 	 *            <ul>
 	 *            <li>If the message is {@link MqttMessage#isAckable() ackable} processing is complete when the ack is received.</li>
-	 *            <li>If none of the above is true then processing is complete when the message is written to the socket.</li>
+	 *            <li>If the message is not {@link MqttMessage#isAckable() ackable} processing is complete when the message is written to the socket.</li>
+	 *            <li>If any exception occurs or the channel is closed all in flight messages are complete</li>
 	 *            </ul>
 	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
-	boolean send(MqttMessage message, CountDownLatch blockingLatch);
+	boolean send(MqttMessage message, BlockingCommand<?> blockingCommand);
 
 	/**
 	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.
@@ -118,7 +118,7 @@ public interface MqttChannel extends MqttChannelRef {
 	long houseKeeping(long now);
 
 	/**
-	 * @return The number of messages in the send queue. This does not include any message currently in the process of being sent
+	 * @return The number of messages in the send queue. This includes any message currently in the process of being sent
 	 */
 	int sendQueueDepth();
 

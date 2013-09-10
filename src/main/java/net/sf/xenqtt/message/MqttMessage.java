@@ -3,7 +3,6 @@ package net.sf.xenqtt.message;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * This is a generic MQTT message. Extending classes support more specific message types
@@ -29,11 +28,11 @@ public class MqttMessage {
 	final int fixedHeaderEndOffset;
 
 	/**
-	 * If not null then {@link CountDownLatch#countDown() countDown()} is invoked when this message is "complete". The definition of "complete" varies by
-	 * message type. If the message is ackable then it is complete when the ack message is received. Otherwise, it is complete when it is written to the socket.
-	 * Used by {@link AbstractMqttChannel} to enable blocking.
+	 * If not null then {@link BlockingCommand#complete(Throwable)} is invoked when this message is "complete". The definition of "complete" varies by message
+	 * type. If the message is ackable then it is complete when the ack message is received. Otherwise, it is complete when it is written to the socket or the
+	 * channel is closed. Used by {@link AbstractMqttChannel} to enable blocking.
 	 */
-	CountDownLatch blockingLatch;
+	BlockingCommand<?> blockingCommand;
 
 	private MessageType messageType;
 
