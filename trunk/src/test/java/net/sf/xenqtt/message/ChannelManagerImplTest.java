@@ -7,6 +7,7 @@ import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.mock.MockMessageHandler;
 import net.sf.xenqtt.mock.MockServer;
@@ -25,7 +26,6 @@ public class ChannelManagerImplTest {
 	MockMessageHandler clientHandler = new MockMessageHandler();
 	MockMessageHandler brokerHandler = new MockMessageHandler();
 
-	// FIXME [jim] - need to test blocking mode
 	ChannelManagerImpl manager;
 
 	@Before
@@ -43,11 +43,11 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testInit_IsRunning_Shutdown_NonBLocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
 		manager.init();
 		manager.shutdown();
 
-		manager = new ChannelManagerImpl(10, false);
+		manager = new ChannelManagerImpl(10);
 		assertFalse(manager.isRunning());
 		manager.init();
 		assertTrue(manager.isRunning());
@@ -58,11 +58,11 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testInit_IsRunning_Shutdown_Blocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, true);
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 		manager.shutdown();
 
-		manager = new ChannelManagerImpl(10, true);
+		manager = new ChannelManagerImpl(10, 0);
 		assertFalse(manager.isRunning());
 		manager.init();
 		assertTrue(manager.isRunning());
@@ -73,7 +73,7 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testShutdownClosesAll_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
 		manager.init();
 
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
@@ -91,7 +91,7 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testShutdownClosesAll_Blocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, true);
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
@@ -109,7 +109,21 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testNewClientChannel_InvalidHost_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		try {
+			manager.newClientChannel("foo", 123, clientHandler);
+			fail("Exception expected");
+		} catch (RuntimeException e) {
+			clientHandler.assertLastChannelClosedCause(e.getCause());
+		}
+	}
+
+	@Test
+	public void testNewClientChannel_InvalidHost_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		try {
@@ -123,7 +137,7 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testNewClientChannel_UnableToConnect_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
 		manager.init();
 
 		CountDownLatch trigger = new CountDownLatch(1);
@@ -136,9 +150,47 @@ public class ChannelManagerImplTest {
 	}
 
 	@Test
+	public void testNewClientChannel_UnableToConnect_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
+		manager.init();
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelClosed(trigger);
+
+		try {
+			clientChannel = manager.newClientChannel("localhost", 19876, clientHandler);
+			fail("expected exception");
+		} catch (MqttCommandCancelledException e) {
+			assertEquals(MqttException.class, e.getCause().getClass());
+			assertEquals(ConnectException.class, e.getCause().getCause().getClass());
+		}
+
+		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+
+		clientHandler.assertLastChannelClosedCause(ConnectException.class);
+	}
+
+	@Test
 	public void testNewClientChannel_HostPort_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelOpened(trigger);
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+
+		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+
+		clientHandler.assertChannelClosedCount(0);
+	}
+
+	@Test
+	public void testNewClientChannel_HostPort_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		CountDownLatch trigger = new CountDownLatch(1);
@@ -154,7 +206,26 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testNewClientChannel_NonTcpUri_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelOpened(trigger);
+
+		try {
+			clientChannel = manager.newClientChannel("http://localhost:3456", clientHandler);
+			fail("expected exception");
+		} catch (MqttException e) {
+			assertEquals("Invalid broker URI (scheme must be 'tcp'): http://localhost:3456", e.getMessage());
+		}
+
+		clientHandler.assertChannelOpenedCount(0);
+	}
+
+	@Test
+	public void testNewClientChannel_NonTcpUri_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		CountDownLatch trigger = new CountDownLatch(1);
@@ -173,7 +244,23 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testNewClientChannel_UriAsString_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelOpened(trigger);
+
+		clientChannel = manager.newClientChannel("tcp://localhost:" + server.getPort(), clientHandler);
+
+		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+
+		clientHandler.assertChannelClosedCount(0);
+	}
+
+	@Test
+	public void testNewClientChannel_UriAsString_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		CountDownLatch trigger = new CountDownLatch(1);
@@ -189,7 +276,23 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testNewClientChannel_Uri_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelOpened(trigger);
+
+		clientChannel = manager.newClientChannel(new URI("tcp://localhost:" + server.getPort()), clientHandler);
+
+		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+
+		clientHandler.assertChannelClosedCount(0);
+	}
+
+	@Test
+	public void testNewClientChannel_Uri_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		CountDownLatch trigger = new CountDownLatch(1);
@@ -205,7 +308,22 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testNewBrokerChannel_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		clientHandler.assertChannelOpenedCount(1);
+		brokerHandler.assertChannelOpenedCount(1);
+		clientHandler.assertChannelClosedCount(0);
+		brokerHandler.assertChannelClosedCount(0);
+	}
+
+	@Test
+	public void testNewBrokerChannel_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
@@ -220,7 +338,7 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testSend_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
 		manager.init();
 
 		CountDownLatch trigger = new CountDownLatch(1);
@@ -237,30 +355,49 @@ public class ChannelManagerImplTest {
 	}
 
 	@Test
-	public void testSendToAll_NonBlocking() throws Exception {
+	public void testSend_Blocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
-		CountDownLatch trigger = new CountDownLatch(2);
-		clientHandler.onMessage(MessageType.PUBACK, trigger);
+		CountDownLatch trigger = new CountDownLatch(1);
 		brokerHandler.onMessage(MessageType.PUBACK, trigger);
 
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
 		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
 
-		manager.sendToAll(new PubAckMessage(1));
+		manager.send(clientChannel, new PubAckMessage(1));
 
-		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
-		clientHandler.assertMessages(new PubAckMessage(1));
 		brokerHandler.assertMessages(new PubAckMessage(1));
 	}
 
 	@Test
 	public void testClose_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		clientHandler.assertChannelClosedCount(0);
+		brokerHandler.assertChannelClosedCount(0);
+
+		manager.close(clientChannel);
+		clientHandler.assertChannelClosedCount(1);
+		brokerHandler.assertChannelClosedCount(0);
+
+		manager.close(brokerChannel);
+		clientHandler.assertChannelClosedCount(1);
+		brokerHandler.assertChannelClosedCount(1);
+	}
+
+	@Test
+	public void testClose_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
 
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
@@ -281,7 +418,31 @@ public class ChannelManagerImplTest {
 	@Test
 	public void testKeepAlive_NonBlocking() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
+		manager = new ChannelManagerImpl(2);
+		doTestKeepAlive();
+	}
+
+	@Test
+	public void testKeepAlive_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
+		doTestKeepAlive();
+	}
+
+	@Test
+	public void testMessageResend_NonBlocking() throws Exception {
+		manager = new ChannelManagerImpl(2);
+		doTestMessageResend();
+	}
+
+	@Test
+	public void testMessageResend_Blocking() throws Exception {
+		manager = new ChannelManagerImpl(2, 0);
+		doTestMessageResend();
+	}
+
+	private void doTestKeepAlive() throws Exception {
+
 		manager.init();
 
 		clientHandler = new MockMessageHandler() {
@@ -329,10 +490,8 @@ public class ChannelManagerImplTest {
 		brokerHandler.assertChannelClosedCount(1);
 	}
 
-	@Test
-	public void testMessageResend_NonBlocking() throws Exception {
+	private void doTestMessageResend() throws Exception {
 
-		manager = new ChannelManagerImpl(2, false);
 		manager.init();
 
 		clientHandler = new MockMessageHandler() {
