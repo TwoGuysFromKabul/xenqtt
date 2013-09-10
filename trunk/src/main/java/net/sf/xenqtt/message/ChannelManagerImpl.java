@@ -135,7 +135,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws MqttInterruptedException {
 
-		return new NewClientChannelCommand(host, port, messageHandler).await();
+		return addCommand(new NewClientChannelCommand(host, port, messageHandler)).await();
 	}
 
 	/**
@@ -144,7 +144,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws MqttInterruptedException {
 
-		return new NewBrokerChannelCommand(socketChannel, messageHandler).await();
+		return addCommand(new NewBrokerChannelCommand(socketChannel, messageHandler)).await();
 	}
 
 	/**
@@ -153,9 +153,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public boolean send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
 
-		SendCommand cmd = new SendCommand(channel, message);
-		cmd.await();
-		return cmd.returnValue;
+		return addCommand(new SendCommand(channel, message)).await();
 	}
 
 	/**
@@ -165,7 +163,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public void sendToAll(MqttMessage message) throws MqttInterruptedException {
 
-		new SendToAllCommand(message).await();
+		addCommand(new SendToAllCommand(message)).await();
 	}
 
 	/**
@@ -174,15 +172,10 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public void close(MqttChannelRef channel) throws MqttInterruptedException {
 
-		new CloseCommand(channel).await();
+		addCommand(new CloseCommand(channel)).await();
 	}
 
-	// FIXME [jim] - test
-	/**
-	 * @see net.sf.xenqtt.message.ChannelManager#closeAll()
-	 */
-	@Override
-	public void closeAll() {
+	private void closeAll() {
 
 		Log.debug("Channel manager closing all channels");
 		for (MqttChannel channel : channels) {
@@ -296,88 +289,36 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		commandsLock.lock();
 		try {
-			if (firstCommand != null) {
-				firstCommand.execute(now);
-				firstCommand = null;
+			while (firstCommand != null) {
+				firstCommand.execute();
+				if (!blocking) {
+					firstCommand.complete(null);
+				}
+				firstCommand = firstCommand.next;
 			}
 		} finally {
 			commandsLock.unlock();
 		}
 	}
 
-	private abstract class Command<T> {
+	private <T, C extends Command<T>> C addCommand(C command) {
 
-		private final CountDownLatch done = new CountDownLatch(1);
+		commandsLock.lock();
+		try {
+			command.next = firstCommand;
+			firstCommand = command;
+		} finally {
+			commandsLock.unlock();
+		}
+
+		selector.wakeup();
+
+		return command;
+	}
+
+	private abstract class Command<T> extends AbstractBlockingCommand<T> {
 
 		private Command<?> next;
-
-		T returnValue;
-		Throwable failCause;
-
-		/**
-		 * Adds this command to the list of commands then wakes up the selector and waits for the command to be executed
-		 */
-		final T await() throws MqttInterruptedException {
-
-			commandsLock.lock();
-			try {
-				next = firstCommand;
-				firstCommand = this;
-			} finally {
-				commandsLock.unlock();
-			}
-
-			selector.wakeup();
-			try {
-				done.await();
-			} catch (InterruptedException e) {
-				// FIXME [jim] - test that the interrupted flag gets reset, or maybe it shouldn't?
-				// reset the thread's interrupted flag
-				Thread.currentThread().interrupt();
-				throw new MqttInterruptedException(e);
-			}
-			// FIXME [jim] - need to release all waiting threads in the event the channel closes and preferably propogate exceptions?
-			if (failCause != null) {
-				if (failCause instanceof RuntimeException) {
-					throw (RuntimeException) failCause;
-				}
-				if (failCause instanceof Error) {
-					throw (Error) failCause;
-				}
-
-				throw new RuntimeException("Unexpected exception. This is a bug!", failCause);
-			}
-
-			return returnValue;
-		}
-
-		/**
-		 * Executes the command. This should only be called by the ioThread.
-		 */
-		final void execute(long now) {
-			try {
-				// don't just catch Exception because if a different type of checked exception is thrown by doExecute we want it to be obvious because we need
-				// to add explicit support for it to the await method in this class.
-				returnValue = doExecute(now);
-			} catch (RuntimeException e) {
-				firstCommand.failCause = e;
-			} catch (Error e) {
-				firstCommand.failCause = e;
-			}
-
-			if (!blocking) {
-				done.countDown();
-			}
-
-			if (next != null) {
-				next.execute(now);
-			}
-		}
-
-		/**
-		 * Each extending class implements its business logic in this method
-		 */
-		abstract T doExecute(long now);
 	}
 
 	private final class SendCommand extends Command<Boolean> {
@@ -391,7 +332,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		Boolean doExecute(long now) {
+		public Boolean doExecute() {
 			return channel.send(message, null);
 		}
 	}
@@ -405,7 +346,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		Void doExecute(long now) {
+		public Void doExecute() {
 
 			for (MqttChannel channel : channels) {
 				try {
@@ -429,7 +370,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		Void doExecute(long now) {
+		public Void doExecute() {
 
 			channel.close();
 			return null;
@@ -450,7 +391,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		MqttClientChannel doExecute(long now) {
+		public MqttClientChannel doExecute() {
 			try {
 				channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, null);
 				channels.add(channel);
@@ -472,7 +413,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		MqttBrokerChannel doExecute(long now) {
+		public MqttBrokerChannel doExecute() {
 			try {
 				MqttBrokerChannel channel = new MqttBrokerChannel(socketChannel, messageHandler, selector, messageResendIntervalMillis);
 				channels.add(channel);
