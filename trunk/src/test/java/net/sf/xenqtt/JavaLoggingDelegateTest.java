@@ -58,17 +58,8 @@ public class JavaLoggingDelegateTest {
 
 		List<String> lines = getLinesFromXenqttLogFile();
 		List<String> nextStandardLogLevel = new ArrayList<String>(Arrays.asList(new String[] { "trace", "debug", "info", "warn", "error", "fatal" }));
-		List<String> nextJulLogLevel = new ArrayList<String>(Arrays.asList(new String[] { "FINER", "FINE", "INFO", "WARNING", "SEVERE", "SEVERE" }));
-		String currentStandardLogLevel = null;
 		for (int i = 0; i < lines.size(); i++) {
-			String line = lines.get(i);
-			if (i % 2 == 0) {
-				currentStandardLogLevel = nextStandardLogLevel.remove(0);
-				assertTrue(line.endsWith(currentStandardLogLevel));
-			} else {
-				assertTrue(line.startsWith(nextJulLogLevel.remove(0)));
-				assertTrue(line.endsWith(String.format("%s message with parameter: hello", currentStandardLogLevel)));
-			}
+			assertTrue(lines.get(i).contains(String.format("%s message with parameter: hello", nextStandardLogLevel.remove(0))));
 		}
 	}
 
