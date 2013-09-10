@@ -3,6 +3,7 @@ package net.sf.xenqtt;
 import static org.junit.Assert.*;
 
 import java.net.ConnectException;
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +34,8 @@ public class ChannelManagerImplTest {
 	MockMessageHandler clientHandler = new MockMessageHandler();
 	MockMessageHandler brokerHandler = new MockMessageHandler();
 
-	ChannelManagerImpl manager = new ChannelManagerImpl(2);
+	// FIXME [jim] - need to test blocking mode
+	ChannelManagerImpl manager = new ChannelManagerImpl(2, false);
 
 	@Before
 	public void before() {
@@ -54,7 +56,7 @@ public class ChannelManagerImplTest {
 
 		manager.shutdown();
 
-		manager = new ChannelManagerImpl(10);
+		manager = new ChannelManagerImpl(10, false);
 		assertFalse(manager.isRunning());
 		manager.init();
 		assertTrue(manager.isRunning());
@@ -101,12 +103,54 @@ public class ChannelManagerImplTest {
 	}
 
 	@Test
-	public void testNewClientChannel_Success() throws Exception {
+	public void testNewClientChannel_HostPort() throws Exception {
 
 		CountDownLatch trigger = new CountDownLatch(1);
 		clientHandler.onChannelOpened(trigger);
 
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+
+		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+
+		clientHandler.assertChannelClosedCount(0);
+	}
+
+	@Test
+	public void testNewClientChannel_NonTcpUri() throws Exception {
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelOpened(trigger);
+
+		try {
+			clientChannel = manager.newClientChannel("http://localhost:3456", clientHandler);
+			fail("expected exception");
+		} catch (MqttException e) {
+			assertEquals("Invalid broker URI (scheme must be 'tcp'): http://localhost:3456", e.getMessage());
+		}
+
+		clientHandler.assertChannelOpenedCount(0);
+	}
+
+	@Test
+	public void testNewClientChannel_UriAsString() throws Exception {
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelOpened(trigger);
+
+		clientChannel = manager.newClientChannel("tcp://localhost:" + server.getPort(), clientHandler);
+
+		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+
+		clientHandler.assertChannelClosedCount(0);
+	}
+
+	@Test
+	public void testNewClientChannel_Uri() throws Exception {
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		clientHandler.onChannelOpened(trigger);
+
+		clientChannel = manager.newClientChannel(new URI("tcp://localhost:" + server.getPort()), clientHandler);
 
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
