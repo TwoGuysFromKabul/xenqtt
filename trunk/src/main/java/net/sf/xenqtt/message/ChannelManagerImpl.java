@@ -1,4 +1,4 @@
-package net.sf.xenqtt;
+package net.sf.xenqtt.message;
 
 import java.io.IOException;
 import java.net.URI;
@@ -14,12 +14,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import net.sf.xenqtt.message.MessageHandler;
-import net.sf.xenqtt.message.MqttBrokerChannel;
-import net.sf.xenqtt.message.MqttChannel;
-import net.sf.xenqtt.message.MqttChannelRef;
-import net.sf.xenqtt.message.MqttClientChannel;
-import net.sf.xenqtt.message.MqttMessage;
+import net.sf.xenqtt.Log;
+import net.sf.xenqtt.MqttException;
+import net.sf.xenqtt.MqttInterruptedException;
 
 /**
  * Uses a single thread and non-blocking NIO to manage one or more {@link MqttChannel}s. You must call {@link #init()} before using this manager and
@@ -64,7 +61,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#init()
+	 * @see net.sf.xenqtt.message.ChannelManager#init()
 	 */
 	@Override
 	public void init() {
@@ -81,7 +78,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#shutdown()
+	 * @see net.sf.xenqtt.message.ChannelManager#shutdown()
 	 */
 	@Override
 	public void shutdown() {
@@ -100,7 +97,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#isRunning()
+	 * @see net.sf.xenqtt.message.ChannelManager#isRunning()
 	 */
 	@Override
 	public boolean isRunning() {
@@ -108,7 +105,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.lang.String, net.sf.xenqtt.message.MessageHandler)
+	 * @see net.sf.xenqtt.message.ChannelManager#newClientChannel(java.lang.String, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
 	public MqttChannelRef newClientChannel(String brokerUri, MessageHandler messageHandler) throws MqttInterruptedException {
@@ -120,7 +117,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.net.URI, net.sf.xenqtt.message.MessageHandler)
+	 * @see net.sf.xenqtt.message.ChannelManager#newClientChannel(java.net.URI, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
 	public MqttChannelRef newClientChannel(URI brokerUri, MessageHandler messageHandler) throws MqttInterruptedException {
@@ -133,7 +130,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#newClientChannel(java.lang.String, int, net.sf.xenqtt.message.MessageHandler)
+	 * @see net.sf.xenqtt.message.ChannelManager#newClientChannel(java.lang.String, int, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
 	public MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws MqttInterruptedException {
@@ -142,7 +139,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#newBrokerChannel(java.nio.channels.SocketChannel, net.sf.xenqtt.message.MessageHandler)
+	 * @see net.sf.xenqtt.message.ChannelManager#newBrokerChannel(java.nio.channels.SocketChannel, net.sf.xenqtt.message.MessageHandler)
 	 */
 	@Override
 	public MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws MqttInterruptedException {
@@ -151,7 +148,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#send(net.sf.xenqtt.message.MqttChannelRef, net.sf.xenqtt.message.MqttMessage)
+	 * @see net.sf.xenqtt.message.ChannelManager#send(net.sf.xenqtt.message.MqttChannelRef, net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
 	public boolean send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
@@ -163,7 +160,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	/**
 	 * @throws MqttInterruptedException
-	 * @see net.sf.xenqtt.ChannelManager#sendToAll(net.sf.xenqtt.message.MqttMessage)
+	 * @see net.sf.xenqtt.message.ChannelManager#sendToAll(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
 	public void sendToAll(MqttMessage message) throws MqttInterruptedException {
@@ -172,7 +169,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#close(net.sf.xenqtt.message.MqttChannelRef)
+	 * @see net.sf.xenqtt.message.ChannelManager#close(net.sf.xenqtt.message.MqttChannelRef)
 	 */
 	@Override
 	public void close(MqttChannelRef channel) throws MqttInterruptedException {
@@ -182,7 +179,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	// FIXME [jim] - test
 	/**
-	 * @see net.sf.xenqtt.ChannelManager#closeAll()
+	 * @see net.sf.xenqtt.message.ChannelManager#closeAll()
 	 */
 	@Override
 	public void closeAll() {

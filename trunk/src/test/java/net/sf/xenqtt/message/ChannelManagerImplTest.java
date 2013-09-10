@@ -1,4 +1,4 @@
-package net.sf.xenqtt;
+package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
 
@@ -7,6 +7,8 @@ import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import net.sf.xenqtt.MqttException;
+import net.sf.xenqtt.message.ChannelManagerImpl;
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
