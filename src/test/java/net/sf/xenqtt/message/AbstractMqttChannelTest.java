@@ -309,7 +309,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection(blockingCommand);
 
-		verify(blockingCommand).complete(null);
+		verify(blockingCommand).complete();
 
 		assertTrue(clientChannel.isOpen());
 		assertFalse(clientChannel.isConnected());
@@ -392,7 +392,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
-		verify(blockingCommand).complete(null);
+		verify(blockingCommand).complete();
 
 		assertFalse(clientChannel.isConnected());
 		assertFalse(clientChannel.connectedCalled);
@@ -456,7 +456,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
-		verify(blockingCommand).complete(null);
+		verify(blockingCommand).complete();
 
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnected());
@@ -854,7 +854,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 			clientHandler.assertMessages(ack);
 		}
 
-		verify(blockingCommand).complete(null);
+		verify(blockingCommand).complete();
 
 		closeConnection();
 	}
