@@ -38,6 +38,14 @@ public class AbstractBlockingCommandTest {
 	}
 
 	@Test
+	public void testCancel() throws Exception {
+
+		cmd = new TestBlockingCommand(25);
+		cmd.cancel();
+		cmd.await(0, TimeUnit.MILLISECONDS);
+	}
+
+	@Test
 	public void testAwait_Success() {
 
 		cmd.execute();
