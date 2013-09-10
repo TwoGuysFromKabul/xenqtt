@@ -22,7 +22,7 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	 */
 	@Override
 	public final T await() throws MqttInterruptedException {
-		return await(0, TimeUnit.DAYS);
+		return await(Long.MAX_VALUE, TimeUnit.DAYS);
 	}
 
 	/**
