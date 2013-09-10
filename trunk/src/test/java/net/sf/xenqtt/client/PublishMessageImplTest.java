@@ -13,9 +13,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-/**
- * FIXME [jim] - needs javadoc
- */
 public class PublishMessageImplTest {
 
 	@Mock ChannelManager channelManager;
