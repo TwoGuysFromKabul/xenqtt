@@ -309,6 +309,29 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#cancelBlockingCommands()
+	 */
+	@Override
+	public void cancelBlockingCommands() {
+
+		// FIXME [jim] - test
+		cancelCommand(connectionCompleteCommand);
+		cancelCommand(connAckReceivedCommand);
+		if (sendMessageInProgress != null) {
+			cancelCommand(sendMessageInProgress.blockingCommand);
+		}
+		for (MqttMessage message : writesPending) {
+			cancelCommand(message.blockingCommand);
+		}
+		for (MqttMessage message : messagesToResend) {
+			cancelCommand(message.blockingCommand);
+		}
+		for (MqttMessage message : inFlightMessages.values()) {
+			cancelCommand(message.blockingCommand);
+		}
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#getUnsentMessages()
 	 */
 	@Override
@@ -476,9 +499,21 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return true;
 	}
 
+	private void setFailureOnCommand(BlockingCommand<?> blockingCommand, Throwable cause) {
+		if (blockingCommand != null) {
+			blockingCommand.setFailureCause(cause);
+		}
+	}
+
+	private void cancelCommand(BlockingCommand<?> blockingCommand) {
+		if (blockingCommand != null) {
+			blockingCommand.cancel();
+		}
+	}
+
 	private void commandComplete(BlockingCommand<?> blockingCommand) {
 		if (blockingCommand != null) {
-			blockingCommand.complete(null);
+			blockingCommand.complete();
 		}
 	}
 
@@ -516,11 +551,35 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return readRemaining(now);
 	}
 
+	private void setFailureOnBlockingCommands(Throwable cause) {
+
+		setFailureOnCommand(connectionCompleteCommand, cause);
+		setFailureOnCommand(connAckReceivedCommand, cause);
+		if (sendMessageInProgress != null) {
+			setFailureOnCommand(sendMessageInProgress.blockingCommand, cause);
+		}
+		for (MqttMessage message : writesPending) {
+			setFailureOnCommand(message.blockingCommand, cause);
+		}
+		for (MqttMessage message : messagesToResend) {
+			setFailureOnCommand(message.blockingCommand, cause);
+		}
+		for (MqttMessage message : inFlightMessages.values()) {
+			setFailureOnCommand(message.blockingCommand, cause);
+		}
+	}
+
 	private void doClose(Throwable cause, String messageFormat, Object... args) {
 
 		if (cause != null) {
 			Log.error(cause, messageFormat, args);
 		}
+
+		// FIXME [jim] - test setting failure
+		if (cause != null) {
+			setFailureOnBlockingCommands(cause);
+		}
+
 		if (channelCloseCalled) {
 			return;
 		}

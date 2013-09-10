@@ -129,6 +129,12 @@ public interface MqttChannel extends MqttChannelRef {
 	int inFlightMessageCount();
 
 	/**
+	 * {@link BlockingCommand#cancel() Cancels} all blocking commands. This is not done when the channel is closed because we may want to reconnect instead of
+	 * releasing the commands.
+	 */
+	void cancelBlockingCommands();
+
+	/**
 	 * @return All messages that have not been sent. This includes messages queued to be sent, any partially sent message, and all in flight messages.
 	 */
 	List<MqttMessage> getUnsentMessages();
