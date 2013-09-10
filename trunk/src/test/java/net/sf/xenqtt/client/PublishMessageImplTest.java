@@ -2,7 +2,7 @@ package net.sf.xenqtt.client;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import net.sf.xenqtt.ChannelManager;
+import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.MqttChannelRef;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
