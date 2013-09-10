@@ -1,12 +1,10 @@
-package net.sf.xenqtt;
+package net.sf.xenqtt.message;
 
 import java.net.URI;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 
-import net.sf.xenqtt.message.MessageHandler;
-import net.sf.xenqtt.message.MqttChannelRef;
-import net.sf.xenqtt.message.MqttMessage;
+import net.sf.xenqtt.MqttInterruptedException;
 
 // FIXME [jim] - update javadoc to describe blocking and non-blocking mode
 /**
