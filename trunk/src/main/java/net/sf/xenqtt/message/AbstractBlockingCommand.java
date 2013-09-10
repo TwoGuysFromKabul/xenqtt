@@ -109,6 +109,17 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.BlockingCommand#cancel()
+	 */
+	@Override
+	public void cancel() {
+
+		while (done.getCount() > 0) {
+			done.countDown();
+		}
+	}
+
+	/**
 	 * Extensions implement this method to execute the command
 	 * 
 	 * @return The value returned by the command

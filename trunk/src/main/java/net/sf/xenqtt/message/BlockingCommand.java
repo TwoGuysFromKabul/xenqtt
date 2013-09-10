@@ -56,10 +56,16 @@ public interface BlockingCommand<T> {
 	void execute();
 
 	/**
-	 * Called when the command is complete. Causes {@link #await()} or {@link #await(long, TimeUnit)} to return.
+	 * Called when the command is complete. Causes {@link #await()} or {@link #await(long, TimeUnit)} to return. This must be called as many times as the count
+	 * specified in the constructor before the methods return.
 	 * 
 	 * @param failCause
 	 *            Thrown by the command execution but not in the execution path of the original thread. Null if there was no exception.
 	 */
 	void complete(Throwable failCause);
+
+	/**
+	 * Cancels the command and lets any thread blocked in {@link #await()} or {@link #await(long, TimeUnit)} return immediately.
+	 */
+	void cancel();
 }
