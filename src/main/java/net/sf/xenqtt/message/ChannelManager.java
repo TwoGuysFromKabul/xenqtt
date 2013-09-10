@@ -104,11 +104,6 @@ public interface ChannelManager {
 	void close(MqttChannelRef channel) throws MqttInterruptedException;
 
 	/**
-	 * Closes all channels
-	 */
-	void closeAll();
-
-	/**
 	 * Starts this channel manager. Must be called before any other methods
 	 */
 	void init();
