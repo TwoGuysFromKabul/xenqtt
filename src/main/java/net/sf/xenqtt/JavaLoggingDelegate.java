@@ -25,7 +25,7 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 				properties.setProperty(".level", "ALL"); // Actual logging levels will be controlled by the Log class.
 				properties.setProperty("java.util.logging.FileHandler.limit", "5368709120");
 				properties.setProperty("java.util.logging.FileHandler.count", "20");
-				properties.setProperty("java.util.logging.FileHandler.formatter", "java.util.logging.SimpleFormatter");
+				properties.setProperty("java.util.logging.FileHandler.formatter", "net.sf.xenqtt.XenqttLogFormatter");
 				String jarDirectory = getDirectoryHostingRunningXenqttJar();
 				if (jarDirectory != null) {
 					properties.setProperty("java.util.logging.FileHandler.pattern", String.format("%s/xenqtt.log", jarDirectory));
