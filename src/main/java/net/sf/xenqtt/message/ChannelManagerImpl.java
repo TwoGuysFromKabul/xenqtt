@@ -9,15 +9,16 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttTimeoutException;
 
 /**
  * Uses a single thread and non-blocking NIO to manage one or more {@link MqttChannel}s. You must call {@link #init()} before using this manager and
@@ -35,18 +36,35 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final Thread ioThread;
 	private final Selector selector;
 	private final boolean blocking;
+	private final long blockingTimeoutMillis;
 
 	// FIXME [jim] - need to deal with reconnection and handling unsent messages when all reconnect tries fail
 
 	/**
+	 * Use this constructor for the asynchronous API
+	 * 
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
-	 * @param blocking
-	 *            If true then this channel manager operates in blocking mode. See the {@link ChannelManager} javadoc for explanations of how blocking mode
-	 *            affects the various methods.
+	 * @param blockingTimeoutSeconds
+	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. Must be > 0
 	 */
-	public ChannelManagerImpl(long messageResendIntervalSeconds, boolean blocking) {
-		this.blocking = blocking;
+	public ChannelManagerImpl(long messageResendIntervalSeconds) {
+		this(messageResendIntervalSeconds, -1);
+	}
+
+	/**
+	 * Use this constructor for the synchronous API
+	 * 
+	 * @param messageResendIntervalSeconds
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
+	 * @param blockingTimeoutSeconds
+	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
+	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
+	 */
+	public ChannelManagerImpl(long messageResendIntervalSeconds, long blockingTimeoutSeconds) {
+
+		this.blocking = blockingTimeoutSeconds >= 0;
+		this.blockingTimeoutMillis = blockingTimeoutSeconds <= 0 ? Long.MAX_VALUE : blockingTimeoutSeconds * 1000;
 		this.messageResendIntervalMillis = messageResendIntervalSeconds * 1000;
 		ioThread = new Thread(new Runnable() {
 
@@ -138,7 +156,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws MqttInterruptedException {
 
-		return addCommand(new NewClientChannelCommand(host, port, messageHandler)).await();
+		return addCommand(new NewClientChannelCommand(host, port, messageHandler)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -147,7 +165,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws MqttInterruptedException {
 
-		return addCommand(new NewBrokerChannelCommand(socketChannel, messageHandler)).await();
+		return addCommand(new NewBrokerChannelCommand(socketChannel, messageHandler)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -156,17 +174,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public boolean send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
 
-		return addCommand(new SendCommand(channel, message)).await();
-	}
-
-	/**
-	 * @throws MqttInterruptedException
-	 * @see net.sf.xenqtt.message.ChannelManager#sendToAll(net.sf.xenqtt.message.MqttMessage)
-	 */
-	@Override
-	public void sendToAll(MqttMessage message) throws MqttInterruptedException {
-
-		addCommand(new SendToAllCommand(message)).await();
+		return addCommand(new SendCommand(channel, message)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -175,7 +183,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public void close(MqttChannelRef channel) throws MqttInterruptedException {
 
-		addCommand(new CloseCommand(channel)).await();
+		addCommand(new CloseCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
 	private void closeAll() {
@@ -235,6 +243,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			if (key.isConnectable()) {
 				MqttChannel channel = (MqttChannel) key.attachment();
 				if (!channel.finishConnect()) {
+					channelClosed(channel);
 					iter.remove();
 				}
 			}
@@ -290,14 +299,9 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private void channelClosed(MqttChannel channel) {
 
-		// FIXME [jim] - test that unsent messages' blocking commands are completed
+		// FIXME [jim] - test that unsent messages' blocking commands are cancelled. when we do retry we would not do this here.
 		channels.remove(channel);
-		List<MqttMessage> messages = channel.getUnsentMessages();
-		for (MqttMessage message : messages) {
-			if (message.blockingCommand != null) {
-				message.blockingCommand.complete(null);
-			}
-		}
+		channel.cancelBlockingCommands();
 	}
 
 	private void executeCommands(long now) {
@@ -307,7 +311,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			while (firstCommand != null) {
 				firstCommand.execute();
 				if (firstCommand.unblockImmediately) {
-					firstCommand.complete(null);
+					firstCommand.complete();
 				}
 				firstCommand = firstCommand.next;
 			}
@@ -354,32 +358,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		@Override
 		public Boolean doExecute() {
-			return channel.send(message, null);
-		}
-	}
-
-	private final class SendToAllCommand extends Command<Void> {
-
-		private final MqttMessage message;
-
-		public SendToAllCommand(MqttMessage message) {
-			super(!blocking);
-			this.message = message;
-		}
-
-		@Override
-		public Void doExecute() {
-
-			for (MqttChannel channel : channels) {
-				try {
-					MqttMessage msg = new MqttMessage(message);
-					channel.send(msg, null);
-				} catch (Exception e) {
-					Log.error(e, "Failed to send message to %s: %s", channel, message);
-				}
-			}
-
-			return null;
+			return channel.send(message, this);
 		}
 	}
 

@@ -4,24 +4,24 @@ import java.net.URI;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttTimeoutException;
 
-// FIXME [jim] - update javadoc to describe blocking and non-blocking mode
 /**
  * <p>
  * Specifies a type that manages zero or more {@link MqttChannelRef channels} that communicate via the MQTT protocol.
  * </p>
  * 
  * <p>
- * All of the methods in this specification are thread-safe and asynchronous.
+ * All of the methods in this specification are thread-safe. Implementations may be blocking or non-blocking
  * </p>
  */
 public interface ChannelManager {
 
 	/**
 	 * Create a new client side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the client end of the connection. The broker
-	 * will have the remote end of the connection. This method only blocks long enough for the channel to be created, not for the TCP connection to happen. This
-	 * will throw a {@link RuntimeException} wrapping any exception thrown while initializing the connection like {@link UnresolvedAddressException}
+	 * will have the remote end of the connection. This method only blocks long enough for the channel to be created, not for the TCP connection to happen.
 	 * 
 	 * @param brokerUri
 	 *            URI of the broker to connect to. For example, tcp://q.m2m.io:1883.
@@ -29,8 +29,17 @@ public interface ChannelManager {
 	 *            The {@link MessageHandler message handler} to use for all received messages
 	 * 
 	 * @return The newly-created channel. The channel may only be safely accessed from the {@link MessageHandler} callback methods.
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
 	 */
-	MqttChannelRef newClientChannel(String brokerUri, MessageHandler messageHandler) throws MqttInterruptedException;
+	MqttChannelRef newClientChannel(String brokerUri, MessageHandler messageHandler) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException;
 
 	/**
 	 * Create a new client side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the client end of the connection. The broker
@@ -43,8 +52,17 @@ public interface ChannelManager {
 	 *            The {@link MessageHandler message handler} to use for all received messages
 	 * 
 	 * @return The newly-created channel. The channel may only be safely accessed from the {@link MessageHandler} callback methods.
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
 	 */
-	MqttChannelRef newClientChannel(URI brokerUri, MessageHandler messageHandler) throws MqttInterruptedException;
+	MqttChannelRef newClientChannel(URI brokerUri, MessageHandler messageHandler) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException;
 
 	/**
 	 * Create a new client side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the client end of the connection. The broker
@@ -59,8 +77,17 @@ public interface ChannelManager {
 	 *            The {@link MessageHandler message handler} to use for all received messages
 	 * 
 	 * @return The newly-created channel. The channel may only be safely accessed from the {@link MessageHandler} callback methods.
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
 	 */
-	MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws MqttInterruptedException;
+	MqttChannelRef newClientChannel(String host, int port, MessageHandler messageHandler) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException;
 
 	/**
 	 * Create a new broker side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the broker end of the connection. The client
@@ -73,8 +100,17 @@ public interface ChannelManager {
 	 *            The {@link MessageHandler message handler} to use for all received messages
 	 * 
 	 * @return The newly-created channel.The channel may only be safely accessed from the {@link MessageHandler} callback methods.
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
 	 */
-	MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws MqttInterruptedException;
+	MqttChannelRef newBrokerChannel(SocketChannel socketChannel, MessageHandler messageHandler) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException;
 
 	/**
 	 * Send a {@link MqttMessage message} over a specified {@code channel}. This method only blocks until the message is queued to send to the channel.
@@ -85,23 +121,29 @@ public interface ChannelManager {
 	 * @param message
 	 *            The {@code message} to send. This can be any type of MQTT message
 	 * @return true if the message was sent, false if it was not (typically this means the channes is closed).
-	 */
-	boolean send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException;
-
-	/**
-	 * Send a {@link MqttMessage message} to all channels managed by this channel manager. Any exceptions sending to any channel will be logged but not
-	 * propagated from this method and will not prevent the message from being sent to other channels. This method only blocks until the message is queued to
-	 * send to the channels.
 	 * 
-	 * @param message
-	 *            The {@code message} to send. This can be any type of MQTT message
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
 	 */
-	void sendToAll(MqttMessage message) throws MqttInterruptedException;
+	boolean send(MqttChannelRef channel, MqttMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
 	 * Closes the specified channel. This method blocks until the channel is closed.
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
 	 */
-	void close(MqttChannelRef channel) throws MqttInterruptedException;
+	void close(MqttChannelRef channel) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
 	 * Starts this channel manager. Must be called before any other methods
