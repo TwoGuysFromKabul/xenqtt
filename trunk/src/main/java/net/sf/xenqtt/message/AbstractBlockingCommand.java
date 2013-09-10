@@ -3,6 +3,7 @@ package net.sf.xenqtt.message;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttTimeoutException;
@@ -113,6 +114,8 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	 */
 	@Override
 	public void cancel() {
+
+		this.failCause = new MqttCommandCancelledException("Command cancelled: " + getClass().getSimpleName());
 
 		while (done.getCount() > 0) {
 			done.countDown();

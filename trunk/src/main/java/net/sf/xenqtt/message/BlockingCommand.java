@@ -2,6 +2,7 @@ package net.sf.xenqtt.message;
 
 import java.util.concurrent.TimeUnit;
 
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttTimeoutException;
@@ -20,6 +21,8 @@ public interface BlockingCommand<T> {
 	 * 
 	 * @return The result of the command, if any.
 	 * 
+	 * @throws MqttCommandCancelledException
+	 *             Thrown if the command was {@link #cancel() cancelled}
 	 * @throws MqttInterruptedException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 * @throws MqttException
@@ -27,7 +30,7 @@ public interface BlockingCommand<T> {
 	 * @throws RuntimeException
 	 *             Of course, any {@link RuntimeException} may be thrown
 	 */
-	T await() throws MqttInterruptedException, MqttException, RuntimeException;
+	T await() throws MqttCommandCancelledException, MqttInterruptedException, MqttException, RuntimeException;
 
 	/**
 	 * Waits for the specified amount of time for the command to complete
@@ -39,16 +42,18 @@ public interface BlockingCommand<T> {
 	 * 
 	 * @return The result of the command, if any.
 	 * 
-	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 * @throws MqttCommandCancelledException
+	 *             Thrown if the command was {@link #cancel() cancelled}
 	 * @throws MqttInterruptedException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 * @throws MqttTimeoutException
+	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
 	 * @throws MqttException
 	 *             Any checked exception thrown by the command will be wrapped in an {@link MqttException}
 	 * @throws RuntimeException
 	 *             Of course, any {@link RuntimeException} may be thrown
 	 */
-	T await(long timeout, TimeUnit unit) throws MqttInterruptedException, MqttTimeoutException, MqttException, RuntimeException;
+	T await(long timeout, TimeUnit unit) throws MqttCommandCancelledException, MqttInterruptedException, MqttTimeoutException, MqttException, RuntimeException;
 
 	/**
 	 * Executes the command. This is called by the thread responsible for processing the command, not the thread creating or waiting on the command.
@@ -65,7 +70,7 @@ public interface BlockingCommand<T> {
 	void complete(Throwable failCause);
 
 	/**
-	 * Cancels the command and lets any thread blocked in {@link #await()} or {@link #await(long, TimeUnit)} return immediately.
+	 * Cancels the command causes {@link #await()} or {@link #await(long, TimeUnit)} to throw an {@link MqttCommandCancelledException}.
 	 */
 	void cancel();
 }
