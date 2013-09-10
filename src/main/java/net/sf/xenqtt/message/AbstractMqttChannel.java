@@ -48,6 +48,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private final Queue<MqttMessage> writesPending = new ArrayDeque<MqttMessage>();
 
 	private BlockingCommand<?> connectionCompleteCommand;
+	private BlockingCommand<?> connAckReceivedCommand;
 
 	private MqttMessage sendMessageInProgress;
 
@@ -65,7 +66,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param connectionCompleteCommand
-	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when the {@link ConnAckMessage} is received.
+	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when the connection is established.
 	 */
 	AbstractMqttChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis,
 			BlockingCommand<?> connectionCompleteCommand) throws IOException {
@@ -197,7 +198,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public boolean send(MqttMessage message, BlockingCommand<?> blockingCommand) {
-		message.blockingCommand = blockingCommand;
+
+		if (message.getMessageType() == MessageType.CONNECT) {
+			connAckReceivedCommand = blockingCommand;
+		} else {
+			message.blockingCommand = blockingCommand;
+		}
+
 		return doSend(message);
 	}
 
@@ -381,6 +388,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private void connectFinished() {
 		int ops = sendMessageInProgress != null ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_READ;
 		selectionKey.interestOps(ops);
+		commandComplete(connectionCompleteCommand);
+		connectionCompleteCommand = null;
 		handler.channelOpened(this);
 	}
 
@@ -444,12 +453,15 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				}
 			}
 
-			if (!sendMessageInProgress.isAckable()) {
-				commandComplete(sendMessageInProgress.blockingCommand);
-			} else if (messageResendIntervalMillis > 0) {
+			boolean ackable = sendMessageInProgress.isAckable();
+			if (ackable && messageResendIntervalMillis > 0) {
 				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
 				m.nextSendTime = now + messageResendIntervalMillis;
 				inFlightMessages.put(m.getMessageId(), m);
+			}
+
+			if (!ackable && type != MessageType.CONNECT) {
+				commandComplete(sendMessageInProgress.blockingCommand);
 			}
 
 			sendMessageInProgress = writesPending.poll();
@@ -617,8 +629,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				break;
 			case CONNACK:
 				ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
-				commandComplete(connectionCompleteCommand);
-				connectionCompleteCommand = null;
+				commandComplete(connAckReceivedCommand);
+				connAckReceivedCommand = null;
 				msg = connAckMessage;
 				result = connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
 				if (connected) {
