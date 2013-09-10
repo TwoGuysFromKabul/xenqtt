@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttTimeoutException;
@@ -37,12 +38,20 @@ public class AbstractBlockingCommandTest {
 		}
 	}
 
-	@Test
-	public void testCancel() throws Exception {
+	@Test(expected = MqttCommandCancelledException.class)
+	public void testAwait_Cancelled() throws Exception {
 
 		cmd = new TestBlockingCommand(25);
 		cmd.cancel();
 		cmd.await(0, TimeUnit.MILLISECONDS);
+	}
+
+	@Test(expected = MqttCommandCancelledException.class)
+	public void testAwaitLongTimeUnit_Cancelled() throws Exception {
+
+		cmd = new TestBlockingCommand(25);
+		cmd.cancel();
+		cmd.await(10, TimeUnit.MILLISECONDS);
 	}
 
 	@Test
