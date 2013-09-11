@@ -66,7 +66,7 @@ public interface MqttChannel extends MqttChannelRef {
 	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
-	boolean send(MqttMessage message, BlockingCommand<?> blockingCommand);
+	boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand);
 
 	/**
 	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.

@@ -32,7 +32,7 @@ public class MqttMessage {
 	 * type. If the message is ackable then it is complete when the ack message is received. Otherwise, it is complete when it is written to the socket or the
 	 * channel is closed. Used by {@link AbstractMqttChannel} to enable blocking.
 	 */
-	BlockingCommand<?> blockingCommand;
+	BlockingCommand<MqttMessage> blockingCommand;
 
 	private MessageType messageType;
 

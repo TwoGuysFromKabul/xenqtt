@@ -347,13 +347,14 @@ public class ChannelManagerImplTest {
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
 		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
 
-		manager.send(clientChannel, new PubAckMessage(1));
+		assertNull(manager.send(clientChannel, new PubAckMessage(1)));
 
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
 		brokerHandler.assertMessages(new PubAckMessage(1));
 	}
 
+	// FIXME [jim] - test blocking sends that actually return messages. better, test non blocking and blocking sends of all message types
 	@Test
 	public void testSend_Blocking() throws Exception {
 
@@ -366,7 +367,7 @@ public class ChannelManagerImplTest {
 		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
 		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
 
-		manager.send(clientChannel, new PubAckMessage(1));
+		assertNull(manager.send(clientChannel, new PubAckMessage(1)));
 
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
