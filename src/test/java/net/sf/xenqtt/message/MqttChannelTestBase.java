@@ -102,7 +102,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	 * @param blockingCommand
 	 *            The blocking command passed to the client channel's constructor
 	 */
-	void establishConnection(BlockingCommand<Void> blockingCommand) throws Exception {
+	void establishConnection(BlockingCommand<MqttMessage> blockingCommand) throws Exception {
 
 		if (clientChannel == null) {
 			clientChannel = newClientChannel(blockingCommand);

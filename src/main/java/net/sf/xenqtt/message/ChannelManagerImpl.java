@@ -172,7 +172,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 * @see net.sf.xenqtt.message.ChannelManager#send(net.sf.xenqtt.message.MqttChannelRef, net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
-	public boolean send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
+	public MqttMessage send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
 
 		return addCommand(new SendCommand(channel, message)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
@@ -345,7 +345,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 	}
 
-	private final class SendCommand extends Command<Boolean> {
+	private final class SendCommand extends Command<MqttMessage> {
 
 		private final MqttMessage message;
 		private final MqttChannel channel;
@@ -357,8 +357,9 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public Boolean doExecute() {
-			return channel.send(message, this);
+		public void doExecute() {
+			// FIXME [jim] - what to do if this returns false
+			channel.send(message, this);
 		}
 	}
 
@@ -372,10 +373,9 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public Void doExecute() {
+		public void doExecute() {
 
 			channel.close();
-			return null;
 		}
 	}
 
@@ -394,11 +394,11 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public MqttClientChannel doExecute() {
+		public void doExecute() {
 			try {
 				channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this);
 				channels.add(channel);
-				return channel;
+				setResult(channel);
 			} catch (Exception e) {
 				throw new MqttException("MQTT Client channel creation failed", e);
 			}
@@ -417,11 +417,11 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public MqttBrokerChannel doExecute() {
+		public void doExecute() {
 			try {
 				MqttBrokerChannel channel = new MqttBrokerChannel(socketChannel, messageHandler, selector, messageResendIntervalMillis);
 				channels.add(channel);
-				return channel;
+				setResult(channel);
 			} catch (Exception e) {
 				try {
 					socketChannel.close();

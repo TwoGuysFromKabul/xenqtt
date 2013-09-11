@@ -23,7 +23,7 @@ import org.mockito.MockitoAnnotations;
 
 public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTestBase<?, ?>.TestChannel, MqttChannelTestBase<?, ?>.TestChannel> {
 
-	@Mock BlockingCommand<Void> blockingCommand;
+	@Mock BlockingCommand<MqttMessage> blockingCommand;
 
 	@Before
 	public void before() {
@@ -283,7 +283,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testEstabishConnection_NoLatch() throws Exception {
+	public void testEstabishConnection_NonBlocking() throws Exception {
 
 		establishConnection();
 
@@ -305,7 +305,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testEstabishConnection_WithLatch() throws Exception {
+	public void testEstabishConnection_Blocking() throws Exception {
 
 		establishConnection(blockingCommand);
 
@@ -348,7 +348,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testReadWriteSend_ConnAckWithoutAccept_NoLatch() throws Exception {
+	public void testReadWriteSend_ConnAckWithoutAccept_NonBlocking() throws Exception {
 
 		establishConnection();
 
@@ -375,7 +375,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testReadWriteSend_ConnAckWithoutAccept_WithLatch() throws Exception {
+	public void testReadWriteSend_ConnAckWithoutAccept_Blocking() throws Exception {
 
 		establishConnection();
 
@@ -393,6 +393,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		clientHandler.assertMessages(ackMsg);
 
 		verify(blockingCommand).complete();
+		verify(blockingCommand).setResult(ackMsg);
 
 		assertFalse(clientChannel.isConnected());
 		assertFalse(clientChannel.connectedCalled);
@@ -406,7 +407,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testReadWriteSend_ConnAckWithAccept_NoLatch() throws Exception {
+	public void testReadWriteSend_ConnAckWithAccept_NonBlocking() throws Exception {
 
 		establishConnection();
 
@@ -439,7 +440,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testReadWriteSend_ConnAckWithAccept_WithLatch() throws Exception {
+	public void testReadWriteSend_ConnAckWithAccept_Blocking() throws Exception {
 
 		establishConnection();
 
@@ -457,6 +458,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		clientHandler.assertMessages(ackMsg);
 
 		verify(blockingCommand).complete();
+		verify(blockingCommand).setResult(ackMsg);
 
 		assertTrue(clientChannel.isOpen());
 		assertTrue(clientChannel.isConnected());
@@ -547,139 +549,139 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
-	public void testReadWriteSend_PublishAndAck_Qos1_NoLatch() throws Exception {
+	public void testReadWriteSend_PublishAndAck_Qos1_NonBlocking() throws Exception {
 
 		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
 		PubAckMessage ack = new PubAckMessage(1);
-		doTestReadWriteSend_NoLatch(msg, ack);
+		doTestReadWriteSend_NonBlocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_PublishAndAck_Qos1_WithLatch() throws Exception {
+	public void testReadWriteSend_PublishAndAck_Qos1_Blocking() throws Exception {
 
 		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
 		PubAckMessage ack = new PubAckMessage(1);
-		doTestReadWriteSend_WithLatch(msg, ack);
+		doTestReadWriteSend_Blocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_Publish_Qos0_NoLatch() throws Exception {
+	public void testReadWriteSend_Publish_Qos0_NonBlocking() throws Exception {
 
 		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 0, new byte[] {});
-		doTestReadWriteSend_NoLatch(msg, null);
+		doTestReadWriteSend_NonBlocking(msg, null);
 	}
 
 	@Test
-	public void testReadWriteSend_Publish_Qos0_WithLatch() throws Exception {
+	public void testReadWriteSend_Publish_Qos0_Blocking() throws Exception {
 
 		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 0, new byte[] {});
-		doTestReadWriteSend_WithLatch(msg, null);
+		doTestReadWriteSend_Blocking(msg, null);
 	}
 
 	@Test
-	public void testReadWriteSend_PublishAndPubRec_NoLatch() throws Exception {
+	public void testReadWriteSend_PublishAndPubRec_NonBlocking() throws Exception {
 
 		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
 		PubRecMessage ack = new PubRecMessage(1);
-		doTestReadWriteSend_NoLatch(msg, ack);
+		doTestReadWriteSend_NonBlocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_PublishAndPubRec_WithLatch() throws Exception {
+	public void testReadWriteSend_PublishAndPubRec_Blocking() throws Exception {
 
 		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 1, new byte[] {});
 		PubRecMessage ack = new PubRecMessage(1);
-		doTestReadWriteSend_WithLatch(msg, ack);
+		doTestReadWriteSend_Blocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_PubRelAndPubComp_NoLatch() throws Exception {
+	public void testReadWriteSend_PubRelAndPubComp_NonBlocking() throws Exception {
 
 		PubRelMessage msg = new PubRelMessage(1);
 		PubCompMessage ack = new PubCompMessage(1);
-		doTestReadWriteSend_NoLatch(msg, ack);
+		doTestReadWriteSend_NonBlocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_PubRelAndPubComp_WithLatch() throws Exception {
+	public void testReadWriteSend_PubRelAndPubComp_Blocking() throws Exception {
 
 		PubRelMessage msg = new PubRelMessage(1);
 		PubCompMessage ack = new PubCompMessage(1);
-		doTestReadWriteSend_WithLatch(msg, ack);
+		doTestReadWriteSend_Blocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_SubscribeAndAck_NoLatch() throws Exception {
+	public void testReadWriteSend_SubscribeAndAck_NonBlocking() throws Exception {
 
 		SubscribeMessage msg = new SubscribeMessage(1, new String[] {}, new QoS[] {});
 		SubAckMessage ack = new SubAckMessage(1, new QoS[] {});
-		doTestReadWriteSend_NoLatch(msg, ack);
+		doTestReadWriteSend_NonBlocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_SubscribeAndAck_WithLatch() throws Exception {
+	public void testReadWriteSend_SubscribeAndAck_Blocking() throws Exception {
 
 		SubscribeMessage msg = new SubscribeMessage(1, new String[] {}, new QoS[] {});
 		SubAckMessage ack = new SubAckMessage(1, new QoS[] {});
-		doTestReadWriteSend_WithLatch(msg, ack);
+		doTestReadWriteSend_Blocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_UnsubscribeAndAck_NoLatch() throws Exception {
+	public void testReadWriteSend_UnsubscribeAndAck_NonBlocking() throws Exception {
 
 		UnsubscribeMessage msg = new UnsubscribeMessage(1, new String[] {});
 		UnsubAckMessage ack = new UnsubAckMessage(1);
-		doTestReadWriteSend_NoLatch(msg, ack);
+		doTestReadWriteSend_NonBlocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_UnsubscribeAndAck_WithLatch() throws Exception {
+	public void testReadWriteSend_UnsubscribeAndAck_Blocking() throws Exception {
 
 		UnsubscribeMessage msg = new UnsubscribeMessage(1, new String[] {});
 		UnsubAckMessage ack = new UnsubAckMessage(1);
-		doTestReadWriteSend_WithLatch(msg, ack);
+		doTestReadWriteSend_Blocking(msg, ack);
 	}
 
 	@Test
-	public void testReadWriteSend_PingReq_NoLatch() throws Exception {
+	public void testReadWriteSend_PingReq_NonBlocking() throws Exception {
 
 		PingReqMessage msg = new PingReqMessage();
-		doTestReadWriteSend_NoLatch(msg, null);
+		doTestReadWriteSend_NonBlocking(msg, null);
 	}
 
 	@Test
-	public void testReadWriteSend_PingReq_WithLatch() throws Exception {
+	public void testReadWriteSend_PingReq_Blocking() throws Exception {
 
 		PingReqMessage msg = new PingReqMessage();
-		doTestReadWriteSend_WithLatch(msg, null);
+		doTestReadWriteSend_Blocking(msg, null);
 	}
 
 	@Test
-	public void testReadWriteSend_PingResp_NoLatch() throws Exception {
+	public void testReadWriteSend_PingResp_NonBlocking() throws Exception {
 
 		PingRespMessage msg = new PingRespMessage();
-		doTestReadWriteSend_NoLatch(msg, null);
+		doTestReadWriteSend_NonBlocking(msg, null);
 	}
 
 	@Test
-	public void testReadWriteSend_PingResp_WithLatch() throws Exception {
+	public void testReadWriteSend_PingResp_Blocking() throws Exception {
 
 		PingRespMessage msg = new PingRespMessage();
-		doTestReadWriteSend_WithLatch(msg, null);
+		doTestReadWriteSend_Blocking(msg, null);
 	}
 
 	@Test
-	public void testReadWriteSend_Disconnect_NoLatch() throws Exception {
+	public void testReadWriteSend_Disconnect_NonBlocking() throws Exception {
 
 		DisconnectMessage msg = new DisconnectMessage();
-		doTestReadWriteSend_NoLatch(msg, null);
+		doTestReadWriteSend_NonBlocking(msg, null);
 	}
 
 	@Test
-	public void testReadWriteSend_Disconnect_WithLatch() throws Exception {
+	public void testReadWriteSend_Disconnect_Blocking() throws Exception {
 
 		DisconnectMessage msg = new DisconnectMessage();
-		doTestReadWriteSend_WithLatch(msg, null);
+		doTestReadWriteSend_Blocking(msg, null);
 	}
 
 	@Test
@@ -822,7 +824,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		closeConnection();
 	}
 
-	private void doTestReadWriteSend_NoLatch(MqttMessage msg, MqttMessage ack) throws Exception {
+	private void doTestReadWriteSend_NonBlocking(MqttMessage msg, MqttMessage ack) throws Exception {
 		establishConnection();
 
 		clientChannel.send(msg, null);
@@ -838,7 +840,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		closeConnection();
 	}
 
-	private void doTestReadWriteSend_WithLatch(MqttMessage msg, MqttMessage ack) throws Exception {
+	private void doTestReadWriteSend_Blocking(MqttMessage msg, MqttMessage ack) throws Exception {
 
 		establishConnection();
 
@@ -852,6 +854,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 			brokerChannel.send(ack, null);
 			readWrite(1, 0);
 			clientHandler.assertMessages(ack);
+			verify(blockingCommand).setResult(ack);
 		}
 
 		verify(blockingCommand).complete();

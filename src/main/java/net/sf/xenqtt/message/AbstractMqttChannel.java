@@ -48,7 +48,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private final Queue<MqttMessage> writesPending = new ArrayDeque<MqttMessage>();
 
 	private BlockingCommand<?> connectionCompleteCommand;
-	private BlockingCommand<?> connAckReceivedCommand;
+	private BlockingCommand<MqttMessage> connAckReceivedCommand;
 
 	private MqttMessage sendMessageInProgress;
 
@@ -197,7 +197,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand)
 	 */
 	@Override
-	public boolean send(MqttMessage message, BlockingCommand<?> blockingCommand) {
+	public boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand) {
 
 		if (message.getMessageType() == MessageType.CONNECT) {
 			connAckReceivedCommand = blockingCommand;
@@ -517,6 +517,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		}
 	}
 
+	private void commandComplete(BlockingCommand<MqttMessage> blockingCommand, MqttMessage ack) {
+		if (blockingCommand != null) {
+			blockingCommand.setResult(ack);
+			blockingCommand.complete();
+		}
+	}
+
 	/**
 	 * @return False to have the channel closed
 	 */
@@ -688,7 +695,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				break;
 			case CONNACK:
 				ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
-				commandComplete(connAckReceivedCommand);
+				commandComplete(connAckReceivedCommand, connAckMessage);
 				connAckReceivedCommand = null;
 				msg = connAckMessage;
 				result = connected = connAckMessage.getReturnCode() == ConnectReturnCode.ACCEPTED;
@@ -786,7 +793,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		IdentifiableMqttMessage ackedMessage = inFlightMessages.remove(ackMessage.getMessageId());
 		if (ackedMessage != null) {
-			commandComplete(ackedMessage.blockingCommand);
+			commandComplete(ackedMessage.blockingCommand, ackMessage);
 		}
 	}
 

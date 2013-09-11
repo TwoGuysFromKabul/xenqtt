@@ -120,7 +120,8 @@ public interface ChannelManager {
 	 *            {@link #newChannel(String, int, MessageHandler)} or {@link #newChannel(SocketChannel, MessageHandler)} methods
 	 * @param message
 	 *            The {@code message} to send. This can be any type of MQTT message
-	 * @return true if the message was sent, false if it was not (typically this means the channes is closed).
+	 * @return In a synchronous implementation this returns the ack message if the message being sent is a {@link ConnectMessage} or has a
+	 *         {@link MqttMessage#getQoSLevel() QoS} > 0.
 	 * 
 	 * @throws MqttCommandCancelledException
 	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
@@ -130,7 +131,7 @@ public interface ChannelManager {
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is interrupted
 	 */
-	boolean send(MqttChannelRef channel, MqttMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	MqttMessage send(MqttChannelRef channel, MqttMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
 	 * Closes the specified channel. This method blocks until the channel is closed.
