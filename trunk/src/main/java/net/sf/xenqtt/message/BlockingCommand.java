@@ -68,7 +68,7 @@ public interface BlockingCommand<T> {
 	/**
 	 * Sets the result of this command. This is the value returned by {@link #await()} and {@link #await(long, TimeUnit)}. This must be set before
 	 * {@link #complete()} is called. The last value set before {@link #complete()} is called is returned from {@link #await()} or
-	 * {@link #await(long, TimeUnit)}. This should only be called by the same thread that calls {@link #execute()}.
+	 * {@link #await(long, TimeUnit)}. This should only be called by the same thread that calls {@link #complete()}.
 	 */
 	void setResult(T result);
 
