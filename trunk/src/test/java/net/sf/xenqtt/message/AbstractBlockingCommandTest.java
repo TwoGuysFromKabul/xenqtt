@@ -183,7 +183,7 @@ public class AbstractBlockingCommandTest {
 		Error errorToThrow;
 
 		@Override
-		protected Object doExecute() throws Exception {
+		protected void doExecute() throws Exception {
 
 			if (errorToThrow != null) {
 				throw errorToThrow;
@@ -191,8 +191,8 @@ public class AbstractBlockingCommandTest {
 			if (exceptionToThrow != null) {
 				throw exceptionToThrow;
 			}
-			return returnValue;
-		}
 
+			setResult(returnValue);
+		}
 	}
 }

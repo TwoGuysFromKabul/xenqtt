@@ -57,25 +57,37 @@ public interface BlockingCommand<T> {
 	T await(long timeout, TimeUnit unit) throws MqttCommandCancelledException, MqttInterruptedException, MqttTimeoutException, MqttException, RuntimeException;
 
 	/**
+	 * <p>
 	 * Executes the command. This is called by the thread responsible for processing the command, not the thread creating or waiting on the command. If an
-	 * exception occurs {@link #setFailureCause(Throwable)} is called with the thrown exception and {@link #complete()} is invoked to complete the command.
+	 * exception occurs {@link #setFailureCause(Throwable)} is called with the thrown exception and {@link #complete()} is invoked to complete the command. If
+	 * the command returns a result use {@link #setResult(Object)} to set it.
+	 * </p>
 	 */
 	void execute();
 
 	/**
-	 * @param cause
-	 *            Cause of the command failure. Null to clear any existing cause
+	 * Sets the result of this command. This is the value returned by {@link #await()} and {@link #await(long, TimeUnit)}. This must be set before
+	 * {@link #complete()} is called. The last value set before {@link #complete()} is called is returned from {@link #await()} or
+	 * {@link #await(long, TimeUnit)}. This should only be called by the same thread that calls {@link #execute()}.
+	 */
+	void setResult(T result);
+
+	/**
+	 * Sets the cause if the command fails. Null to clear any existing cause. If this is non-null then it is thrown by {@link #await()} or
+	 * {@link #await(long, TimeUnit)} after {@link #complete()} is called. If cause is a checked exception it will be wrapped in {@link MqttException} before
+	 * being thrown by {@link #await()} or {@link #await(long, TimeUnit)}.This should only be called by the same thread that calls {@link #execute()}.
 	 */
 	void setFailureCause(Throwable cause);
 
 	/**
-	 * Called when the command is complete. Causes {@link #await()} or {@link #await(long, TimeUnit)} to return. This must be called as many times as the count
-	 * specified in the constructor before the methods return.
+	 * Called when the command is complete. Causes {@link #await()} or {@link #await(long, TimeUnit)} to return.This should only be called by the same thread
+	 * that calls {@link #execute()}.
 	 */
 	void complete();
 
 	/**
-	 * Cancels the command causes {@link #await()} or {@link #await(long, TimeUnit)} to throw an {@link MqttCommandCancelledException}.
+	 * Cancels the command causes {@link #await()} or {@link #await(long, TimeUnit)} to throw an {@link MqttCommandCancelledException}.This should only be
+	 * called by the same thread that calls {@link #execute()}.
 	 */
 	void cancel();
 }

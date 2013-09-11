@@ -15,7 +15,7 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 
 	private final CountDownLatch done = new CountDownLatch(1);
 
-	private T returnValue;
+	private T result;
 	private Throwable failCause;
 
 	/**
@@ -54,7 +54,7 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 			throw new RuntimeException("Unexpected exception. This is a bug!", failCause);
 		}
 
-		return returnValue;
+		return result;
 	}
 
 	/**
@@ -63,11 +63,20 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	@Override
 	public final void execute() {
 		try {
-			returnValue = doExecute();
+			doExecute();
 		} catch (Throwable t) {
 			setFailureCause(t);
 			complete();
 		}
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.BlockingCommand#setResult(java.lang.Object)
+	 */
+	@Override
+	public void setResult(T result) {
+
+		this.result = result;
 	}
 
 	/**
@@ -107,9 +116,8 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	/**
 	 * Extensions implement this method to execute the command
 	 * 
-	 * @return The value returned by the command
 	 * @throws Exception
-	 *             Any exception thrown by the command
+	 *             Any exception thrown by the command. This will be set as the failure cause using {@link #setFailureCause(Throwable)}.
 	 */
-	protected abstract T doExecute() throws Exception;
+	protected abstract void doExecute() throws Throwable;
 }
