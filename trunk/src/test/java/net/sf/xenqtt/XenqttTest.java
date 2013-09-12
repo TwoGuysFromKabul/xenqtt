@@ -49,4 +49,9 @@ public class XenqttTest {
 		assertTrue(new String(baos.toByteArray(), "US-ASCII").startsWith("usage: "));
 	}
 
+	@Test
+	public void testAsync() {
+		assertTrue(Boolean.parseBoolean(System.getProperty("xenqtt.logging.async")));
+	}
+
 }

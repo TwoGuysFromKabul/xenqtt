@@ -12,6 +12,10 @@ public final class Xenqtt {
 			+ "-v: Increase logging verbosity. v = info, vv = debug";
 	private static final String ARG_REGEX = "^\\-(?i:v){1,2}$";
 
+	static {
+		System.setProperty("xenqtt.logging.async", "true");
+	}
+
 	/**
 	 * The entry point into Xenqtt.
 	 * 

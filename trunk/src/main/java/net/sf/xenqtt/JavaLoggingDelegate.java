@@ -83,6 +83,14 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#trace(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 */
+	@Override
+	public void trace(Throwable t, String message, Object... parameters) {
+		log.log(Level.FINER, String.format(message, parameters), t);
+	}
+
+	/**
 	 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.String, java.lang.Object[])
 	 */
 	@Override
@@ -91,11 +99,27 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 */
+	@Override
+	public void debug(Throwable t, String message, Object... parameters) {
+		log.log(Level.FINE, String.format(message, parameters), t);
+	}
+
+	/**
 	 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.String, java.lang.Object[])
 	 */
 	@Override
 	public void info(String message, Object... parameters) {
 		log.info(String.format(message, parameters));
+	}
+
+	/**
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 */
+	@Override
+	public void info(Throwable t, String message, Object... parameters) {
+		log.log(Level.INFO, String.format(message, parameters), t);
 	}
 
 	/**
