@@ -1,6 +1,5 @@
 package net.sf.xenqtt;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -18,14 +17,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 public final class Log {
 
 	private static final LoggingDelegate DELEGATE;
-	private static final BlockingQueue<LogWork> workQueue = new LinkedBlockingQueue<LogWork>();
-	private static final AsynchLogger ASYNCH_LOGGER;
+	private static final Logger LOGGER;
 
 	static {
 		DELEGATE = createDelegate();
 		LoggingLevels levels = determineLoggingLevels();
-		ASYNCH_LOGGER = new AsynchLogger(levels);
-		ASYNCH_LOGGER.start();
+		LOGGER = getLogger(levels);
 	}
 
 	private Log() {
@@ -76,15 +73,27 @@ public final class Log {
 		return new LoggingLevels(false, false, false, true, true, true);
 	}
 
+	private static Logger getLogger(LoggingLevels levels) {
+		if (Boolean.parseBoolean(System.getProperty("xenqtt.logging.async")) || inUnitTest()) {
+			return new AsynchronousLogger(levels);
+		}
+
+		return new SynchronousLogger(levels);
+	}
+
 	/**
-	 * Set the {@link LoggingLevels logging levels} to use.
+	 * Set the {@link LoggingLevels logging levels} to use. This method will only update the logging levels for the asynchronous logging mode. Level changes for
+	 * synchronous loggers are not supported by this API.
 	 * 
 	 * @param levels
 	 *            The logging levels to use
 	 */
 	public static void setLoggingLevels(LoggingLevels levels) {
-		LoggingLevelsChange levelChange = new LoggingLevelsChange(levels);
-		workQueue.offer(levelChange);
+		if (LOGGER instanceof SynchronousLogger) {
+			return;
+		}
+
+		((AsynchronousLogger) LOGGER).setLoggingLevels(levels);
 	}
 
 	/**
@@ -96,7 +105,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void trace(String message, Object... parameters) {
-		workQueue.offer(new LogMessage("trace", LoggingLevels.TRACE_FLAG, message, parameters));
+		LOGGER.log(LoggingLevels.TRACE_FLAG, message, parameters);
 	}
 
 	/**
@@ -108,7 +117,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void debug(String message, Object... parameters) {
-		workQueue.offer(new LogMessage("debug", LoggingLevels.DEBUG_FLAG, message, parameters));
+		LOGGER.log(LoggingLevels.DEBUG_FLAG, message, parameters);
 	}
 
 	/**
@@ -120,7 +129,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void info(String message, Object... parameters) {
-		workQueue.offer(new LogMessage("info", LoggingLevels.INFO_FLAG, message, parameters));
+		LOGGER.log(LoggingLevels.INFO_FLAG, message, parameters);
 	}
 
 	/**
@@ -132,7 +141,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(String message, Object... parameters) {
-		workQueue.offer(new LogMessage("warn", LoggingLevels.WARN_FLAG, message, parameters));
+		LOGGER.log(LoggingLevels.WARN_FLAG, message, parameters);
 	}
 
 	/**
@@ -146,7 +155,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(Throwable t, String message, Object... parameters) {
-		workQueue.offer(new LogMessage("warn", LoggingLevels.WARN_FLAG, message, parameters, t));
+		LOGGER.log(LoggingLevels.WARN_FLAG, t, message, parameters);
 	}
 
 	/**
@@ -158,7 +167,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(String message, Object... parameters) {
-		workQueue.offer(new LogMessage("error", LoggingLevels.ERROR_FLAG, message, parameters));
+		LOGGER.log(LoggingLevels.ERROR_FLAG, message, parameters);
 	}
 
 	/**
@@ -172,7 +181,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(Throwable t, String message, Object... parameters) {
-		workQueue.offer(new LogMessage("error", LoggingLevels.ERROR_FLAG, message, parameters, t));
+		LOGGER.log(LoggingLevels.ERROR_FLAG, t, message, parameters);
 	}
 
 	/**
@@ -184,7 +193,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(String message, Object... parameters) {
-		workQueue.offer(new LogMessage("fatal", LoggingLevels.FATAL_FLAG, message, parameters));
+		LOGGER.log(LoggingLevels.FATAL_FLAG, message, parameters);
 	}
 
 	/**
@@ -198,7 +207,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(Throwable t, String message, Object... parameters) {
-		workQueue.offer(new LogMessage("fatal", LoggingLevels.FATAL_FLAG, message, parameters, t));
+		LOGGER.log(LoggingLevels.FATAL_FLAG, t, message, parameters);
 	}
 
 	/**
@@ -208,9 +217,15 @@ public final class Log {
 
 		void trace(String message, Object... parameters);
 
+		void trace(Throwable t, String message, Object... parameters);
+
 		void debug(String message, Object... parameters);
 
+		void debug(Throwable t, String message, Object... parameters);
+
 		void info(String message, Object... parameters);
+
+		void info(Throwable t, String message, Object... parameters);
 
 		void warn(String message, Object... parameters);
 
@@ -240,18 +255,16 @@ public final class Log {
 
 	private static final class LogMessage extends LogWork {
 
-		private final String method;
 		private final int levelFlag;
 		private final String message;
 		private final Object[] parameters;
 		private final Throwable t;
 
-		private LogMessage(String method, int levelFlag, String message, Object[] parameters) {
-			this(method, levelFlag, message, parameters, null);
+		private LogMessage(int levelFlag, String message, Object[] parameters) {
+			this(levelFlag, message, parameters, null);
 		}
 
-		private LogMessage(String method, int levelFlag, String message, Object[] parameters, Throwable t) {
-			this.method = method;
+		private LogMessage(int levelFlag, String message, Object[] parameters, Throwable t) {
 			this.levelFlag = levelFlag;
 			this.message = message;
 			this.parameters = parameters;
@@ -280,13 +293,194 @@ public final class Log {
 
 	}
 
-	private static final class AsynchLogger extends Thread {
+	private static final class ConsoleLoggingDelegate implements LoggingDelegate {
 
-		private volatile LoggingLevels levels;
+		@Override
+		public void trace(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
 
-		private AsynchLogger(LoggingLevels levels) {
-			super("AsynchLogger");
+		@Override
+		public void trace(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace();
+			}
+		}
+
+		@Override
+		public void debug(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void debug(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace();
+			}
+		}
+
+		@Override
+		public void info(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void info(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace();
+			}
+		}
+
+		@Override
+		public void warn(String message, Object... parameters) {
+			System.err.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void warn(Throwable t, String message, Object... parameters) {
+			System.err.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace();
+			}
+		}
+
+		@Override
+		public void error(String message, Object... parameters) {
+			System.err.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void error(Throwable t, String message, Object... parameters) {
+			System.err.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace();
+			}
+		}
+
+		@Override
+		public void fatal(String message, Object... parameters) {
+			System.err.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void fatal(Throwable t, String message, Object... parameters) {
+			System.err.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace();
+			}
+
+		}
+
+	}
+
+	private static interface Logger {
+
+		void log(int levelFlag, String message, Object... parameters);
+
+		void log(int levelFlag, Throwable t, String message, Object... parameters);
+
+	}
+
+	private static final class SynchronousLogger implements Logger {
+
+		private final LoggingLevels levels;
+
+		private SynchronousLogger(LoggingLevels levels) {
 			this.levels = levels;
+		}
+
+		/**
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String, java.lang.Object[])
+		 */
+		@Override
+		public void log(int levelFlag, String message, Object... parameters) {
+			if (!levels.isLoggable(levelFlag)) {
+				return;
+			}
+
+			doLog(levelFlag, null, message, parameters);
+		}
+
+		/**
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String, java.lang.Object[])
+		 */
+		@Override
+		public void log(int levelFlag, Throwable t, String message, Object... parameters) {
+			if (!levels.isLoggable(levelFlag)) {
+				return;
+			}
+
+			doLog(levelFlag, t, message, parameters);
+		}
+
+		private void doLog(int levelFlag, Throwable t, String message, Object[] parameters) {
+			switch (levelFlag) {
+			case LoggingLevels.TRACE_FLAG:
+				DELEGATE.trace(t, message, parameters);
+				break;
+			case LoggingLevels.DEBUG_FLAG:
+				DELEGATE.debug(t, message, parameters);
+				break;
+			case LoggingLevels.INFO_FLAG:
+				DELEGATE.info(t, message, parameters);
+				break;
+			case LoggingLevels.WARN_FLAG:
+				DELEGATE.warn(t, message, parameters);
+				break;
+			case LoggingLevels.ERROR_FLAG:
+				DELEGATE.error(t, message, parameters);
+				break;
+			case LoggingLevels.FATAL_FLAG:
+				DELEGATE.fatal(t, message, parameters);
+				break;
+			}
+		}
+
+	}
+
+	private static final class AsynchronousLogger implements Logger {
+
+		private final LoggingManager loggingManager;
+
+		private AsynchronousLogger(LoggingLevels levels) {
+			loggingManager = new LoggingManager(levels);
+			loggingManager.start();
+		}
+
+		/**
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String, java.lang.Object[])
+		 */
+		@Override
+		public void log(int levelFlag, String message, Object... parameters) {
+			loggingManager.offerWork(new LogMessage(levelFlag, message, parameters));
+		}
+
+		/**
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String, java.lang.Object[])
+		 */
+		@Override
+		public void log(int levelFlag, Throwable t, String message, Object... parameters) {
+			loggingManager.offerWork(new LogMessage(levelFlag, message, parameters, t));
+		}
+
+		private void setLoggingLevels(LoggingLevels levels) {
+			loggingManager.offerWork(new LoggingLevelsChange(levels));
+		}
+
+	}
+
+	private static final class LoggingManager extends Thread {
+
+		private LoggingLevels levels;
+		private final BlockingQueue<LogWork> work;
+
+		private LoggingManager(LoggingLevels levels) {
+			super("LoggingManager");
+			this.levels = levels;
+			work = new LinkedBlockingQueue<LogWork>();
 
 			setDaemon(true);
 		}
@@ -295,11 +489,11 @@ public final class Log {
 		public void run() {
 			for (;;) {
 				try {
-					LogWork work = workQueue.take();
-					if (work instanceof LoggingLevelsChange) {
-						this.levels = ((LoggingLevelsChange) work).levels;
+					LogWork presentWork = work.take();
+					if (presentWork instanceof LoggingLevelsChange) {
+						this.levels = ((LoggingLevelsChange) presentWork).levels;
 					} else {
-						logMessage((LogMessage) work);
+						logMessage((LogMessage) presentWork);
 					}
 				} catch (InterruptedException ex) {
 					return;
@@ -315,106 +509,30 @@ public final class Log {
 				return;
 			}
 
-			Class<?>[] parameterTypes = getParameterTypes(message);
-			Method logMethod = DELEGATE.getClass().getMethod(message.method, parameterTypes);
-			Object[] args = getArgs(message);
-			logMethod.invoke(DELEGATE, args);
-		}
-
-		private Class<?>[] getParameterTypes(LogMessage message) {
-			if (message.t != null) {
-				return new Class<?>[] { Throwable.class, String.class, Object[].class };
+			switch (message.levelFlag) {
+			case LoggingLevels.TRACE_FLAG:
+				DELEGATE.trace(message.t, message.message, message.parameters);
+				break;
+			case LoggingLevels.DEBUG_FLAG:
+				DELEGATE.debug(message.t, message.message, message.parameters);
+				break;
+			case LoggingLevels.INFO_FLAG:
+				DELEGATE.info(message.t, message.message, message.parameters);
+				break;
+			case LoggingLevels.WARN_FLAG:
+				DELEGATE.warn(message.t, message.message, message.parameters);
+				break;
+			case LoggingLevels.ERROR_FLAG:
+				DELEGATE.error(message.t, message.message, message.parameters);
+				break;
+			case LoggingLevels.FATAL_FLAG:
+				DELEGATE.fatal(message.t, message.message, message.parameters);
+				break;
 			}
-
-			return new Class<?>[] { String.class, Object[].class };
 		}
 
-		private Object[] getArgs(LogMessage message) {
-			if (message.t != null) {
-				return new Object[] { message.t, message.message, message.parameters };
-			}
-
-			return new Object[] { message.message, message.parameters };
-		}
-
-	}
-
-	private static final class ConsoleLoggingDelegate implements LoggingDelegate {
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#trace(java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void trace(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void debug(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void info(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void warn(String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.Throwable, java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void warn(Throwable t, String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-			t.printStackTrace();
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void error(String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.Throwable, java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void error(Throwable t, String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-			t.printStackTrace();
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void fatal(String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-		}
-
-		/**
-		 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.Throwable, java.lang.String, java.lang.Object[])
-		 */
-		@Override
-		public void fatal(Throwable t, String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-			t.printStackTrace();
-
+		private void offerWork(LogWork workToOffer) {
+			work.offer(workToOffer);
 		}
 
 	}
