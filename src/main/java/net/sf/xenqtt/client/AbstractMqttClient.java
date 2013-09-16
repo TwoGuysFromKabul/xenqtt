@@ -1,12 +1,13 @@
 package net.sf.xenqtt.client;
 
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.sf.xenqtt.Log;
@@ -39,14 +40,13 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 abstract class AbstractMqttClient implements MqttClient {
 
-	private static final Charset UTF8 = Charset.forName("UTF-8");
-
-	private final boolean executorOwner;
 	private final ChannelManager manager;
 
 	private final ReconnectionStrategy reconnectionStrategy;
 
 	private final Executor executor;
+	private final ExecutorService executorService;
+
 	private final MessageHandler messageHandler;
 	private final PublishListener publishListener;
 	private final AsyncClientListener asyncClientListener;
@@ -75,7 +75,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	AbstractMqttClient(String brokerUri, PublishListener publishListener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
 			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 		this(brokerUri, publishListener, null, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), messageResendIntervalSeconds,
-				blockingTimeoutSeconds, true);
+				blockingTimeoutSeconds);
 	}
 
 	/**
@@ -98,7 +98,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	AbstractMqttClient(String brokerUri, PublishListener publishListener, ReconnectionStrategy reconnectionStrategy, Executor executor,
 			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
-		this(brokerUri, publishListener, null, reconnectionStrategy, executor, messageResendIntervalSeconds, blockingTimeoutSeconds, false);
+		this(brokerUri, publishListener, null, reconnectionStrategy, executor, messageResendIntervalSeconds, blockingTimeoutSeconds);
 	}
 
 	/**
@@ -114,14 +114,11 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
-	 * @param blockingTimeoutSeconds
-	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
-	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
 	AbstractMqttClient(String brokerUri, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
-			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+			int messageResendIntervalSeconds) {
 		this(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize),
-				messageResendIntervalSeconds, blockingTimeoutSeconds, true);
+				messageResendIntervalSeconds, -1);
 	}
 
 	/**
@@ -138,13 +135,10 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            executor.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
-	 * @param blockingTimeoutSeconds
-	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
-	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
 	AbstractMqttClient(String brokerUri, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy, Executor executor,
-			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
-		this(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy, executor, messageResendIntervalSeconds, blockingTimeoutSeconds, false);
+			int messageResendIntervalSeconds) {
+		this(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy, executor, messageResendIntervalSeconds, -1);
 	}
 
 	/**
@@ -152,7 +146,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *      net.sf.xenqtt.message.QoS, boolean)
 	 */
 	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password, String willTopic,
+	public final ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password, String willTopic,
 			String willMessage, QoS willQos, boolean willRetain) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds, userName, password, willTopic, willMessage, willQos, willRetain);
@@ -163,8 +157,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#connect(java.lang.String, boolean, int)
 	 */
 	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds) throws MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException {
+	public final ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds) throws MqttCommandCancelledException,
+			MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds);
 		return doConnect(message);
@@ -174,7 +168,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#connect(java.lang.String, boolean, int, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password)
+	public final ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password)
 			throws MqttCommandCancelledException, MqttTimeoutException, InterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds, userName, password);
@@ -185,7 +179,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#connect(java.lang.String, boolean, int, java.lang.String, java.lang.String, net.sf.xenqtt.message.QoS, boolean)
 	 */
 	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String willTopic, String willMessage, QoS willQos,
+	public final ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String willTopic, String willMessage, QoS willQos,
 			boolean willRetain) throws MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds, willTopic, willMessage, willQos, willRetain);
@@ -196,7 +190,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#disconnect()
 	 */
 	@Override
-	public void disconnect() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final void disconnect() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		DisconnectMessage message = new DisconnectMessage();
 		manager.send(channel, message);
@@ -206,7 +200,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#subscribe(net.sf.xenqtt.client.Subscription[])
 	 */
 	@Override
-	public Subscription[] subscribe(Subscription[] subscriptions) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final Subscription[] subscribe(Subscription[] subscriptions) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		String[] topics = new String[subscriptions.length];
 		QoS[] requestedQoses = new QoS[subscriptions.length];
@@ -227,7 +221,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#subscribe(java.util.List)
 	 */
 	@Override
-	public List<Subscription> subscribe(List<Subscription> subscriptions) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final List<Subscription> subscribe(List<Subscription> subscriptions) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException {
 
 		Subscription[] array = subscribe(subscriptions.toArray(new Subscription[subscriptions.size()]));
 		return array == null ? null : Arrays.asList(array);
@@ -237,7 +232,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#unsubscribe(java.lang.String[])
 	 */
 	@Override
-	public void unsubscribe(String[] topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final void unsubscribe(String[] topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		int messageId = nextMessageId(topics);
 		UnsubscribeMessage message = new UnsubscribeMessage(messageId, topics);
@@ -248,7 +243,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#unsubscribe(java.util.List)
 	 */
 	@Override
-	public void unsubscribe(List<String> topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final void unsubscribe(List<String> topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		unsubscribe(topics.toArray(new String[topics.size()]));
 	}
@@ -257,7 +252,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#publish(net.sf.xenqtt.client.PublishMessage)
 	 */
 	@Override
-	public void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		int messageId = nextMessageId(message);
 		message.pubMessage.setMessageId(messageId);
@@ -268,27 +263,76 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#close()
 	 */
 	@Override
-	public void close() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final void close() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		manager.close(channel);
 	}
 
-	private AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener,
-			ReconnectionStrategy reconnectionStrategy, Executor executor, int messageResendIntervalSeconds, int blockingTimeoutSeconds, boolean executorOwner) {
+	/**
+	 * Stops this client. Closes the connection to the broker if it is open. Blocks until shutdown is complete. Any other methods called after this have
+	 * unpredictable results.
+	 * 
+	 * @throws MqttInterruptedException
+	 *             If the thread is {@link Thread#interrupt() interrupted}
+	 */
+	public final void shutdown() throws MqttInterruptedException {
+
+		this.manager.shutdown();
+
+		if (executorService != null) {
+			executorService.shutdown();
+			try {
+				executorService.awaitTermination(1, TimeUnit.DAYS);
+			} catch (InterruptedException e) {
+				throw new MqttInterruptedException(e);
+			}
+		}
+	}
+
+	/**
+	 * Package visible and only for use by the {@link MqttClientFactory}
+	 */
+	AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
+			Executor executor, ChannelManager manager) {
 		this.publishListener = publishListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executor;
+		this.executorService = null;
 		this.messageHandler = new AsyncMessageHandler();
-		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
-		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds);
-		this.manager.init();
-		this.executorOwner = executorOwner;
+		this.reconnectionStrategy = reconnectionStrategy;
+		this.manager = manager;
 		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
 		this.channel = manager.newClientChannel(brokerUri, messageHandler);
 	}
 
-	// FIXME [jim] - add support for "sibling" client channels
-	// FIXME [jim] - need to figure out when to shut down the channel manager
+	private AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener,
+			ReconnectionStrategy reconnectionStrategy, Executor executor, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+		this.publishListener = publishListener;
+		this.asyncClientListener = asyncClientListener;
+		this.executor = executor;
+		this.executorService = null;
+		this.messageHandler = new AsyncMessageHandler();
+		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
+		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
+		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds, blockingTimeoutSeconds);
+		this.manager.init();
+		this.channel = manager.newClientChannel(brokerUri, messageHandler);
+	}
+
+	private AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener,
+			ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+		this.publishListener = publishListener;
+		this.asyncClientListener = asyncClientListener;
+		this.executor = executorService;
+		this.executorService = executorService;
+		this.messageHandler = new AsyncMessageHandler();
+		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
+		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
+		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds, blockingTimeoutSeconds);
+		this.manager.init();
+		this.channel = manager.newClientChannel(brokerUri, messageHandler);
+	}
+
 	private int nextMessageId(Object messageData) {
 
 		// TODO [jim] - need to deal with what happens when we have an in-flight message that is already using a message ID that we come around to again. Is
