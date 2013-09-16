@@ -2,14 +2,10 @@ package net.sf.xenqtt.client;
 
 import java.util.concurrent.Executor;
 
-import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
- * An {@link MqttClient} that handles interactions with the MQTT broker in an asynchronous fashion. The {@link ChannelManager} used by this class is shut down
- * when the last connected client disconnects. An {@link Executor} is used to handle incoming messages. The executor can be owned by this class or user
- * supplied. If it is user supplied then it is the responsibility of the API user to shut it down. If the executor is owned by this class then this class will
- * shut it down when the last client disconnects.
+ * An {@link MqttClient} that handles interactions with the MQTT broker in an asynchronous fashion.
  */
 public final class AsyncMqttClient extends AbstractMqttClient {
 
