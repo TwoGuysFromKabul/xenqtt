@@ -4,7 +4,7 @@ package net.sf.xenqtt.client;
  * Implementations are strategies used by {@link MqttClient} implementation to reconnect to the broker if the connection is lost. Implementations must be thread
  * safe.
  */
-public interface ReconnectionStrategy {
+public interface ReconnectionStrategy extends Cloneable {
 
 	/**
 	 * Called by an {@link MqttClient} each time the connection to the broker is lost other than by an intentional disconnect.
