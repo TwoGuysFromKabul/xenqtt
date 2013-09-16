@@ -29,7 +29,7 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
 			int messageResendIntervalSeconds) {
-		super(brokerUri, listener, reconnectionStrategy, messageHandlerThreadPoolSize, messageResendIntervalSeconds, -1);
+		super(brokerUri, listener, reconnectionStrategy, messageHandlerThreadPoolSize, messageResendIntervalSeconds);
 	}
 
 	/**
@@ -49,6 +49,6 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor,
 			int messageResendIntervalSeconds) {
-		super(brokerUri, listener, reconnectionStrategy, executor, messageResendIntervalSeconds, -1);
+		super(brokerUri, listener, reconnectionStrategy, executor, messageResendIntervalSeconds);
 	}
 }
