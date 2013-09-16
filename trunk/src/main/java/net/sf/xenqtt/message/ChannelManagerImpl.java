@@ -45,8 +45,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 * 
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
-	 * @param blockingTimeoutSeconds
-	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. Must be > 0
 	 */
 	public ChannelManagerImpl(long messageResendIntervalSeconds) {
 		this(messageResendIntervalSeconds, -1);
@@ -61,7 +59,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
-	public ChannelManagerImpl(long messageResendIntervalSeconds, long blockingTimeoutSeconds) {
+	public ChannelManagerImpl(long messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 
 		this.blocking = blockingTimeoutSeconds >= 0;
 		this.blockingTimeoutMillis = blockingTimeoutSeconds <= 0 ? Long.MAX_VALUE : blockingTimeoutSeconds * 1000;

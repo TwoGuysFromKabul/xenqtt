@@ -1,164 +1,54 @@
 package net.sf.xenqtt.client;
 
-import java.util.List;
 import java.util.concurrent.Executor;
 
-import net.sf.xenqtt.MqttTimeoutException;
-import net.sf.xenqtt.message.ConnectReturnCode;
-import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.message.ChannelManager;
+import net.sf.xenqtt.message.MqttMessage;
 
 /**
- * An {@link MqttClient} that handles interactions with the MQTT broker in an asynchronous fashion.
+ * An {@link MqttClient} that handles interactions with the MQTT broker in an asynchronous fashion. The {@link ChannelManager} used by this class is shut down
+ * when the last connected client disconnects. An {@link Executor} is used to handle incoming messages. The executor can be owned by this class or user
+ * supplied. If it is user supplied then it is the responsibility of the API user to shut it down. If the executor is owned by this class then this class will
+ * shut it down when the last client disconnects.
  */
-public final class AsyncMqttClient implements MqttClient {
+public final class AsyncMqttClient extends AbstractMqttClient {
 
 	/**
-	 * FIXME [jim] - needs javadoc
+	 * Constructs an instance of this class using an {@link Executor} owned by this class.
 	 * 
+	 * @param brokerUri
+	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param listener
+	 *            Handles events from this client
+	 * @param reconnectionStrategy
+	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
+	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
+	 * @param messageResendIntervalSeconds
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public AsyncMqttClient(AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize) {
-		// TODO Auto-generated constructor stub
+	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
+			int messageResendIntervalSeconds) {
+		super(brokerUri, listener, reconnectionStrategy, messageHandlerThreadPoolSize, messageResendIntervalSeconds, -1);
 	}
 
 	/**
-	 * FIXME [jim] - needs javadoc
+	 * Constructs an instance of this class using a user provided {@link Executor}.
 	 * 
+	 * @param brokerUri
+	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param listener
+	 *            Handles events from this client
+	 * @param reconnectionStrategy
+	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param executor
+	 *            The executor used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods. This class will NOT shut down the
+	 *            executor.
+	 * @param messageResendIntervalSeconds
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public AsyncMqttClient(AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor) {
-		// TODO Auto-generated constructor stub
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#connect(java.lang.String, boolean, int, java.lang.String, java.lang.String, java.lang.String, java.lang.String,
-	 *      net.sf.xenqtt.message.QoS, boolean)
-	 */
-	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password, String willTopic,
-			String willMessage, QoS willQos, boolean willRetain) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#connect(java.lang.String, boolean, int)
-	 */
-	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#connect(java.lang.String, boolean, int, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password)
-			throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#connect(java.lang.String, boolean, int, java.lang.String, java.lang.String, net.sf.xenqtt.message.QoS, boolean)
-	 */
-	@Override
-	public ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String willTopic, String willMessage, QoS willQos,
-			boolean willRetain) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#disconnect()
-	 */
-	@Override
-	public void disconnect() throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#subscribe(net.sf.xenqtt.client.Subscription[])
-	 */
-	@Override
-	public Subscription[] subscribe(Subscription[] subscriptions) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#subscribe(java.util.List)
-	 */
-	@Override
-	public List<Subscription> subscribe(List<Subscription> subscriptions) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#unsubscribe(java.lang.String[])
-	 */
-	@Override
-	public void unsubscribe(String[] topics) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#unsubscribe(java.util.List)
-	 */
-	@Override
-	public void unsubscribe(List<String> topics) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#publish(java.lang.String, net.sf.xenqtt.message.QoS, byte[])
-	 */
-	@Override
-	public void publish(String topicName, QoS qos, byte[] payload) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#publish(java.lang.String, net.sf.xenqtt.message.QoS, byte[], boolean)
-	 */
-	@Override
-	public void publish(String topicName, QoS qos, byte[] payload, boolean retain) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#publish(java.lang.String, net.sf.xenqtt.message.QoS, java.lang.String)
-	 */
-	@Override
-	public void publish(String topicName, QoS qos, String payload) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#publish(java.lang.String, net.sf.xenqtt.message.QoS, java.lang.String, boolean)
-	 */
-	@Override
-	public void publish(String topicName, QoS qos, String payload, boolean retain) throws MqttTimeoutException, InterruptedException {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#newClient()
-	 */
-	@Override
-	public MqttClient newClient() {
-		// TODO Auto-generated method stub
-		return null;
+	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor,
+			int messageResendIntervalSeconds) {
+		super(brokerUri, listener, reconnectionStrategy, executor, messageResendIntervalSeconds, -1);
 	}
 }

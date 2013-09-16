@@ -13,17 +13,18 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class PublishMessageImplTest {
+public class PublishMessageTest {
 
 	@Mock ChannelManager channelManager;
 	@Mock MqttChannelRef channel;
 	PubMessage pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "my topic", 123, new byte[] { 97, 98, 99 });
 	PublishMessage message;
 
+	// FIXME [jim] - add tests for new constructors
 	@Before
 	public void before() {
 		MockitoAnnotations.initMocks(this);
-		message = new PublishMessageImpl(channelManager, channel, pubMessage);
+		message = new PublishMessage(channelManager, channel, pubMessage);
 	}
 
 	@Test
@@ -49,7 +50,7 @@ public class PublishMessageImplTest {
 		assertFalse(message.isRetain());
 
 		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, true, "my topic", 123, new byte[] { 97, 98, 99 });
-		message = new PublishMessageImpl(channelManager, channel, pubMessage);
+		message = new PublishMessage(channelManager, channel, pubMessage);
 
 		assertTrue(message.isRetain());
 	}
@@ -70,7 +71,7 @@ public class PublishMessageImplTest {
 		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 
 		pubMessage = new PubMessage(QoS.AT_MOST_ONCE, false, "my topic", 123, new byte[] { 97, 98, 99 });
-		message = new PublishMessageImpl(channelManager, channel, pubMessage);
+		message = new PublishMessage(channelManager, channel, pubMessage);
 
 		assertEquals(QoS.AT_MOST_ONCE, message.getQoS());
 	}
@@ -79,7 +80,7 @@ public class PublishMessageImplTest {
 	public void testAck_Qos0() throws Exception {
 
 		pubMessage = new PubMessage(QoS.AT_MOST_ONCE, false, "my topic", 123, new byte[] { 97, 98, 99 });
-		message = new PublishMessageImpl(channelManager, channel, pubMessage);
+		message = new PublishMessage(channelManager, channel, pubMessage);
 
 		message.ack();
 		verifyZeroInteractions(channelManager);

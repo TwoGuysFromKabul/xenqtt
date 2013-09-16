@@ -1,7 +1,5 @@
 package net.sf.xenqtt.client;
 
-import java.util.List;
-
 import net.sf.xenqtt.message.ConnectReturnCode;
 
 /**
@@ -25,8 +23,7 @@ public interface AsyncClientListener extends PublishListener {
 	void connected(MqttClient client, ConnectReturnCode returnCode);
 
 	/**
-	 * Called when the client receives a subscribe acknowledgment from the broker. This method is called when the subscription request was made by
-	 * {@link MqttClient#subscribe(Subscription[])}.
+	 * Called when the client receives a subscribe acknowledgment from the broker.
 	 * 
 	 * @param client
 	 *            The client that requested the subscriptions
@@ -40,16 +37,7 @@ public interface AsyncClientListener extends PublishListener {
 	void subscribed(MqttClient client, Subscription[] requestedSubscriptions, Subscription[] grantedSubscriptions);
 
 	/**
-	 * This method is the same as {@link #subscribed(MqttClient, Subscription[], Subscription[])} except it uses {@link List lists} instead of arrays and is
-	 * called when the subscription request was made by {@link MqttClient#subscribe(java.util.List)}.
-	 * 
-	 * @see AsyncClientListener#subscribed(MqttClient, Subscription[], Subscription[])
-	 */
-	void subscribed(MqttClient client, List<Subscription> requestedSubscriptions, List<Subscription> grantedSubscriptions);
-
-	/**
-	 * Called when an unsubscribe acknowledgment is received from the broker. This method is called when the request was made by
-	 * {@link MqttClient#unsubscribe(String[])}.
+	 * Called when an unsubscribe acknowledgment is received from the broker.
 	 * 
 	 * @param client
 	 *            The client that requested the unsubscribe
@@ -59,33 +47,12 @@ public interface AsyncClientListener extends PublishListener {
 	void unsubscribed(MqttClient client, String[] topics);
 
 	/**
-	 * This method is the same as {@link #unsubscribed(MqttClient, String[])} except it uses {@link List lists} instead of arrays and is called when the
-	 * subscription request was made by {@link MqttClient#unsubscribe(List)}.
-	 * 
-	 * @see AsyncClientListener#subscribed(MqttClient, Subscription[], Subscription[])
-	 */
-	void unsubscribed(MqttClient client, List<String> topics);
-
-	/**
-	 * Called when an acknowledgment is received from the broker to a client published message.
+	 * Called when an acknowledgment is received from the broker to a client publish message.
 	 * 
 	 * @param client
 	 *            The client the message was published to
 	 * @param message
-	 *            The message that was published.
+	 *            The message that was published. This will be the same object passed to {@link MqttClient#publish(PublishMessage)}.
 	 */
 	void published(MqttClient client, PublishMessage message);
-
-	/**
-	 * Called when the connection to the broker is lost either unintentionally or because the client requested the disconnect.
-	 * 
-	 * @param client
-	 *            The client that was disconnected
-	 * @param cause
-	 *            The exception that caused the client to disconnect. Null if there was no exception.
-	 * @param reconnecting
-	 *            True if the client will attempt to reconnect. False if either all reconnect attempts have failed or the disconnect was requested by the
-	 *            client.
-	 */
-	void disconnected(MqttClient client, Throwable cause, boolean reconnecting);
 }
