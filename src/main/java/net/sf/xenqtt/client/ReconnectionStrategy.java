@@ -15,4 +15,9 @@ public interface ReconnectionStrategy {
 	 * @return Milliseconds the client should wait before trying to connect to the broker again. If < 0 the client will stop trying to connect to the broker.
 	 */
 	long connectionLost(MqttClient client, Throwable cause);
+
+	/**
+	 * Called by an {@link MqttClient} instance when a connection to the broker is established.
+	 */
+	void connectionEstablished();
 }
