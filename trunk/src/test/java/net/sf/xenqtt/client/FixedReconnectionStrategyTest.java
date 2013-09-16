@@ -33,4 +33,9 @@ public class FixedReconnectionStrategyTest {
 		assertEquals(-1, strategy.connectionLost(null, null));
 	}
 
+	@Test
+	public void testClone() throws Exception {
+
+		fail("not implemented");
+	}
 }

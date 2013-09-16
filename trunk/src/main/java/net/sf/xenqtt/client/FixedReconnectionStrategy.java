@@ -53,4 +53,13 @@ final class FixedReconnectionStrategy implements ReconnectionStrategy {
 		currentReconnectAttempts.set(0);
 	}
 
+	/**
+	 * @see java.lang.Object#clone()
+	 * @see ReconnectionStrategy#clone()
+	 */
+	@Override
+	public ReconnectionStrategy clone() {
+
+		return new FixedReconnectionStrategy(reconnectDelayMillis, maxReconnectAttempts);
+	}
 }

@@ -68,4 +68,12 @@ final class ProgressiveReconnectionStrategy implements ReconnectionStrategy {
 		currentRetry.set(0);
 	}
 
+	/**
+	 * @see java.lang.Object#clone()
+	 * @see ReconnectionStrategy#clone()
+	 */
+	@Override
+	public ReconnectionStrategy clone() {
+		return new ProgressiveReconnectionStrategy(baseReconnectMillis, progressiveFactor, maxNumberOfReconnects);
+	}
 }
