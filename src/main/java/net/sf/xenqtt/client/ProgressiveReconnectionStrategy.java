@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This class is thread-safe.
  * </p>
  */
-final class ProgressiveReconnectionStrategy implements ReconnectionStrategy {
+public final class ProgressiveReconnectionStrategy implements ReconnectionStrategy {
 
 	private final long baseReconnectMillis;
 	private final int progressiveFactor;
