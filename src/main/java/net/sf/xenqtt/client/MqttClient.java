@@ -1,7 +1,6 @@
 package net.sf.xenqtt.client;
 
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
@@ -240,14 +239,7 @@ public interface MqttClient {
 	void unsubscribe(List<String> topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
-	 * Publishes a binary message with retain set to false. Delegates to {@link #publish(String, QoS, byte[], boolean)}.
-	 * 
-	 * @see MqttClient#publish(String, QoS, byte[], boolean)
-	 */
-	void publish(String topicName, QoS qos, byte[] payload) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
-
-	/**
-	 * Publishes a binary message. This includes these actions:
+	 * Publishes a {@link PublishMessage message}. This includes these actions:
 	 * <ol>
 	 * <li>Send a publish message to the broker</li>
 	 * <li>If the QoS is not {@link QoS#AT_MOST_ONCE} then wait for the broker's acknowledgment</li>
@@ -255,17 +247,8 @@ public interface MqttClient {
 	 * If the synchronous client is used this method blocks until these actions are completed. If the asynchronous client is used the
 	 * {@link AsyncClientListener#published(MqttClient, PublishMessage) published} method is called after these actions are completed.
 	 * 
-	 * @param topicName
-	 *            The name of the topic to publish to. This may not contain wildcards ('+' and '#')
-	 * @param qos
-	 *            The level of assurance for delivery.
-	 * @param payload
-	 *            The payload as a byte array. It is valid to publish a zero length payload.
-	 * @param retain
-	 *            If the Retain flag is set (1), the broker should hold on to the message after it has been delivered to the current subscribers. This is useful
-	 *            where publishers send messages on a "report by exception" basis, where it might be some time between messages. This allows new subscribers to
-	 *            instantly receive data with the retained, or Last Known Good, value. A broker may delete a retained message if it receives a message with a
-	 *            zero-length payload and the Retain flag set on the same topic.
+	 * @param message
+	 *            The message to publish to the broker
 	 * 
 	 * @throws MqttCommandCancelledException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
@@ -275,25 +258,7 @@ public interface MqttClient {
 	 * @throws MqttInterruptedException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 */
-	void publish(String topicName, QoS qos, byte[] payload, boolean retain) throws MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException;
-
-	/**
-	 * Publishes a message with a string as the payload with retain set to false. The string is converted to a byte[] using UTF8 encoding and used as the binary
-	 * message payload. Delegates to {@link #publish(String, QoS, byte[], boolean)}.
-	 * 
-	 * @see MqttClient#publish(String, QoS, byte[], boolean)
-	 */
-	void publish(String topicName, QoS qos, String payload) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
-
-	/**
-	 * Publishes a message with a string as the payload. The string is converted to a byte[] using UTF8 encoding and used as the binary message payload.
-	 * Delegates to {@link #publish(String, QoS, byte[], boolean)}.
-	 * 
-	 * @see MqttClient#publish(String, QoS, byte[], boolean)
-	 */
-	void publish(String topicName, QoS qos, String payload, boolean retain) throws MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException;
+	void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
 	 * Closes this client without doing a clean disconnect. This includes these actions:
@@ -313,45 +278,4 @@ public interface MqttClient {
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 */
 	void close() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
-
-	/**
-	 * Creates a "sibling" client. This is a new client to the same broker this client uses. The new client will also share the same {@link Executor} and
-	 * {@link PublishListener} or {@link AsyncClientListener}. The new client will use the same implementation this client does ({@link SynchronousMqttClient
-	 * synchronous} or {@link AsyncMqttClient asynchronous}). When <code>connect</code> is called on the new client a new TCP connection will be established to
-	 * the broker. This method does not block regardless of the implementation used.
-	 * 
-	 * @return A new {@link MqttClient}
-	 */
-	MqttClient newClient();
-
-	/**
-	 * Invokes {@link #disconnect()} on all the {@link MqttClient}s that are siblings of this client. This is a simple way to disconnect all clients before
-	 * shutting down.
-	 * 
-	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
-	 * @throws MqttTimeoutException
-	 *             Thrown when one or more of the clients called by this method throws this exception. All clients' {@link #disconnect()} methods will be
-	 *             invoked regardless of how many throw this exception.
-	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}. This
-	 *             will cause an immediate return without processing more clients.
-	 */
-	void disconnectAll() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
-
-	/**
-	 * Invokes {@link #close()} on all the {@link MqttClient}s that are siblings of this client. This is a simple way to close all clients before shutting down.
-	 * 
-	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
-	 * @throws MqttTimeoutException
-	 *             Thrown when one or more of the clients called by this method throws this exception. All clients' {@link #close()} methods will be invoked
-	 *             regardless of how many throw this exception.
-	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}. This
-	 *             will cause an immediate return without processing more clients.
-	 */
-	void closeAll() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 }

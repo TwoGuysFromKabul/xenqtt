@@ -1,27 +1,105 @@
 package net.sf.xenqtt.client;
 
+import java.nio.charset.Charset;
+
+import net.sf.xenqtt.message.ChannelManager;
+import net.sf.xenqtt.message.MqttChannelRef;
+import net.sf.xenqtt.message.PubAckMessage;
+import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
 
 /**
- * A message published to this client will implement this interface
+ * Message published either by the client to a topic or published to the client from subscribed topic. Users may extend this class to add user defined data.
+ * This can be especially useful when using the {@link AsyncMqttClient}.
  */
-public interface PublishMessage {
+public class PublishMessage {
+
+	private static final Charset UTF8 = Charset.forName("UTF-8");
+
+	private final ChannelManager manager;
+	private final MqttChannelRef channel;
+	final PubMessage pubMessage;
+
+	/**
+	 * Creates a binary message.
+	 * 
+	 * @param topicName
+	 *            The name of the topic to publish to. This may not contain wildcards ('+' and '#')
+	 * @param qos
+	 *            The level of assurance for delivery.
+	 * @param payload
+	 *            The payload as a byte array. It is valid to publish a zero length payload.
+	 * @param retain
+	 *            If the Retain flag is set (1), the broker should hold on to the message after it has been delivered to the current subscribers. This is useful
+	 *            where publishers send messages on a "report by exception" basis, where it might be some time between messages. This allows new subscribers to
+	 *            instantly receive data with the retained, or Last Known Good, value. A broker may delete a retained message if it receives a message with a
+	 *            zero-length payload and the Retain flag set on the same topic.
+	 */
+	public PublishMessage(String topicName, QoS qos, byte[] payload, boolean retain) {
+		this.channel = null;
+		this.manager = null;
+		this.pubMessage = new PubMessage(qos, retain, topicName, 0, payload);
+	}
+
+	/**
+	 * Creates a binary message with retain set to false. Delegates to {@link #publish(String, QoS, byte[], boolean)}.
+	 * 
+	 * @see PublishMessage#PublishMessage(String, QoS, byte[], boolean)
+	 */
+	public PublishMessage(String topicName, QoS qos, byte[] payload) {
+		this(topicName, qos, payload, false);
+	}
+
+	/**
+	 * Creates a message with a string as the payload with retain set to false. The string is converted to a byte[] using UTF8 encoding and used as the binary
+	 * message payload. Delegates to {@link #PublishMessage(String, QoS, byte[], boolean)}.
+	 * 
+	 * @see PublishMessage#PublishMessage(String, QoS, byte[], boolean)
+	 */
+	public PublishMessage(String topicName, QoS qos, String payload) {
+		this(topicName, qos, payload, false);
+	}
+
+	/**
+	 * Creates a message with a string as the payload. The string is converted to a byte[] using UTF8 encoding and used as the binary message payload. Delegates
+	 * to {@link #PublishMessage(String, QoS, byte[], boolean)}.
+	 * 
+	 * @see PublishMessage#PublishMessage(String, QoS, byte[], boolean)
+	 */
+	public PublishMessage(String topicName, QoS qos, String payload, boolean retain) {
+		this(topicName, qos, payload.getBytes(UTF8), retain);
+	}
+
+	/**
+	 * Package visible as this is only for internal use
+	 */
+	PublishMessage(ChannelManager manager, MqttChannelRef channel, PubMessage pubMessage) {
+		this.manager = manager;
+		this.channel = channel;
+		this.pubMessage = pubMessage;
+	}
 
 	/**
 	 * @return The topic the message was published to. When received by a client that subscribed using wildcard characters, this string will be the absolute
 	 *         topic specified by the originating publisher and not the subscription string used by the client. This will never contain wildcards.
 	 */
-	String getTopic();
+	public final String getTopic() {
+		return pubMessage.getTopicName();
+	}
 
 	/**
 	 * @return The message's payload as a byte[]
 	 */
-	byte[] getPayload();
+	public final byte[] getPayload() {
+		return pubMessage.getPayload();
+	}
 
 	/**
 	 * @return The message's payload as a string. The payload is converted to a string using the UTF8 character set.
 	 */
-	String getPayloadString();
+	public final String getPayloadString() {
+		return new String(pubMessage.getPayload(), UTF8);
+	}
 
 	/**
 	 * If the Retain flag is set (1), the server should hold on to the message after it has been delivered to the current subscribers.
@@ -40,22 +118,33 @@ public interface PublishMessage {
 	 * <p>
 	 * A server may delete a retained message if it receives a message with a zero-length payload and the Retain flag set on the same topic.
 	 */
-	boolean isRetain();
+	public final boolean isRetain() {
+		return pubMessage.isRetain();
+	}
 
 	/**
 	 * @return True if the broker is re-delivering the message and the message's QoS is not {@link QoS#AT_MOST_ONCE}. The recipient should treat this flag as a
 	 *         hint as to whether the message may have been previously received. It should not be relied on to detect duplicates.
 	 */
-	boolean isDuplicate();
+	public final boolean isDuplicate() {
+		return pubMessage.isDuplicate();
+	}
 
 	/**
 	 * @return The level of assurance for delivery
 	 */
-	QoS getQoS();
+	public final QoS getQoS() {
+		return pubMessage.getQoS();
+	}
 
 	/**
 	 * Sends an acknowledgment to the broker for this message unless {@link #getQoS()} is {@link QoS#AT_MOST_ONCE} in which case this does nothing. This method
-	 * is always asynchronous.
+	 * is always asynchronous. If called on an instance created by the client to send to the broker this method does nothing.
 	 */
-	void ack();
+	public final void ack() {
+
+		if (manager != null && pubMessage.getQoSLevel() > 0) {
+			manager.send(channel, new PubAckMessage(pubMessage.getMessageId()));
+		}
+	}
 }

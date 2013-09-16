@@ -131,7 +131,8 @@ public interface ChannelManager {
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is interrupted
 	 */
-	MqttMessage send(MqttChannelRef channel, MqttMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	<T extends MqttMessage> T send(MqttChannelRef channel, MqttMessage message) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException;
 
 	/**
 	 * Closes the specified channel. This method blocks until the channel is closed.

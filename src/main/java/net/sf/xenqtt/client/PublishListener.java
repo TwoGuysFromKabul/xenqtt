@@ -18,4 +18,17 @@ public interface PublishListener {
 	 *            The message that was published
 	 */
 	void publish(MqttClient client, PublishMessage message);
+
+	/**
+	 * Called when the connection to the broker is lost either unintentionally or because the client requested the disconnect.
+	 * 
+	 * @param client
+	 *            The client that was disconnected
+	 * @param cause
+	 *            The exception that caused the client to disconnect. Null if there was no exception.
+	 * @param reconnecting
+	 *            True if the client will attempt to reconnect. False if either all reconnect attempts have failed or the disconnect was requested by the
+	 *            client.
+	 */
+	void disconnected(MqttClient client, Throwable cause, boolean reconnecting);
 }
