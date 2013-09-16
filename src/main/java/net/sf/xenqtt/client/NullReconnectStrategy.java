@@ -21,4 +21,12 @@ final class NullReconnectStrategy implements ReconnectionStrategy {
 	public void connectionEstablished() {
 	}
 
+	/**
+	 * @see java.lang.Object#clone()
+	 * @see ReconnectionStrategy#clone()
+	 */
+	@Override
+	public ReconnectionStrategy clone() {
+		return this;
+	}
 }
