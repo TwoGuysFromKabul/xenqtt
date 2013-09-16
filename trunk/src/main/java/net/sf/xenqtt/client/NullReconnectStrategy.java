@@ -14,4 +14,11 @@ final class NullReconnectStrategy implements ReconnectionStrategy {
 		return -1;
 	}
 
+	/**
+	 * @see net.sf.xenqtt.client.ReconnectionStrategy#connectionEstablished()
+	 */
+	@Override
+	public void connectionEstablished() {
+	}
+
 }
