@@ -20,4 +20,9 @@ public interface ReconnectionStrategy extends Cloneable {
 	 * Called by an {@link MqttClient} instance when a connection to the broker is established.
 	 */
 	void connectionEstablished();
+
+	/**
+	 * @return A new instance of the same type as this object. This is used to create a new strategy for each client created by the {@link MqttClientFactory}.
+	 */
+	ReconnectionStrategy clone();
 }
