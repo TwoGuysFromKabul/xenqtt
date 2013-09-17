@@ -138,7 +138,7 @@ public final class MqttClientFactory {
 	/**
 	 * Creates a synchronous {@link MqttClient client}. You may only use this method if the factory was constructed to create synchronous clients.
 	 * 
-	 * @param publishListener
+	 * @param mqttClientListener
 	 *            Handles events from this client's channel
 	 * 
 	 * @return A new synchronous {@link MqttClient client}
@@ -146,13 +146,13 @@ public final class MqttClientFactory {
 	 * @throws IllegalStateException
 	 *             If this factory was constructed to create asynchronous clients and not synchronous clients.
 	 */
-	public MqttClient newSynchronousClient(PublishListener publishListener) throws IllegalStateException {
+	public MqttClient newSynchronousClient(MqttClientListener mqttClientListener) throws IllegalStateException {
 
 		if (!blocking) {
 			throw new IllegalStateException("You may not create a synchronous client using a client factory configured to create asynchronous clients");
 		}
 
-		return new FactoryClient(brokerUri, publishListener, null, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor);
+		return new FactoryClient(brokerUri, mqttClientListener, null, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor);
 	}
 
 	/**
@@ -190,9 +190,9 @@ public final class MqttClientFactory {
 
 	private static final class FactoryClient extends AbstractMqttClient {
 
-		FactoryClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
+		FactoryClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
 				Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
-			super(brokerUri, publishListener, asyncClientListener, reconnectionStrategy, executor, manager, reconnectionExecutor);
+			super(brokerUri, mqttClientListener, asyncClientListener, reconnectionStrategy, executor, manager, reconnectionExecutor);
 		}
 	};
 }

@@ -51,7 +51,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	private final ScheduledExecutorService reconnectionExecutor;
 
 	private final MessageHandler messageHandler;
-	private final PublishListener publishListener;
+	private final MqttClientListener mqttClientListener;
 	private final AsyncClientListener asyncClientListener;
 
 	private final Map<Integer, Object> dataByMessageId;
@@ -66,7 +66,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * 
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
-	 * @param publishListener
+	 * @param mqttClientListener
 	 *            Handles events from this client's channel
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
@@ -78,9 +78,9 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
-	AbstractMqttClient(String brokerUri, PublishListener publishListener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
+	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
 			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
-		this(brokerUri, publishListener, null, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), messageResendIntervalSeconds,
+		this(brokerUri, mqttClientListener, null, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), messageResendIntervalSeconds,
 				blockingTimeoutSeconds);
 	}
 
@@ -89,7 +89,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * 
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
-	 * @param publishListener
+	 * @param mqttClientListener
 	 *            Handles events from this client's channel
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
@@ -102,9 +102,9 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
-	AbstractMqttClient(String brokerUri, PublishListener publishListener, ReconnectionStrategy reconnectionStrategy, Executor executor,
+	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, ReconnectionStrategy reconnectionStrategy, Executor executor,
 			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
-		this(brokerUri, publishListener, null, reconnectionStrategy, executor, messageResendIntervalSeconds, blockingTimeoutSeconds);
+		this(brokerUri, mqttClientListener, null, reconnectionStrategy, executor, messageResendIntervalSeconds, blockingTimeoutSeconds);
 	}
 
 	/**
@@ -305,10 +305,10 @@ abstract class AbstractMqttClient implements MqttClient {
 	/**
 	 * Package visible and only for use by the {@link MqttClientFactory}
 	 */
-	AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
+	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
 			Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
 		this.brokerUri = brokerUri;
-		this.publishListener = publishListener;
+		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executor;
 		this.reconnectionExecutor = reconnectionExecutor;
@@ -320,10 +320,10 @@ abstract class AbstractMqttClient implements MqttClient {
 		this.channel = manager.newClientChannel(brokerUri, messageHandler);
 	}
 
-	private AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener,
+	private AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
 			ReconnectionStrategy reconnectionStrategy, Executor executor, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 		this.brokerUri = brokerUri;
-		this.publishListener = publishListener;
+		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executor;
 		this.executorService = null;
@@ -336,10 +336,10 @@ abstract class AbstractMqttClient implements MqttClient {
 		this.channel = manager.newClientChannel(brokerUri, messageHandler);
 	}
 
-	private AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener,
+	private AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
 			ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 		this.brokerUri = brokerUri;
-		this.publishListener = publishListener;
+		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executorService;
 		this.executorService = executorService;
@@ -398,7 +398,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		} else {
 			manager.cancelBlockingCommands(channel);
 		}
-		publishListener.disconnected(this, cause, reconnecting);
+		mqttClientListener.disconnected(this, cause, reconnecting);
 	}
 
 	private final class AsyncMessageHandler implements MessageHandler {
@@ -460,7 +460,7 @@ abstract class AbstractMqttClient implements MqttClient {
 				@Override
 				public void run() {
 					try {
-						publishListener.publish(client, new PublishMessage(manager, channel, message));
+						mqttClientListener.publishReceived(client, new PublishMessage(manager, channel, message));
 					} catch (Exception e) {
 						Log.error(e, "Failed to process message for %s: %s", channel, message);
 					}

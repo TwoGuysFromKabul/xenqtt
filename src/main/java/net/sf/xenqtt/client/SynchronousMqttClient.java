@@ -21,13 +21,13 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
-	 *            The number of threads used to handle incoming messages and invoke the {@link PublishListener listener's} methods
+	 *            The number of threads used to handle incoming messages and invoke the {@link MqttClientListener listener's} methods
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown
 	 */
-	public SynchronousMqttClient(String brokerUri, PublishListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
+	public SynchronousMqttClient(String brokerUri, MqttClientListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
 			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 		super(brokerUri, listener, reconnectionStrategy, messageHandlerThreadPoolSize, messageResendIntervalSeconds, blockingTimeoutSeconds);
 	}
@@ -42,14 +42,14 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param executor
-	 *            The executor used to handle incoming messages and invoke the {@link PublishListener listener's} methods. This class will NOT shut down the
+	 *            The executor used to handle incoming messages and invoke the {@link MqttClientListener listener's} methods. This class will NOT shut down the
 	 *            executor.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown
 	 */
-	public SynchronousMqttClient(String brokerUri, PublishListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor,
+	public SynchronousMqttClient(String brokerUri, MqttClientListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor,
 			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 		super(brokerUri, listener, reconnectionStrategy, executor, messageResendIntervalSeconds, blockingTimeoutSeconds);
 	}
