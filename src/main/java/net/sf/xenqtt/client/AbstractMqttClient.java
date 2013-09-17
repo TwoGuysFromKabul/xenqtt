@@ -56,7 +56,10 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private final Map<Integer, Object> dataByMessageId;
 	private final AtomicInteger messageIdGenerator = new AtomicInteger();
+
 	private volatile MqttChannelRef channel;
+	private volatile ConnectMessage connectMessage;
+	private volatile List<MqttMessage> unsentMessages;
 
 	/**
 	 * Constructs a synchronous instance of this class using an {@link Executor} owned by this class.
@@ -368,6 +371,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private ConnectReturnCode doConnect(ConnectMessage message) {
 
+		connectMessage = message;
 		MqttMessage ack = manager.send(channel, message);
 		return ack == null ? null : ((ConnAckMessage) ack).getReturnCode();
 	}
@@ -386,11 +390,14 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private void tryReconnect(Throwable cause) {
 
-		// FIXME [jim] - need to resend unsent messages. Need to ensure all blocking commands are released if we are not going to retry
-
 		long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
-		reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
 		boolean reconnecting = reconnectDelay >= 0;
+		if (reconnecting) {
+			unsentMessages = manager.getUnsentMessages(channel);
+			reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
+		} else {
+			manager.cancelBlockingCommands(channel);
+		}
 		publishListener.disconnected(this, cause, reconnecting);
 	}
 
@@ -411,6 +418,23 @@ abstract class AbstractMqttClient implements MqttClient {
 		 */
 		@Override
 		public void connAck(final MqttChannel channel, final ConnAckMessage message) throws Exception {
+
+			if (message.getReturnCode() == ConnectReturnCode.ACCEPTED) {
+
+				executor.execute(new Runnable() {
+
+					@Override
+					public void run() {
+
+						reconnectionStrategy.connectionEstablished();
+						if (unsentMessages != null) {
+							for (MqttMessage message : unsentMessages) {
+								manager.send(channel, message);
+							}
+						}
+					}
+				});
+			}
 
 			if (asyncClientListener != null) {
 				executor.execute(new Runnable() {
@@ -563,7 +587,10 @@ abstract class AbstractMqttClient implements MqttClient {
 		 */
 		@Override
 		public void channelOpened(MqttChannel channel) {
-			reconnectionStrategy.connectionEstablished();
+
+			if (connectMessage != null) {
+				doConnect(connectMessage);
+			}
 		}
 
 		/**
@@ -588,8 +615,6 @@ abstract class AbstractMqttClient implements MqttClient {
 	}
 
 	private final class ClientReconnector implements Runnable {
-
-		private final MqttClient client = AbstractMqttClient.this;
 
 		/**
 		 * @see java.lang.Runnable#run()
