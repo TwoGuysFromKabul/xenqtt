@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttQosNotGrantedException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ChannelManagerImpl;
@@ -80,8 +81,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
 			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
-		this(brokerUri, mqttClientListener, null, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), messageResendIntervalSeconds,
-				blockingTimeoutSeconds);
+		this(brokerUri, mqttClientListener, null, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize),
+				messageResendIntervalSeconds, blockingTimeoutSeconds);
 	}
 
 	/**
@@ -305,8 +306,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	/**
 	 * Package visible and only for use by the {@link MqttClientFactory}
 	 */
-	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
-			Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
+	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
+			ReconnectionStrategy reconnectionStrategy, Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
 		this.brokerUri = brokerUri;
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
@@ -378,11 +379,20 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private Subscription[] grantedSubscriptions(Subscription[] requestedSubscriptions, SubAckMessage ack) {
 
+		boolean match = true;
+
 		// TODO [jim] - what if the number of granted qoses does not match the number of requested subscriptions?
 		QoS[] grantedQoses = ack.getGrantedQoses();
 		Subscription[] grantedSubscriptions = new Subscription[requestedSubscriptions.length];
 		for (int i = 0; i < requestedSubscriptions.length; i++) {
 			grantedSubscriptions[i] = new Subscription(requestedSubscriptions[i].getTopic(), grantedQoses[i]);
+			if (requestedSubscriptions[i].getQos() != grantedQoses[i]) {
+				match = false;
+			}
+		}
+
+		if (!match) {
+			throw new MqttQosNotGrantedException(grantedSubscriptions);
 		}
 
 		return grantedSubscriptions;
@@ -534,7 +544,12 @@ abstract class AbstractMqttClient implements MqttClient {
 					public void run() {
 						try {
 							Subscription[] requestedSubscriptions = (Subscription[]) dataByMessageId.get(message.getMessageId());
-							asyncClientListener.subscribed(client, requestedSubscriptions, grantedSubscriptions(requestedSubscriptions, message));
+							try {
+								Subscription[] grantedSubscriptions = grantedSubscriptions(requestedSubscriptions, message);
+								asyncClientListener.subscribed(client, requestedSubscriptions, grantedSubscriptions, true);
+							} catch (MqttQosNotGrantedException e) {
+								asyncClientListener.subscribed(client, requestedSubscriptions, e.getGrantedSubscriptions(), false);
+							}
 						} catch (Exception e) {
 							Log.error(e, "Failed to process message for %s: %s", channel, message);
 						}
