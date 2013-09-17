@@ -36,6 +36,7 @@ public interface AsyncClientListener extends PublishListener {
 	 */
 	void subscribed(MqttClient client, Subscription[] requestedSubscriptions, Subscription[] grantedSubscriptions);
 
+	// FIXME [jim] - add a way to make it obvious if the granted qos does not match the requested qos
 	/**
 	 * Called when an unsubscribe acknowledgment is received from the broker.
 	 * 

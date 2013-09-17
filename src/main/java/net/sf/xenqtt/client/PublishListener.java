@@ -19,6 +19,7 @@ public interface PublishListener {
 	 */
 	void publish(MqttClient client, PublishMessage message);
 
+	// FIXME [jim] - rename the publish, published, publis, etc. Maybe onPublish, ...?
 	/**
 	 * Called when the connection to the broker is lost either unintentionally or because the client requested the disconnect.
 	 * 
