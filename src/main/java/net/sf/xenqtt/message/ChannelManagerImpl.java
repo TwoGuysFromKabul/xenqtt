@@ -9,6 +9,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +27,7 @@ import net.sf.xenqtt.MqttTimeoutException;
  */
 public final class ChannelManagerImpl implements ChannelManager {
 
-	private final Set<MqttChannel> channels = new HashSet<MqttChannel>();
+	private final Set<MqttChannel> openChannels = new HashSet<MqttChannel>();
 	private final long messageResendIntervalMillis;
 
 	private final Lock commandsLock = new ReentrantLock();
@@ -184,10 +185,29 @@ public final class ChannelManagerImpl implements ChannelManager {
 		addCommand(new CloseCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
+	/**
+	 * @see net.sf.xenqtt.message.ChannelManager#cancelBlockingCommands(net.sf.xenqtt.message.MqttChannelRef)
+	 */
+	@Override
+	public void cancelBlockingCommands(MqttChannelRef channel) {
+
+		// FIXME [jim] - test
+		addCommand(new CancelBlockingCommandsCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.ChannelManager#getUnsentMessages(net.sf.xenqtt.message.MqttChannelRef)
+	 */
+	@Override
+	public List<MqttMessage> getUnsentMessages(MqttChannelRef channel) {
+		// FIXME [jim] - test
+		return addCommand(new GetUnsentMessagesCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+	}
+
 	private void closeAll() {
 
 		Log.debug("Channel manager closing all channels");
-		for (MqttChannel channel : channels) {
+		for (MqttChannel channel : openChannels) {
 			try {
 				channel.close();
 			} catch (Exception ignore) {
@@ -297,9 +317,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private void channelClosed(MqttChannel channel) {
 
-		// FIXME [jim] - need to do something about this as it should not happen when we retry
-		channels.remove(channel);
-		channel.cancelBlockingCommands();
+		openChannels.remove(channel);
 	}
 
 	private void executeCommands(long now) {
@@ -377,6 +395,39 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 	}
 
+	private final class CancelBlockingCommandsCommand extends Command<Void> {
+
+		private final MqttChannel channel;
+
+		public CancelBlockingCommandsCommand(MqttChannelRef channel) {
+			super(true);
+			this.channel = (MqttChannel) channel;
+		}
+
+		@Override
+		public void doExecute() {
+
+			channel.cancelBlockingCommands();
+		}
+	}
+
+	private final class GetUnsentMessagesCommand extends Command<List<MqttMessage>> {
+
+		private final MqttChannel channel;
+
+		public GetUnsentMessagesCommand(MqttChannelRef channel) {
+			super(true);
+			this.channel = (MqttChannel) channel;
+		}
+
+		@Override
+		public void doExecute() {
+
+			List<MqttMessage> unsentMessages = channel.getUnsentMessages();
+			setResult(unsentMessages);
+		}
+	}
+
 	private final class NewClientChannelCommand extends Command<MqttClientChannel> {
 
 		private final String host;
@@ -395,7 +446,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		public void doExecute() {
 			try {
 				channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this);
-				channels.add(channel);
+				openChannels.add(channel);
 				setResult(channel);
 			} catch (Exception e) {
 				throw new MqttException("MQTT Client channel creation failed", e);
@@ -418,7 +469,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		public void doExecute() {
 			try {
 				MqttBrokerChannel channel = new MqttBrokerChannel(socketChannel, messageHandler, selector, messageResendIntervalMillis);
-				channels.add(channel);
+				openChannels.add(channel);
 				setResult(channel);
 			} catch (Exception e) {
 				try {

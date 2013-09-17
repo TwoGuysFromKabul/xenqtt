@@ -3,6 +3,7 @@ package net.sf.xenqtt.message;
 import java.net.URI;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
+import java.util.List;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
@@ -146,6 +147,17 @@ public interface ChannelManager {
 	 *             Thrown when the calling thread is interrupted
 	 */
 	void close(MqttChannelRef channel) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+
+	/**
+	 * {@link BlockingCommand#cancel() Cancels} all blocking commands for the specified channel. This is not done when the channel is closed because we may want
+	 * to reconnect instead of releasing the commands.
+	 */
+	void cancelBlockingCommands(MqttChannelRef channel);
+
+	/**
+	 * @return All messages that have not been sent. This includes messages queued to be sent, any partially sent message, and all in flight messages.
+	 */
+	List<MqttMessage> getUnsentMessages(MqttChannelRef channel);
 
 	/**
 	 * Starts this channel manager. Must be called before any other methods
