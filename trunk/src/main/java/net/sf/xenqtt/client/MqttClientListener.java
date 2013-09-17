@@ -6,7 +6,7 @@ import net.sf.xenqtt.message.QoS;
  * Implement this interface to use {@link SynchronousMqttClient}. The client will invoke the methods in this interface when a published message is received. A
  * single instance of this interface may be used with multiple clients.
  */
-public interface PublishListener {
+public interface MqttClientListener {
 
 	/**
 	 * Called when a published message is received from the broker. You should always call {@link PublishMessage#ack() ack()} when you are done processing the
@@ -17,9 +17,8 @@ public interface PublishListener {
 	 * @param message
 	 *            The message that was published
 	 */
-	void publish(MqttClient client, PublishMessage message);
+	void publishReceived(MqttClient client, PublishMessage message);
 
-	// FIXME [jim] - rename the publish, published, publis, etc. Maybe onPublish, ...?
 	/**
 	 * Called when the connection to the broker is lost either unintentionally or because the client requested the disconnect.
 	 * 

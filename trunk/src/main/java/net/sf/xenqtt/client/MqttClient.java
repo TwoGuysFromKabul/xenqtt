@@ -13,7 +13,7 @@ import net.sf.xenqtt.message.QoS;
  * A client to an MQTT broker. This interface is implemented by both synchronous and asynchronous clients.
  * </p>
  * <p>
- * To use the synchronous client create a {@link SynchronousMqttClient} and {@link PublishListener}. The synchronous client blocks until it receives an
+ * To use the synchronous client create a {@link SynchronousMqttClient} and {@link MqttClientListener}. The synchronous client blocks until it receives an
  * acknowledgment from the broker for each operation that requires such an acknowledgment. Each method's javadoc details what has to happen before the calling
  * thread is allowed to return. If the timeout configured in the {@link SynchronousMqttClient} expires an {@link MqttTimeoutException} is thrown and any
  * messages it is trying to send will be cancelled. To abort any of the blocking client calls {@link Thread#interrupt() interrupt} the calling thread which will
@@ -26,11 +26,11 @@ import net.sf.xenqtt.message.QoS;
  * </p>
  * <p>
  * Received publish messages are handled the same way by both the synchronous and asynchronous clients. When a publish message is received
- * {@link PublishListener#publish(MqttClient, PublishMessage) publish} is invoked with the client that received the message and the message that was received.
+ * {@link MqttClientListener#publishReceived(MqttClient, PublishMessage) publish} is invoked with the client that received the message and the message that was received.
  * If the message's {@link PublishMessage#getQoS() QoS} level is anything other than {@link QoS#AT_MOST_ONCE AT_MOST_ONCE} you must call
  * {@link PublishMessage#ack() ack()} when you are finished processing the message. It is recommended that you always call {@link PublishMessage#ack() ack()}
  * regardless of the message's {@link PublishMessage#getQoS() QoS}. If you do not call ack or you wait too long to call ack the message will be resent by the
- * broker and {@link PublishListener#publish(MqttClient, PublishMessage) publish} will be called with the resent message. {@link PublishMessage#isDuplicate()
+ * broker and {@link MqttClientListener#publishReceived(MqttClient, PublishMessage) publish} will be called with the resent message. {@link PublishMessage#isDuplicate()
  * isDuplicate()} will be <code>true</code> for messages that are resent by the broker.
  * </p>
  * <p>

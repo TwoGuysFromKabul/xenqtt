@@ -8,7 +8,7 @@ import net.sf.xenqtt.message.ConnectReturnCode;
  * instance of this interface may be used with multiple clients.
  * </p>
  */
-public interface AsyncClientListener extends PublishListener {
+public interface AsyncClientListener extends MqttClientListener {
 
 	/**
 	 * Called after the client has received a connect acknowledgment from the broker.
@@ -48,7 +48,7 @@ public interface AsyncClientListener extends PublishListener {
 	void unsubscribed(MqttClient client, String[] topics);
 
 	/**
-	 * Called when an acknowledgment is received from the broker to a client publish message.
+	 * Called when the protocol to send a client publish message to the broker is complete.
 	 * 
 	 * @param client
 	 *            The client the message was published to
