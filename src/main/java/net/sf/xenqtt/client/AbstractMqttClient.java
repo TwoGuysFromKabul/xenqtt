@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,12 +41,14 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 abstract class AbstractMqttClient implements MqttClient {
 
+	private final String brokerUri;
 	private final ChannelManager manager;
 
 	private final ReconnectionStrategy reconnectionStrategy;
 
 	private final Executor executor;
 	private final ExecutorService executorService;
+	private final ScheduledExecutorService reconnectionExecutor;
 
 	private final MessageHandler messageHandler;
 	private final PublishListener publishListener;
@@ -53,7 +56,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private final Map<Integer, Object> dataByMessageId;
 	private final AtomicInteger messageIdGenerator = new AtomicInteger();
-	private final MqttChannelRef channel;
+	private volatile MqttChannelRef channel;
 
 	/**
 	 * Constructs a synchronous instance of this class using an {@link Executor} owned by this class.
@@ -279,8 +282,15 @@ abstract class AbstractMqttClient implements MqttClient {
 
 		this.manager.shutdown();
 
+		reconnectionExecutor.shutdownNow();
+		try {
+			reconnectionExecutor.awaitTermination(1, TimeUnit.DAYS);
+		} catch (InterruptedException e) {
+			throw new MqttInterruptedException(e);
+		}
+
 		if (executorService != null) {
-			executorService.shutdown();
+			executorService.shutdownNow();
 			try {
 				executorService.awaitTermination(1, TimeUnit.DAYS);
 			} catch (InterruptedException e) {
@@ -293,10 +303,12 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * Package visible and only for use by the {@link MqttClientFactory}
 	 */
 	AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
-			Executor executor, ChannelManager manager) {
+			Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
+		this.brokerUri = brokerUri;
 		this.publishListener = publishListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executor;
+		this.reconnectionExecutor = reconnectionExecutor;
 		this.executorService = null;
 		this.messageHandler = new AsyncMessageHandler();
 		this.reconnectionStrategy = reconnectionStrategy;
@@ -307,10 +319,12 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener,
 			ReconnectionStrategy reconnectionStrategy, Executor executor, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+		this.brokerUri = brokerUri;
 		this.publishListener = publishListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executor;
 		this.executorService = null;
+		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.messageHandler = new AsyncMessageHandler();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
 		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
@@ -321,10 +335,12 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private AbstractMqttClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener,
 			ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+		this.brokerUri = brokerUri;
 		this.publishListener = publishListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executorService;
 		this.executorService = executorService;
+		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.messageHandler = new AsyncMessageHandler();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
 		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
@@ -366,6 +382,16 @@ abstract class AbstractMqttClient implements MqttClient {
 		}
 
 		return grantedSubscriptions;
+	}
+
+	private void tryReconnect(Throwable cause) {
+
+		// FIXME [jim] - need to resend unsent messages. Need to ensure all blocking commands are released if we are not going to retry
+
+		long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
+		reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
+		boolean reconnecting = reconnectDelay >= 0;
+		publishListener.disconnected(this, cause, reconnecting);
 	}
 
 	private final class AsyncMessageHandler implements MessageHandler {
@@ -537,7 +563,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		 */
 		@Override
 		public void channelOpened(MqttChannel channel) {
-			// not used
+			reconnectionStrategy.connectionEstablished();
 		}
 
 		/**
@@ -551,15 +577,31 @@ abstract class AbstractMqttClient implements MqttClient {
 				@Override
 				public void run() {
 					try {
-						// FIXME [jim] - this should use the reconnect strategy and schedule the reconnect
-						boolean reconnecting = false;
-						publishListener.disconnected(client, cause, reconnecting);
+						tryReconnect(cause);
 					} catch (Exception e) {
 						Log.error(e, "Failed to process channelClosed for %s: cause=", channel, cause);
 					}
 
 				}
 			});
+		}
+	}
+
+	private final class ClientReconnector implements Runnable {
+
+		private final MqttClient client = AbstractMqttClient.this;
+
+		/**
+		 * @see java.lang.Runnable#run()
+		 */
+		@Override
+		public void run() {
+
+			try {
+				channel = manager.newClientChannel(brokerUri, messageHandler);
+			} catch (Throwable t) {
+				tryReconnect(t);
+			}
 		}
 	}
 }

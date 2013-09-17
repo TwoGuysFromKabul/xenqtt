@@ -3,6 +3,7 @@ package net.sf.xenqtt.client;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.MqttInterruptedException;
@@ -12,7 +13,7 @@ import net.sf.xenqtt.message.ChannelManagerImpl;
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
- * Used to create multiple "sibling" {@link MqttClient clients} that share an {@link Executor}, broker URI, etc. FIXME [jim] - needs javadoc
+ * Used to create multiple "sibling" {@link MqttClient clients} that share an {@link Executor}, broker URI, etc.
  */
 public final class MqttClientFactory {
 
@@ -21,6 +22,7 @@ public final class MqttClientFactory {
 	private final ReconnectionStrategy reconnectionStrategy;
 	private final Executor executor;
 	private final ExecutorService executorService;
+	private final ScheduledExecutorService reconnectionExecutor;
 	private final String brokerUri;
 
 	/**
@@ -66,6 +68,7 @@ public final class MqttClientFactory {
 		this.brokerUri = brokerUri;
 		this.executor = executor;
 		this.executorService = null;
+		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
 		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds, blockingTimeoutSeconds);
 		this.manager.init();
@@ -115,8 +118,15 @@ public final class MqttClientFactory {
 
 		this.manager.shutdown();
 
+		reconnectionExecutor.shutdownNow();
+		try {
+			reconnectionExecutor.awaitTermination(1, TimeUnit.DAYS);
+		} catch (InterruptedException e) {
+			throw new MqttInterruptedException(e);
+		}
+
 		if (executorService != null) {
-			executorService.shutdown();
+			executorService.shutdownNow();
 			try {
 				executorService.awaitTermination(1, TimeUnit.DAYS);
 			} catch (InterruptedException e) {
@@ -142,7 +152,7 @@ public final class MqttClientFactory {
 			throw new IllegalStateException("You may not create a synchronous client using a client factory configured to create asynchronous clients");
 		}
 
-		return new FactoryClient(brokerUri, publishListener, null, reconnectionStrategy.clone(), executor, manager);
+		return new FactoryClient(brokerUri, publishListener, null, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor);
 	}
 
 	/**
@@ -162,7 +172,7 @@ public final class MqttClientFactory {
 			throw new IllegalStateException("You may not create aa asynchronous client using a client factory configured to create synchronous clients");
 		}
 
-		return new FactoryClient(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy.clone(), executor, manager);
+		return new FactoryClient(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor);
 	}
 
 	private MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int messageResendIntervalSeconds,
@@ -172,6 +182,7 @@ public final class MqttClientFactory {
 		this.brokerUri = brokerUri;
 		this.executor = executorService;
 		this.executorService = executorService;
+		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
 		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds, blockingTimeoutSeconds);
 		this.manager.init();
@@ -180,8 +191,8 @@ public final class MqttClientFactory {
 	private static final class FactoryClient extends AbstractMqttClient {
 
 		FactoryClient(String brokerUri, PublishListener publishListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
-				Executor executor, ChannelManager manager) {
-			super(brokerUri, publishListener, asyncClientListener, reconnectionStrategy, executor, manager);
+				Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
+			super(brokerUri, publishListener, asyncClientListener, reconnectionStrategy, executor, manager, reconnectionExecutor);
 		}
 	};
 }
