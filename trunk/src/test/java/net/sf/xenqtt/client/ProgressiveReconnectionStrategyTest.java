@@ -42,6 +42,23 @@ public class ProgressiveReconnectionStrategyTest {
 	@Test
 	public void testClone() throws Exception {
 
-		fail("not implemented");
+		assertEquals(1000, strategy.connectionLost(null, null));
+		assertEquals(7000, strategy.connectionLost(null, null));
+		assertEquals(49000, strategy.connectionLost(null, null));
+		assertEquals(343000, strategy.connectionLost(null, null));
+		assertEquals(2401000, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+
+		ReconnectionStrategy clone = strategy.clone();
+		assertNotSame(strategy, clone);
+
+		assertEquals(1000, clone.connectionLost(null, null));
+		assertEquals(7000, clone.connectionLost(null, null));
+		assertEquals(49000, clone.connectionLost(null, null));
+		assertEquals(343000, clone.connectionLost(null, null));
+		assertEquals(2401000, clone.connectionLost(null, null));
+		assertEquals(-1, clone.connectionLost(null, null));
+		assertEquals(-1, clone.connectionLost(null, null));
 	}
 }

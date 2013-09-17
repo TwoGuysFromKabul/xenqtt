@@ -36,6 +36,19 @@ public class FixedReconnectionStrategyTest {
 	@Test
 	public void testClone() throws Exception {
 
-		fail("not implemented");
+		assertEquals(7000, strategy.connectionLost(null, null));
+		assertEquals(7000, strategy.connectionLost(null, null));
+		assertEquals(7000, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+
+		ReconnectionStrategy clone = strategy.clone();
+		assertNotSame(strategy, clone);
+
+		assertEquals(7000, clone.connectionLost(null, null));
+		assertEquals(7000, clone.connectionLost(null, null));
+		assertEquals(7000, clone.connectionLost(null, null));
+		assertEquals(-1, clone.connectionLost(null, null));
+		assertEquals(-1, clone.connectionLost(null, null));
 	}
 }
