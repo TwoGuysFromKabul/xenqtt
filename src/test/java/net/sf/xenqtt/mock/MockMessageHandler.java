@@ -20,9 +20,9 @@ import net.sf.xenqtt.message.PingReqMessage;
 import net.sf.xenqtt.message.PingRespMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubCompMessage;
+import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.PubRecMessage;
 import net.sf.xenqtt.message.PubRelMessage;
-import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.SubAckMessage;
 import net.sf.xenqtt.message.SubscribeMessage;
 import net.sf.xenqtt.message.UnsubAckMessage;
@@ -152,6 +152,7 @@ public class MockMessageHandler implements MessageHandler {
 	public void channelClosed(MqttChannel channel, Throwable cause) {
 		channelClosedCount++;
 		lastChannelClosedCause = cause;
+		channel.cancelBlockingCommands();
 		doHandleInvocation(channel, "channelClosed");
 	}
 
