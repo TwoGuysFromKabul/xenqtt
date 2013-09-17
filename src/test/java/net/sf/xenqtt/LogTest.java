@@ -4,12 +4,18 @@ import static org.junit.Assert.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import net.sf.xenqtt.Log.LoggingDelegate;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,225 +28,190 @@ public class LogTest {
 	static final int ERROR_AND_ABOVE = 0x30;
 	static final int FATAL = 0x20;
 	static final LoggingLevels DEFAULT_LOGGING_LEVELS = new LoggingLevels(WARN_AND_ABOVE);
+
+	boolean asyncTestable;
+	PrintStream standardOut;
 	NotifyingByteArrayOutputStream baos = new NotifyingByteArrayOutputStream();
 	PrintStream out = new PrintStream(baos);
-	PrintStream err = new PrintStream(baos);
 
 	@Before
-	public void setup() {
-		Log.setLoggingLevels(DEFAULT_LOGGING_LEVELS);
-		System.setOut(out);
-		System.setErr(err);
+	public void setup() throws Exception {
+		asyncTestable = isAsyncTestable();
+		if (asyncTestable) {
+			standardOut = System.out;
+			System.setOut(out);
+		}
+	}
+
+	private boolean isAsyncTestable() throws Exception {
+		Field field = Log.class.getDeclaredField("DELEGATE");
+		field.setAccessible(true);
+		LoggingDelegate delegate = (LoggingDelegate) field.get(null);
+		Class<?> delegateClass = delegate.getClass();
+
+		return Log4jLoggingDelegate.class != delegateClass && JavaLoggingDelegate.class != delegateClass;
+	}
+
+	@After
+	public void teardown() {
+		System.setOut(standardOut);
 	}
 
 	@Test
 	public void testTrace() throws Exception {
-		CountDownLatch latch = new CountDownLatch(6);
-		baos.setLatch(latch);
-
-		Log.setLoggingLevels(toLoggingLevels(TRACE_AND_ABOVE));
-		Log.trace("Message: %s", "Trace");
-		Log.debug("Message: %s", "Debug");
-		Log.info("Message: %s", "Info");
-		Log.warn("Message: %s", "Warn");
-		Log.error("Message: %s", "Error");
-		Log.fatal("Message: %s", "Fatal");
-
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals(6, individualMessages.length);
-
-		List<String> expected = new ArrayList<String>(Arrays.asList(new String[] { "Message: Trace", "Message: Debug", "Message: Info", "Message: Warn",
-				"Message: Error", "Message: Fatal" }));
-		for (String individualMessage : individualMessages) {
-			expected.remove(individualMessage);
+		if (asyncTestable) {
+			doTestAtLevel(TRACE_AND_ABOVE, new String[] { "Message: Trace", "Message: Debug", "Message: Info", "Message: Warn", "Message: Error",
+					"Message: Fatal" });
+		} else {
+			ensureLog4jLoggerUsed();
 		}
-		assertTrue(expected.isEmpty());
 	}
 
 	@Test
 	public void testDebug() throws Exception {
-		CountDownLatch latch = new CountDownLatch(5);
-		baos.setLatch(latch);
-
-		Log.setLoggingLevels(toLoggingLevels(DEBUG_AND_ABOVE));
-		Log.trace("Message: %s", "Trace");
-		Log.debug("Message: %s", "Debug");
-		Log.info("Message: %s", "Info");
-		Log.warn("Message: %s", "Warn");
-		Log.error("Message: %s", "Error");
-		Log.fatal("Message: %s", "Fatal");
-
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals(5, individualMessages.length);
-
-		List<String> expected = new ArrayList<String>(Arrays.asList(new String[] { "Message: Debug", "Message: Info", "Message: Warn", "Message: Error",
-				"Message: Fatal" }));
-		for (String individualMessage : individualMessages) {
-			expected.remove(individualMessage);
+		if (asyncTestable) {
+			doTestAtLevel(DEBUG_AND_ABOVE, new String[] { "Message: Debug", "Message: Info", "Message: Warn", "Message: Error", "Message: Fatal" });
+		} else {
+			ensureLog4jLoggerUsed();
 		}
-		assertTrue(expected.isEmpty());
 	}
 
 	@Test
 	public void testInfo() throws Exception {
-		CountDownLatch latch = new CountDownLatch(4);
-		baos.setLatch(latch);
-
-		Log.setLoggingLevels(toLoggingLevels(INFO_AND_ABOVE));
-		Log.trace("Message: %s", "Trace");
-		Log.debug("Message: %s", "Debug");
-		Log.info("Message: %s", "Info");
-		Log.warn("Message: %s", "Warn");
-		Log.error("Message: %s", "Error");
-		Log.fatal("Message: %s", "Fatal");
-
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals(4, individualMessages.length);
-
-		List<String> expected = new ArrayList<String>(Arrays.asList(new String[] { "Message: Info", "Message: Warn", "Message: Error", "Message: Fatal" }));
-		for (String individualMessage : individualMessages) {
-			expected.remove(individualMessage);
+		if (asyncTestable) {
+			doTestAtLevel(INFO_AND_ABOVE, new String[] { "Message: Info", "Message: Warn", "Message: Error", "Message: Fatal" });
+		} else {
+			ensureLog4jLoggerUsed();
 		}
-		assertTrue(expected.isEmpty());
 	}
 
 	@Test
 	public void testWarn() throws Exception {
-		CountDownLatch latch = new CountDownLatch(3);
-		baos.setLatch(latch);
-
-		Log.setLoggingLevels(toLoggingLevels(WARN_AND_ABOVE));
-		Log.trace("Message: %s", "Trace");
-		Log.debug("Message: %s", "Debug");
-		Log.info("Message: %s", "Info");
-		Log.warn("Message: %s", "Warn");
-		Log.error("Message: %s", "Error");
-		Log.fatal("Message: %s", "Fatal");
-
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals(3, individualMessages.length);
-
-		List<String> expected = new ArrayList<String>(Arrays.asList(new String[] { "Message: Warn", "Message: Error", "Message: Fatal" }));
-		for (String individualMessage : individualMessages) {
-			expected.remove(individualMessage);
+		if (asyncTestable) {
+			doTestAtLevel(WARN_AND_ABOVE, new String[] { "Message: Warn", "Message: Error", "Message: Fatal" });
+		} else {
+			ensureLog4jLoggerUsed();
 		}
-		assertTrue(expected.isEmpty());
 	}
 
 	@Test
 	public void testWarn_WithException() throws Exception {
-		CountDownLatch latch = new CountDownLatch(2);
-		baos.setLatch(latch);
-
-		Log.setLoggingLevels(toLoggingLevels(WARN_AND_ABOVE));
-		Log.warn(new RuntimeException("Doeth!"), "Message: %s", "Warn");
-
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals("Message: Warn", individualMessages[0]);
-		assertEquals("java.lang.RuntimeException: Doeth!", individualMessages[1]);
+		if (asyncTestable) {
+			doExceptionTestAtLevel(WARN_AND_ABOVE, new String[] { "Message: Warn", "java.lang.RuntimeException: Doeth!" });
+		} else {
+			ensureLog4jLoggerUsed();
+		}
 	}
 
 	@Test
 	public void testError() throws Exception {
-		CountDownLatch latch = new CountDownLatch(2);
-		baos.setLatch(latch);
-
-		Log.setLoggingLevels(toLoggingLevels(ERROR_AND_ABOVE));
-		Log.trace("Message: %s", "Trace");
-		Log.debug("Message: %s", "Debug");
-		Log.info("Message: %s", "Info");
-		Log.warn("Message: %s", "Warn");
-		Log.error("Message: %s", "Error");
-		Log.fatal("Message: %s", "Fatal");
-
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals(2, individualMessages.length);
-
-		List<String> expected = new ArrayList<String>(Arrays.asList(new String[] { "Message: Error", "Message: Fatal" }));
-		for (String individualMessage : individualMessages) {
-			expected.remove(individualMessage);
+		if (asyncTestable) {
+			doTestAtLevel(ERROR_AND_ABOVE, new String[] { "Message: Error", "Message: Fatal" });
+		} else {
+			ensureLog4jLoggerUsed();
 		}
-		assertTrue(expected.isEmpty());
 	}
 
 	@Test
 	public void testError_WithException() throws Exception {
-		CountDownLatch latch = new CountDownLatch(2);
-		baos.setLatch(latch);
-
-		Log.setLoggingLevels(toLoggingLevels(ERROR_AND_ABOVE));
-		Log.error(new RuntimeException("Doeth!"), "Message: %s", "Error");
-
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals("Message: Error", individualMessages[0]);
-		assertEquals("java.lang.RuntimeException: Doeth!", individualMessages[1]);
+		if (asyncTestable) {
+			doExceptionTestAtLevel(ERROR_AND_ABOVE, new String[] { "Message: Error", "java.lang.RuntimeException: Doeth!" });
+		} else {
+			ensureLog4jLoggerUsed();
+		}
 	}
 
 	@Test
 	public void testFatal() throws Exception {
-		CountDownLatch latch = new CountDownLatch(1);
+		if (asyncTestable) {
+			doTestAtLevel(FATAL, new String[] { "Message: Fatal" });
+		} else {
+			ensureLog4jLoggerUsed();
+		}
+	}
+
+	@Test
+	public void testFatal_WithException() throws Exception {
+		if (asyncTestable) {
+			doExceptionTestAtLevel(FATAL, new String[] { "Message: Fatal", "java.lang.RuntimeException: Doeth!" });
+		} else {
+			ensureLog4jLoggerUsed();
+		}
+	}
+
+	private LoggingLevels toLoggingLevels(int flags) {
+		return new LoggingLevels(flags);
+	}
+
+	private void doTestAtLevel(int levelFlag, String[] expectedValues) throws Exception {
+		Log.setLoggingLevels(toLoggingLevels(levelFlag));
+		CountDownLatch latch = new CountDownLatch(expectedValues.length);
 		baos.setLatch(latch);
 
-		Log.setLoggingLevels(toLoggingLevels(FATAL));
 		Log.trace("Message: %s", "Trace");
 		Log.debug("Message: %s", "Debug");
 		Log.info("Message: %s", "Info");
 		Log.warn("Message: %s", "Warn");
 		Log.error("Message: %s", "Error");
 		Log.fatal("Message: %s", "Fatal");
+		assertTrue(latch.await(1, TimeUnit.SECONDS));
 
-		latch.await();
-
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals(1, individualMessages.length);
-
-		List<String> expected = new ArrayList<String>(Arrays.asList(new String[] { "Message: Fatal" }));
-		for (String individualMessage : individualMessages) {
-			expected.remove(individualMessage);
+		List<String> messages = Arrays.asList(new String(baos.toByteArray(), Charset.forName("US-ASCII")).split("[\r\n]+"));
+		List<String> expected = new ArrayList<String>(Arrays.asList(expectedValues));
+		for (String message : messages) {
+			Iterator<String> iter = expected.iterator();
+			while (iter.hasNext()) {
+				if (message.contains(iter.next())) {
+					iter.remove();
+					break;
+				}
+			}
 		}
 		assertTrue(expected.isEmpty());
 	}
 
-	@Test
-	public void testFatal_WithException() throws Exception {
-		CountDownLatch latch = new CountDownLatch(2);
+	private void doExceptionTestAtLevel(int levelFlag, String[] expectedValues) throws Exception {
+		Log.setLoggingLevels(toLoggingLevels(levelFlag));
+		CountDownLatch latch = new CountDownLatch(expectedValues.length);
 		baos.setLatch(latch);
 
-		Log.setLoggingLevels(toLoggingLevels(FATAL));
-		Log.fatal(new RuntimeException("Doeth!"), "Message: %s", "Fatal");
+		switch (levelFlag) {
+		case WARN_AND_ABOVE:
+			Log.warn(new RuntimeException("Doeth!"), "Message: %s", "Warn");
+			break;
+		case ERROR_AND_ABOVE:
+			Log.error(new RuntimeException("Doeth!"), "Message: %s", "Error");
+			break;
+		case FATAL:
+			Log.fatal(new RuntimeException("Doeth!"), "Message: %s", "Fatal");
+			break;
+		}
+		assertTrue(latch.await(1, TimeUnit.SECONDS));
 
-		latch.await();
+		List<String> messages = new ArrayList<String>(Arrays.asList(new String(baos.toByteArray(), Charset.forName("US-ASCII")).split("[\r\n]+")));
+		List<String> expected = new ArrayList<String>(Arrays.asList(expectedValues));
+		for (String message : messages) {
+			Iterator<String> iter = expected.iterator();
+			while (iter.hasNext()) {
+				if (message.equals(iter.next())) {
+					iter.remove();
+					break;
+				}
+			}
 
-		String messages = new String(baos.toByteArray(), Charset.forName("US-ASCII"));
-		String[] individualMessages = messages.split("[\r\n]+");
-		assertEquals("Message: Fatal", individualMessages[0]);
-		assertEquals("java.lang.RuntimeException: Doeth!", individualMessages[1]);
+			if (expected.isEmpty()) {
+				break;
+			}
+		}
+		assertTrue(expected.isEmpty());
 	}
 
-	private LoggingLevels toLoggingLevels(int flags) {
-		return new LoggingLevels(flags);
+	private void ensureLog4jLoggerUsed() throws Exception {
+		Field delegateField = Log.class.getDeclaredField("DELEGATE");
+		delegateField.setAccessible(true);
+		LoggingDelegate delegate = (LoggingDelegate) delegateField.get(null);
+
+		assertSame(Log4jLoggingDelegate.class, delegate.getClass());
 	}
 
 	private static final class NotifyingByteArrayOutputStream extends ByteArrayOutputStream {
@@ -251,11 +222,14 @@ public class LogTest {
 			this.latch = latch;
 		}
 
+		/**
+		 * @see java.io.ByteArrayOutputStream#write(byte[], int, int)
+		 */
 		@Override
-		public void write(byte[] buf, int start, int end) {
-			super.write(buf, start, end);
+		public synchronized void write(byte[] buffer, int off, int len) {
+			super.write(buffer, off, len);
 			if (latch != null) {
-				for (byte b : buf) {
+				for (byte b : buffer) {
 					if (b == '\n') {
 						latch.countDown();
 					}

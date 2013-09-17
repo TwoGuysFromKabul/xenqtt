@@ -293,89 +293,6 @@ public final class Log {
 
 	}
 
-	private static final class ConsoleLoggingDelegate implements LoggingDelegate {
-
-		@Override
-		public void trace(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-		}
-
-		@Override
-		public void trace(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-			if (t != null) {
-				t.printStackTrace();
-			}
-		}
-
-		@Override
-		public void debug(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-		}
-
-		@Override
-		public void debug(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-			if (t != null) {
-				t.printStackTrace();
-			}
-		}
-
-		@Override
-		public void info(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-		}
-
-		@Override
-		public void info(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
-			if (t != null) {
-				t.printStackTrace();
-			}
-		}
-
-		@Override
-		public void warn(String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-		}
-
-		@Override
-		public void warn(Throwable t, String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-			if (t != null) {
-				t.printStackTrace();
-			}
-		}
-
-		@Override
-		public void error(String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-		}
-
-		@Override
-		public void error(Throwable t, String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-			if (t != null) {
-				t.printStackTrace();
-			}
-		}
-
-		@Override
-		public void fatal(String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-		}
-
-		@Override
-		public void fatal(Throwable t, String message, Object... parameters) {
-			System.err.println(String.format(message, parameters));
-			if (t != null) {
-				t.printStackTrace();
-			}
-
-		}
-
-	}
-
 	private static interface Logger {
 
 		void log(int levelFlag, String message, Object... parameters);
@@ -533,6 +450,89 @@ public final class Log {
 
 		private void offerWork(LogWork workToOffer) {
 			work.offer(workToOffer);
+		}
+
+	}
+
+	private static final class ConsoleLoggingDelegate implements LoggingDelegate {
+
+		@Override
+		public void trace(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void trace(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace(System.out);
+			}
+		}
+
+		@Override
+		public void debug(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void debug(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace(System.out);
+			}
+		}
+
+		@Override
+		public void info(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void info(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace(System.out);
+			}
+		}
+
+		@Override
+		public void warn(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void warn(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace(System.out);
+			}
+		}
+
+		@Override
+		public void error(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void error(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace(System.out);
+			}
+		}
+
+		@Override
+		public void fatal(String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+		}
+
+		@Override
+		public void fatal(Throwable t, String message, Object... parameters) {
+			System.out.println(String.format(message, parameters));
+			if (t != null) {
+				t.printStackTrace(System.out);
+			}
+
 		}
 
 	}
