@@ -1,6 +1,7 @@
 package net.sf.xenqtt.client;
 
 import net.sf.xenqtt.message.ConnectReturnCode;
+import net.sf.xenqtt.message.QoS;
 
 /**
  * <p>
@@ -33,10 +34,11 @@ public interface AsyncClientListener extends MqttClientListener {
 	 * @param grantedSubscriptions
 	 *            The subscriptions. The topics will be the same as in requestedSubscriptions but the {@link Subscription#getQos() QoS} will be the QoS granted
 	 *            by the broker, not the QoS requested by the client.
+	 * @param requestsGranted
+	 *            True if the requested {@link QoS} for each topic matches the granted QoS. False otherwise.
 	 */
-	void subscribed(MqttClient client, Subscription[] requestedSubscriptions, Subscription[] grantedSubscriptions);
+	void subscribed(MqttClient client, Subscription[] requestedSubscriptions, Subscription[] grantedSubscriptions, boolean requestsGranted);
 
-	// FIXME [jim] - add a way to make it obvious if the granted qos does not match the requested qos
 	/**
 	 * Called when an unsubscribe acknowledgment is received from the broker.
 	 * 

@@ -4,6 +4,7 @@ import java.util.List;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttQosNotGrantedException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
@@ -26,12 +27,12 @@ import net.sf.xenqtt.message.QoS;
  * </p>
  * <p>
  * Received publish messages are handled the same way by both the synchronous and asynchronous clients. When a publish message is received
- * {@link MqttClientListener#publishReceived(MqttClient, PublishMessage) publish} is invoked with the client that received the message and the message that was received.
- * If the message's {@link PublishMessage#getQoS() QoS} level is anything other than {@link QoS#AT_MOST_ONCE AT_MOST_ONCE} you must call
+ * {@link MqttClientListener#publishReceived(MqttClient, PublishMessage) publish} is invoked with the client that received the message and the message that was
+ * received. If the message's {@link PublishMessage#getQoS() QoS} level is anything other than {@link QoS#AT_MOST_ONCE AT_MOST_ONCE} you must call
  * {@link PublishMessage#ack() ack()} when you are finished processing the message. It is recommended that you always call {@link PublishMessage#ack() ack()}
  * regardless of the message's {@link PublishMessage#getQoS() QoS}. If you do not call ack or you wait too long to call ack the message will be resent by the
- * broker and {@link MqttClientListener#publishReceived(MqttClient, PublishMessage) publish} will be called with the resent message. {@link PublishMessage#isDuplicate()
- * isDuplicate()} will be <code>true</code> for messages that are resent by the broker.
+ * broker and {@link MqttClientListener#publishReceived(MqttClient, PublishMessage) publish} will be called with the resent message.
+ * {@link PublishMessage#isDuplicate() isDuplicate()} will be <code>true</code> for messages that are resent by the broker.
  * </p>
  * <p>
  * If the connection is lost it will be restored using the {@link ReconnectionStrategy}, if any, provided to the client.
@@ -190,6 +191,8 @@ public interface MqttClient {
 	 * @return The topics subscribed to and the QoS granted for each if the {@link SynchronousMqttClient} is used. Null if the {@link AsyncMqttClient}
 	 *         implementation is used.
 	 * 
+	 * @throws MqttQosNotGrantedException
+	 *             Thrown when the QoS granted for any topic does not match the QoS requested.
 	 * @throws MqttCommandCancelledException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
 	 *             typically because of some exception.
@@ -198,14 +201,16 @@ public interface MqttClient {
 	 * @throws MqttInterruptedException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 */
-	Subscription[] subscribe(Subscription[] subscriptions) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	Subscription[] subscribe(Subscription[] subscriptions) throws MqttQosNotGrantedException, MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException;
 
 	/**
 	 * Subscribes to topics. This is the same as {@link #subscribe(Subscription[])} except it uses {@link List lists} instead of arrays.
 	 * 
 	 * @see MqttClient#subscribe(Subscription[])
 	 */
-	List<Subscription> subscribe(List<Subscription> subscriptions) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	List<Subscription> subscribe(List<Subscription> subscriptions) throws MqttQosNotGrantedException, MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException;
 
 	/**
 	 * Unsubscribes from topics. This includes these actions:
