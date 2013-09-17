@@ -38,8 +38,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final boolean blocking;
 	private final long blockingTimeoutMillis;
 
-	// FIXME [jim] - need to deal with reconnection and handling unsent messages when all reconnect tries fail
-
 	/**
 	 * Use this constructor for the asynchronous API
 	 * 
@@ -169,10 +167,12 @@ public final class ChannelManagerImpl implements ChannelManager {
 	/**
 	 * @see net.sf.xenqtt.message.ChannelManager#send(net.sf.xenqtt.message.MqttChannelRef, net.sf.xenqtt.message.MqttMessage)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public MqttMessage send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
+	public <T extends MqttMessage> T send(MqttChannelRef channel, MqttMessage message) throws MqttInterruptedException {
 
-		return addCommand(new SendCommand(channel, message)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+		MqttMessage msg = addCommand(new SendCommand(channel, message)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+		return (T) msg;
 	}
 
 	/**
@@ -297,7 +297,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private void channelClosed(MqttChannel channel) {
 
-		// FIXME [jim] - test that unsent messages' blocking commands are cancelled. when we do retry we would not do this here.
+		// FIXME [jim] - need to do something about this as it should not happen when we retry
 		channels.remove(channel);
 		channel.cancelBlockingCommands();
 	}
@@ -356,7 +356,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		@Override
 		public void doExecute() {
-			// FIXME [jim] - what to do if this returns false
+			// TODO [jim] - what to do if this returns false
 			channel.send(message, this);
 		}
 	}
