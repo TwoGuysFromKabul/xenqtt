@@ -10,7 +10,7 @@
 	</appender>
 
 	<logger name="xenqtt">
-		<level value="debug" />
+		<level value="info" />
 	</logger>
 	
 	<root>
