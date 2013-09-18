@@ -100,6 +100,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	AbstractMqttChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 
+		// FIXME [jim] - if there is no conn ack response to a connect in some amount of time we need to close the channel
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.connectionCompleteCommand = null;
@@ -360,7 +361,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		}
 		if (!channel.isOpen()) {
-			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A" + channel.socket().getRemoteSocketAddress() + "]";
+			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:" + channel.socket().getRemoteSocketAddress() + "]";
 
 		}
 		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalSocketAddress() + ",remoteAddress:"
