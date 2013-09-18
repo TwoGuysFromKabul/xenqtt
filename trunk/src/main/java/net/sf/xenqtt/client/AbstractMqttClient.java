@@ -1,5 +1,6 @@
 package net.sf.xenqtt.client;
 
+import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -400,14 +401,23 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private void tryReconnect(Throwable cause) {
 
-		long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
-		boolean reconnecting = reconnectDelay >= 0;
-		if (reconnecting) {
-			unsentMessages = manager.getUnsentMessages(channel);
-			reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
-		} else {
-			manager.cancelBlockingCommands(channel);
+		boolean reconnecting = false;
+
+		if (channel != null) {
+			long reconnectDelay = 0;
+			if (cause != null && !(cause instanceof ConnectException)) {
+				reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
+				reconnecting = reconnectDelay >= 0;
+			}
+
+			if (reconnecting) {
+				unsentMessages = manager.getUnsentMessages(channel);
+				reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
+			} else {
+				manager.cancelBlockingCommands(channel);
+			}
 		}
+
 		mqttClientListener.disconnected(this, cause, reconnecting);
 	}
 
@@ -601,10 +611,21 @@ abstract class AbstractMqttClient implements MqttClient {
 		 * @see net.sf.xenqtt.message.MessageHandler#channelOpened(net.sf.xenqtt.message.MqttChannel)
 		 */
 		@Override
-		public void channelOpened(MqttChannel channel) {
+		public void channelOpened(final MqttChannel channel) {
 
 			if (connectMessage != null) {
-				doConnect(connectMessage);
+				executor.execute(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							doConnect(connectMessage);
+						} catch (Exception e) {
+							Log.error(e, "Failed to process channelOpened for %s: cause=", channel);
+						}
+
+					}
+				});
 			}
 		}
 
