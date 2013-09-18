@@ -25,6 +25,9 @@ import net.sf.xenqtt.Log;
  */
 abstract class AbstractMqttChannel implements MqttChannel {
 
+	// FIXME [jim] - try backing off the time on each message retry.
+	// FIXME [jim] - limit the number of retries?
+
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
 	private final List<IdentifiableMqttMessage> messagesToResend = new ArrayList<IdentifiableMqttMessage>();
 	private final long messageResendIntervalMillis;
@@ -358,11 +361,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		Socket socket = channel.socket();
 		if (!socket.isBound()) {
 			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A]";
-
 		}
 		if (!channel.isOpen()) {
 			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:" + channel.socket().getRemoteSocketAddress() + "]";
-
 		}
 		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalSocketAddress() + ",remoteAddress:"
 				+ channel.socket().getRemoteSocketAddress() + "]";
