@@ -61,6 +61,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private volatile MqttChannelRef channel;
 	private volatile ConnectMessage connectMessage;
+	private volatile boolean firstConnectPending = true;
 	private volatile List<MqttMessage> unsentMessages;
 
 	/**
@@ -613,7 +614,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		@Override
 		public void channelOpened(final MqttChannel channel) {
 
-			if (connectMessage != null) {
+			if (!firstConnectPending && connectMessage != null) {
 				executor.execute(new Runnable() {
 
 					@Override
@@ -626,6 +627,8 @@ abstract class AbstractMqttClient implements MqttClient {
 
 					}
 				});
+			} else {
+				firstConnectPending = false;
 			}
 		}
 
