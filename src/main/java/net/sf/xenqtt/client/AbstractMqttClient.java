@@ -264,7 +264,6 @@ abstract class AbstractMqttClient implements MqttClient {
 	@Override
 	public final void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
-		// FIXME [jim] - test message not set at qos 0
 		if (message.pubMessage.getQoSLevel() > 0) {
 			int messageId = nextMessageId(message);
 			message.pubMessage.setMessageId(messageId);
