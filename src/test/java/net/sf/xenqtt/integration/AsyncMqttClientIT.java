@@ -47,7 +47,7 @@ public class AsyncMqttClientIT {
 	}
 
 	@Test
-	public void testInvalidScheme() throws Exception {
+	public void testConstructor_InvalidScheme() throws Exception {
 
 		try {
 			client = new AsyncMqttClient("ftp://foo:1883", listener, reconnectionStrategy, 5, 5);
@@ -60,7 +60,7 @@ public class AsyncMqttClientIT {
 	}
 
 	@Test
-	public void testInvalidHost() throws Exception {
+	public void testConstructor_InvalidHost() throws Exception {
 
 		Throwable thrown = null;
 		try {
@@ -80,7 +80,7 @@ public class AsyncMqttClientIT {
 	// This test can take over a minute to run so ignore it by default
 	@Ignore
 	@Test
-	public void testInvalidPort() throws Exception {
+	public void testConstructor_InvalidPort() throws Exception {
 
 		client = new AsyncMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 5);
 
@@ -310,7 +310,7 @@ public class AsyncMqttClientIT {
 		verify(listener, timeout(5000)).subscribed(same(client), aryEq(requestedSubscriptions), aryEq(grantedSubscriptions), eq(true));
 
 		// test unsubscribing
-		client.unsubscribe(new String[] { "my/topic3", "my/topic4" });
+		client.unsubscribe(Arrays.asList(new String[] { "my/topic3", "my/topic4" }));
 		verify(listener, timeout(5000)).unsubscribed(same(client), aryEq(new String[] { "my/topic3", "my/topic4" }));
 
 		// disconnect
