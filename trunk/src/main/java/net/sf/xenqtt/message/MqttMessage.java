@@ -116,6 +116,10 @@ public class MqttMessage {
 	 */
 	public static String bytesToHex(byte[] bytes) {
 
+		if (bytes == null) {
+			return null;
+		}
+
 		final byte[] hex = new byte[(bytes.length - 1) * 3 + 2];
 
 		for (int i = 0, j = 0; i < bytes.length; i++) {
