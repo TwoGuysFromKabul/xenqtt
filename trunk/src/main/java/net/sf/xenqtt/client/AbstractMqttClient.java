@@ -404,23 +404,23 @@ abstract class AbstractMqttClient implements MqttClient {
 		return grantedSubscriptions;
 	}
 
-	private void tryReconnect(Throwable cause) {
+	// FIXME [jim] - what happens if the client sends messages after the channel closes but before the reconnect is done? I think they will get lost.
+	private void tryReconnect(MqttChannel closedChannel, Throwable cause) {
 
 		boolean reconnecting = false;
 
-		if (channel != null) {
-			long reconnectDelay = 0;
-			if (cause != null && !(cause instanceof ConnectException)) {
-				reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
-				reconnecting = reconnectDelay >= 0;
-			}
+		// if channel is null then it didn't even finish construction so we definitely don't want to reconnect
+		if (channel != null && cause != null && !(cause instanceof ConnectException)) {
+			long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
+			reconnecting = reconnectDelay >= 0;
 
 			if (reconnecting) {
-				unsentMessages = manager.getUnsentMessages(channel);
-				reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
-			} else {
-				manager.cancelBlockingCommands(channel);
+				unsentMessages = manager.getUnsentMessages(closedChannel);
+				reconnectionExecutor.schedule(new ClientReconnector(closedChannel), reconnectDelay, TimeUnit.MILLISECONDS);
 			}
+		}
+		if (!reconnecting) {
+			manager.cancelBlockingCommands(closedChannel);
 		}
 
 		mqttClientListener.disconnected(this, cause, reconnecting);
@@ -647,7 +647,7 @@ abstract class AbstractMqttClient implements MqttClient {
 				@Override
 				public void run() {
 					try {
-						tryReconnect(cause);
+						tryReconnect(channel, cause);
 					} catch (Exception e) {
 						Log.error(e, "Failed to process channelClosed for %s: cause=", channel, cause);
 					}
@@ -659,6 +659,12 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private final class ClientReconnector implements Runnable {
 
+		private final MqttChannel closedChannel;
+
+		public ClientReconnector(MqttChannel closedChannel) {
+			this.closedChannel = closedChannel;
+		}
+
 		/**
 		 * @see java.lang.Runnable#run()
 		 */
@@ -668,7 +674,7 @@ abstract class AbstractMqttClient implements MqttClient {
 			try {
 				channel = manager.newClientChannel(brokerUri, messageHandler);
 			} catch (Throwable t) {
-				tryReconnect(t);
+				tryReconnect(closedChannel, t);
 			}
 		}
 	}
