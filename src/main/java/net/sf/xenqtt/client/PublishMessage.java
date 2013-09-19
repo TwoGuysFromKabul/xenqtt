@@ -147,4 +147,12 @@ public class PublishMessage {
 			manager.send(channel, new PubAckMessage(pubMessage.getMessageId()));
 		}
 	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return pubMessage.toString();
+	}
 }
