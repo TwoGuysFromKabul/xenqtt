@@ -6,7 +6,7 @@ import net.sf.xenqtt.message.QoS;
  * An MQTT topic subscription
  */
 public final class Subscription {
-
+	// FIXME [jim] - need to add argument validation at least to all public APIs
 	private final String topic;
 	private final QoS qos;
 
@@ -45,5 +45,43 @@ public final class Subscription {
 	 */
 	public QoS getQos() {
 		return qos;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+
+		int hash = topic.hashCode();
+		hash = 31 * hash + qos.hashCode();
+		return hash;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (obj == this) {
+			return true;
+		}
+
+		if (!(obj instanceof Subscription)) {
+			return false;
+		}
+
+		Subscription that = (Subscription) obj;
+
+		return qos == that.qos && topic.equals(that.topic);
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Subscription [topic=" + topic + ", qos=" + qos + "]";
 	}
 }
