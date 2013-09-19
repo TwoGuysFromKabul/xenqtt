@@ -27,8 +27,8 @@ public interface MqttClientListener {
 	 * @param cause
 	 *            The exception that caused the client to disconnect. Null if there was no exception.
 	 * @param reconnecting
-	 *            True if the client will attempt to reconnect. False if either all reconnect attempts have failed or the disconnect was requested by the
-	 *            client.
+	 *            True if the client will attempt to reconnect. False if either all reconnect attempts have failed or the disconnect was not because of an
+	 *            exception.
 	 */
 	void disconnected(MqttClient client, Throwable cause, boolean reconnecting);
 }
