@@ -10,8 +10,12 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import net.sf.xenqtt.mock.MockMessageHandler;
@@ -41,6 +45,203 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	@Override
 	TestChannel newBrokerChannel(SocketChannel brokerSocketChannel) throws Exception {
 		return new TestChannel(brokerSocketChannel, brokerHandler, selector, 10000);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testCancelBlockingCommands() throws Exception {
+		clientChannel = newClientChannel(blockingCommand);
+
+		BlockingCommand<MqttMessage> connAckReceivedCommand = mock(BlockingCommand.class);
+		setField(clientChannel, "connAckReceivedCommand", connAckReceivedCommand);
+
+		MqttMessage sendMessageInProgress = new MqttMessage(MessageType.PUBLISH, 0);
+		sendMessageInProgress.blockingCommand = mock(BlockingCommand.class);
+		setField(clientChannel, "sendMessageInProgress", sendMessageInProgress);
+
+		List<MqttMessage> writesPendingMessages = new ArrayList<MqttMessage>();
+		writesPendingMessages.add(new MqttMessage(MessageType.PUBLISH, 0));
+		writesPendingMessages.add(new MqttMessage(MessageType.PUBLISH, 0));
+		writesPendingMessages.add(new MqttMessage(MessageType.PUBLISH, 0));
+		writesPendingMessages.get(0).blockingCommand = mock(BlockingCommand.class);
+		writesPendingMessages.get(1).blockingCommand = mock(BlockingCommand.class);
+		writesPendingMessages.get(2).blockingCommand = mock(BlockingCommand.class);
+		addMessages(clientChannel, "writesPending", writesPendingMessages);
+
+		List<MqttMessage> messagesToResend = new ArrayList<MqttMessage>();
+		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.get(0).blockingCommand = mock(BlockingCommand.class);
+		messagesToResend.get(1).blockingCommand = mock(BlockingCommand.class);
+		messagesToResend.get(2).blockingCommand = mock(BlockingCommand.class);
+		addMessages(clientChannel, "messagesToResend", messagesToResend);
+
+		Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
+		PubMessage pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "a/b/c", 0, new byte[] { 97, 98, 99 });
+		pubMessage.blockingCommand = mock(BlockingCommand.class);
+		inFlightMessages.put(Integer.valueOf(0), pubMessage);
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "a/b/c", 1, new byte[] { 97, 98, 99 });
+		pubMessage.blockingCommand = mock(BlockingCommand.class);
+		inFlightMessages.put(Integer.valueOf(1), pubMessage);
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "a/b/c", 2, new byte[] { 97, 98, 99 });
+		pubMessage.blockingCommand = mock(BlockingCommand.class);
+		inFlightMessages.put(Integer.valueOf(2), pubMessage);
+		setInFlightMessages(clientChannel, inFlightMessages);
+
+		clientChannel.cancelBlockingCommands();
+		verify(blockingCommand).cancel();
+		verify(connAckReceivedCommand).cancel();
+		verify(sendMessageInProgress.blockingCommand).cancel();
+		for (MqttMessage writePendingMessage : writesPendingMessages) {
+			verify(writePendingMessage.blockingCommand).cancel();
+		}
+		for (MqttMessage messageToResend : messagesToResend) {
+			verify(messageToResend.blockingCommand).cancel();
+		}
+		for (IdentifiableMqttMessage inFlightMessage : inFlightMessages.values()) {
+			verify(inFlightMessage.blockingCommand).cancel();
+		}
+		verifyNoMoreInteractions(allOf(writesPendingMessages, messagesToResend, inFlightMessages, blockingCommand, connAckReceivedCommand,
+				sendMessageInProgress.blockingCommand));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testCancelBlockingCommands_SomeMessagesDoNotHaveABlockingCommand() throws Exception {
+		clientChannel = newClientChannel(null);
+		setField(clientChannel, "connAckReceivedCommand", null);
+
+		MqttMessage sendMessageInProgress = new MqttMessage(MessageType.PUBLISH, 0);
+		sendMessageInProgress.blockingCommand = null;
+		setField(clientChannel, "sendMessageInProgress", sendMessageInProgress);
+
+		List<MqttMessage> writesPendingMessages = new ArrayList<MqttMessage>();
+		writesPendingMessages.add(new MqttMessage(MessageType.PUBLISH, 0));
+		writesPendingMessages.add(new MqttMessage(MessageType.PUBLISH, 0));
+		writesPendingMessages.add(new MqttMessage(MessageType.PUBLISH, 0));
+		writesPendingMessages.get(0).blockingCommand = mock(BlockingCommand.class);
+		writesPendingMessages.get(1).blockingCommand = null;
+		writesPendingMessages.get(2).blockingCommand = mock(BlockingCommand.class);
+		addMessages(clientChannel, "writesPending", writesPendingMessages);
+
+		List<MqttMessage> messagesToResend = new ArrayList<MqttMessage>();
+		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.get(0).blockingCommand = mock(BlockingCommand.class);
+		messagesToResend.get(1).blockingCommand = mock(BlockingCommand.class);
+		messagesToResend.get(2).blockingCommand = null;
+		addMessages(clientChannel, "messagesToResend", messagesToResend);
+
+		Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
+		PubMessage pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "a/b/c", 0, new byte[] { 97, 98, 99 });
+		pubMessage.blockingCommand = null;
+		inFlightMessages.put(Integer.valueOf(0), pubMessage);
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "a/b/c", 1, new byte[] { 97, 98, 99 });
+		pubMessage.blockingCommand = mock(BlockingCommand.class);
+		inFlightMessages.put(Integer.valueOf(1), pubMessage);
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "a/b/c", 2, new byte[] { 97, 98, 99 });
+		pubMessage.blockingCommand = mock(BlockingCommand.class);
+		inFlightMessages.put(Integer.valueOf(2), pubMessage);
+		setInFlightMessages(clientChannel, inFlightMessages);
+
+		clientChannel.cancelBlockingCommands();
+		for (MqttMessage writePendingMessage : writesPendingMessages) {
+			if (writePendingMessage.blockingCommand != null) {
+				verify(writePendingMessage.blockingCommand).cancel();
+			}
+		}
+		for (MqttMessage messageToResend : messagesToResend) {
+			if (messageToResend.blockingCommand != null) {
+				verify(messageToResend.blockingCommand).cancel();
+			}
+		}
+		for (IdentifiableMqttMessage inFlightMessage : inFlightMessages.values()) {
+			if (inFlightMessage.blockingCommand != null) {
+				verify(inFlightMessage.blockingCommand).cancel();
+			}
+		}
+
+		verifyZeroInteractions(blockingCommand);
+		verifyNoMoreInteractions(allOf(writesPendingMessages, messagesToResend, inFlightMessages));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testCancelBlockingCommands_CancelsInFlightMessagesBeforeAcked() throws Exception {
+		establishConnection();
+
+		BlockingCommand<MqttMessage> command1 = mock(BlockingCommand.class);
+		BlockingCommand<MqttMessage> command2 = mock(BlockingCommand.class);
+		assertTrue(clientChannel.send(new UnsubscribeMessage(1, new String[] { "foo" }), command1));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(2, new String[] { "foo" }), command2));
+
+		readWrite(0, 2);
+		assertEquals(2, clientChannel.getUnsentMessages().size());
+
+		clientChannel.cancelBlockingCommands();
+
+		verify(command1, timeout(1000)).cancel();
+		verify(command2, timeout(1000)).cancel();
+		verifyNoMoreInteractions(command1, command2);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private void setField(net.sf.xenqtt.message.MqttChannelTestBase.TestChannel clientChannel, String fieldName, Object value) throws Exception {
+		Field field = AbstractMqttChannel.class.getDeclaredField(fieldName);
+		field.setAccessible(true);
+		field.set(clientChannel, value);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void addMessages(net.sf.xenqtt.message.MqttChannelTestBase.TestChannel clientChannel, String messagesField, List<MqttMessage> messages)
+			throws Exception {
+		Field field = AbstractMqttChannel.class.getDeclaredField(messagesField);
+		field.setAccessible(true);
+		Collection<MqttMessage> writesPending = (Collection<MqttMessage>) field.get(clientChannel);
+		for (MqttMessage message : messages) {
+			assertTrue(writesPending.add(message));
+		}
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void setInFlightMessages(net.sf.xenqtt.message.MqttChannelTestBase.TestChannel clientChannel, Map<Integer, IdentifiableMqttMessage> messages)
+			throws Exception {
+		Field field = AbstractMqttChannel.class.getDeclaredField("inFlightMessages");
+		field.setAccessible(true);
+		Map<Integer, IdentifiableMqttMessage> inFlightMessages = (Map<Integer, IdentifiableMqttMessage>) field.get(clientChannel);
+		inFlightMessages.clear();
+		for (Entry<Integer, IdentifiableMqttMessage> entry : messages.entrySet()) {
+			inFlightMessages.put(entry.getKey(), entry.getValue());
+		}
+	}
+
+	private Object[] allOf(List<MqttMessage> writesPendingMessages, List<MqttMessage> messagesToResend, Map<Integer, IdentifiableMqttMessage> inFlightMessages,
+			BlockingCommand<?>... others) {
+		List<BlockingCommand<?>> blockingCommands = new ArrayList<BlockingCommand<?>>();
+		for (MqttMessage message : writesPendingMessages) {
+			if (message.blockingCommand != null) {
+				blockingCommands.add(message.blockingCommand);
+			}
+		}
+		for (MqttMessage message : messagesToResend) {
+			if (message.blockingCommand != null) {
+				blockingCommands.add(message.blockingCommand);
+			}
+		}
+		for (MqttMessage message : inFlightMessages.values()) {
+			if (message.blockingCommand != null) {
+				blockingCommands.add(message.blockingCommand);
+			}
+		}
+		for (BlockingCommand<?> other : others) {
+			if (other != null) {
+				blockingCommands.add(other);
+			}
+		}
+
+		return blockingCommands.toArray(new BlockingCommand<?>[0]);
 	}
 
 	@Test
