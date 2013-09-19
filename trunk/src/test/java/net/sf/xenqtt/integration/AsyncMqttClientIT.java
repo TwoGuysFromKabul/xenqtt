@@ -1,11 +1,14 @@
 package net.sf.xenqtt.integration;
 
 import static org.junit.Assert.*;
+import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
+import java.util.Arrays;
+import java.util.List;
 
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.client.AsyncClientListener;
@@ -93,7 +96,7 @@ public class AsyncMqttClientIT {
 	public void testConnectDisconnect_NoCredentialsNoWill() throws Exception {
 
 		client = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5);
-		client.connect("testclient1", false, 90);
+		client.connect("testclient1", true, 90);
 		verify(listener, timeout(1000)).connected(client, ConnectReturnCode.ACCEPTED);
 		verify(reconnectionStrategy, timeout(1000)).connectionEstablished();
 
@@ -107,7 +110,7 @@ public class AsyncMqttClientIT {
 	public void testConnect_BadCredentials() throws Exception {
 
 		client = new AsyncMqttClient("tcp://q.m2m.io:1883", listener, reconnectionStrategy, 5, 5);
-		client.connect("testclient1", false, 90, "not_a_user", "not_a_password");
+		client.connect("testclient1", true, 90, "not_a_user", "not_a_password");
 
 		verify(listener, timeout(1000)).connected(client, ConnectReturnCode.BAD_CREDENTIALS);
 		verify(listener, timeout(1000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -187,7 +190,6 @@ public class AsyncMqttClientIT {
 		assertTrue(message.isRetain());
 
 		verifyNoMoreInteractions(listener, listener2);
-		fail();
 	}
 
 	@Test
@@ -227,33 +229,54 @@ public class AsyncMqttClientIT {
 	@Test
 	public void testSubscribeUnsubscribe_Array() throws Exception {
 
+		// connect client
 		client = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5);
-		client.connect("testclient1", false, 90);
+		client.connect("testclient1", true, 90);
 		verify(listener, timeout(1000)).connected(client, ConnectReturnCode.ACCEPTED);
-		verify(reconnectionStrategy, timeout(1000)).connectionEstablished();
 
+		// test subscribing
+		Subscription[] requestedSubscriptions = new Subscription[] { new Subscription("my/topic1", QoS.AT_LEAST_ONCE),
+				new Subscription("my/topic2", QoS.AT_MOST_ONCE) };
+		Subscription[] grantedSubscriptions = requestedSubscriptions;
+		client.subscribe(requestedSubscriptions);
+		verify(listener, timeout(1000)).subscribed(same(client), same(requestedSubscriptions), aryEq(grantedSubscriptions), eq(true));
+
+		// test unsubscribing
+		client.unsubscribe(new String[] { "my/topic1", "my/topic2" });
+		verify(listener, timeout(1000)).unsubscribed(same(client), aryEq(new String[] { "my/topic1", "my/topic2" }));
+
+		// disconnect
 		client.disconnect();
 		verify(listener, timeout(1000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
-		verifyNoMoreInteractions(listener, reconnectionStrategy);
-
-		fail();
+		verifyNoMoreInteractions(listener);
 	}
 
 	@Test
 	public void testSubscribeUnsubscribe_List() throws Exception {
 
+		// connect client
 		client = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5);
-		client.connect("testclient1", false, 90);
+		client.connect("testclient1", true, 90);
 		verify(listener, timeout(1000)).connected(client, ConnectReturnCode.ACCEPTED);
-		verify(reconnectionStrategy, timeout(1000)).connectionEstablished();
 
+		// test subscribing
+		Subscription[] requestedSubscriptions = new Subscription[] { new Subscription("my/topic1", QoS.AT_LEAST_ONCE),
+				new Subscription("my/topic2", QoS.AT_MOST_ONCE) };
+		List<Subscription> requestedSubscriptionsList = Arrays.asList(requestedSubscriptions);
+		Subscription[] grantedSubscriptions = requestedSubscriptions;
+		client.subscribe(requestedSubscriptionsList);
+		verify(listener, timeout(1000)).subscribed(same(client), aryEq(requestedSubscriptions), aryEq(grantedSubscriptions), eq(true));
+
+		// test unsubscribing
+		client.unsubscribe(new String[] { "my/topic1", "my/topic2" });
+		verify(listener, timeout(1000)).unsubscribed(same(client), aryEq(new String[] { "my/topic1", "my/topic2" }));
+
+		// disconnect
 		client.disconnect();
 		verify(listener, timeout(1000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
-		verifyNoMoreInteractions(listener, reconnectionStrategy);
-
-		fail();
+		verifyNoMoreInteractions(listener);
 	}
 
 	@Test
