@@ -20,11 +20,43 @@ public class PublishMessageTest {
 	PubMessage pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "my topic", 123, new byte[] { 97, 98, 99 });
 	PublishMessage message;
 
-	// FIXME [jim] - add tests for new constructors
 	@Before
 	public void before() {
 		MockitoAnnotations.initMocks(this);
 		message = new PublishMessage(channelManager, channel, pubMessage);
+	}
+
+	@Test
+	public void testCtor_TopicQosPayload() {
+		PublishMessage message = new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, new byte[] { 97, 98, 99 });
+		assertEquals("grand/foo/bar", message.getTopic());
+		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());
+		assertArrayEquals(new byte[] { 97, 98, 99 }, message.getPayload());
+		assertEquals("abc", message.getPayloadString());
+		assertFalse(message.isDuplicate());
+		assertFalse(message.isRetain());
+	}
+
+	@Test
+	public void testCtor_TopicQosPayloadString() {
+		PublishMessage message = new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "abc");
+		assertEquals("grand/foo/bar", message.getTopic());
+		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());
+		assertArrayEquals(new byte[] { 97, 98, 99 }, message.getPayload());
+		assertEquals("abc", message.getPayloadString());
+		assertFalse(message.isDuplicate());
+		assertFalse(message.isRetain());
+	}
+
+	@Test
+	public void testCtor_TopicQosPayloadStringRetain() {
+		PublishMessage message = new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "abc", true);
+		assertEquals("grand/foo/bar", message.getTopic());
+		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());
+		assertArrayEquals(new byte[] { 97, 98, 99 }, message.getPayload());
+		assertEquals("abc", message.getPayloadString());
+		assertFalse(message.isDuplicate());
+		assertTrue(message.isRetain());
 	}
 
 	@Test
