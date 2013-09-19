@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.MqttChannelRef;
+import net.sf.xenqtt.message.MqttMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
@@ -153,6 +154,8 @@ public class PublishMessage {
 	 */
 	@Override
 	public String toString() {
-		return pubMessage.toString();
+
+		return "PublishMessage [topic=" + pubMessage.getTopicName() + ", QoS=" + pubMessage.getQoS() + ", Payload="
+				+ MqttMessage.bytesToHex(pubMessage.getPayload()) + "]";
 	}
 }
