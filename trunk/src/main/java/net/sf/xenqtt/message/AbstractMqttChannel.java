@@ -318,7 +318,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public void cancelBlockingCommands() {
 
-		// FIXME [jim] - test
 		cancelCommand(connectionCompleteCommand);
 		cancelCommand(connAckReceivedCommand);
 		if (sendMessageInProgress != null) {
