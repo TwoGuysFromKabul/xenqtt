@@ -64,6 +64,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	private volatile boolean firstConnectPending = true;
 	private volatile List<MqttMessage> unsentMessages;
 
+	// FIXME [jim] - add constructors that take host/port and ctors that take URI
 	/**
 	 * Constructs a synchronous instance of this class using an {@link Executor} owned by this class.
 	 * 
