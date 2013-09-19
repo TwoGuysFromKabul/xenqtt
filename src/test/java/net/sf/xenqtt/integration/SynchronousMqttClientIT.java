@@ -488,4 +488,10 @@ public class SynchronousMqttClientIT {
 
 		fail("not implemented");
 	}
+
+	@Test
+	public void testSendWhileReconnectionInProgress() throws Exception {
+
+		fail("not implemented");
+	}
 }
