@@ -1,9 +1,12 @@
 package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.net.ConnectException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -104,6 +107,32 @@ public class ChannelManagerImplTest {
 
 		clientHandler.assertChannelClosedCount(1);
 		brokerHandler.assertChannelClosedCount(1);
+	}
+
+	@Test
+	public void testCancelBlockingCommands_Blocking() throws Exception {
+		manager = new ChannelManagerImpl(2, 0);
+		manager.init();
+
+		MqttChannel channel = mock(MqttChannel.class);
+		manager.cancelBlockingCommands(channel);
+
+		manager.shutdown();
+
+		verify(channel).cancelBlockingCommands();
+	}
+
+	@Test
+	public void testCancelBlockingCommands_NonBlocking() throws Exception {
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		MqttChannel channel = mock(MqttChannel.class);
+		manager.cancelBlockingCommands(channel);
+
+		manager.shutdown();
+
+		verify(channel, timeout(1000)).cancelBlockingCommands();
 	}
 
 	@Test
@@ -396,6 +425,46 @@ public class ChannelManagerImplTest {
 	}
 
 	@Test
+	public void testGetUnsentMessages_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
+		manager.init();
+
+		MqttChannel channel = mock(MqttChannel.class);
+		List<MqttMessage> unsentMessages = new ArrayList<MqttMessage>();
+		unsentMessages.add(new PubAckMessage(1));
+		unsentMessages.add(new PubAckMessage(2));
+		unsentMessages.add(new PubAckMessage(3));
+		when(channel.getUnsentMessages()).thenReturn(unsentMessages);
+
+		List<MqttMessage> messages = manager.getUnsentMessages(channel);
+		assertEquals(unsentMessages.size(), messages.size());
+		for (MqttMessage message : messages) {
+			assertTrue(unsentMessages.contains(message));
+		}
+	}
+
+	@Test
+	public void testGetUnsentMessages_NonBlocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		MqttChannel channel = mock(MqttChannel.class);
+		List<MqttMessage> unsentMessages = new ArrayList<MqttMessage>();
+		unsentMessages.add(new PubAckMessage(1));
+		unsentMessages.add(new PubAckMessage(2));
+		unsentMessages.add(new PubAckMessage(3));
+		when(channel.getUnsentMessages()).thenReturn(unsentMessages);
+
+		List<MqttMessage> messages = manager.getUnsentMessages(channel);
+		assertEquals(unsentMessages.size(), messages.size());
+		for (MqttMessage message : messages) {
+			assertTrue(unsentMessages.contains(message));
+		}
+	}
+
+	@Test
 	public void testClose_Blocking() throws Exception {
 
 		manager = new ChannelManagerImpl(2, 0);
@@ -560,4 +629,5 @@ public class ChannelManagerImplTest {
 		clientHandler.assertChannelClosedCount(1);
 		brokerHandler.assertChannelClosedCount(1);
 	}
+
 }

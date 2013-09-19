@@ -191,7 +191,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public void cancelBlockingCommands(MqttChannelRef channel) {
 
-		// FIXME [jim] - test
 		addCommand(new CancelBlockingCommandsCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
@@ -200,7 +199,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 */
 	@Override
 	public List<MqttMessage> getUnsentMessages(MqttChannelRef channel) {
-		// FIXME [jim] - test
 		return addCommand(new GetUnsentMessagesCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
