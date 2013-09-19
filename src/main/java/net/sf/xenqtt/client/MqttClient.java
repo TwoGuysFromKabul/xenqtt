@@ -155,7 +155,6 @@ public interface MqttClient {
 	 * <ol>
 	 * <li>Send a disconnect message to the broker</li>
 	 * <li>Close the TCP connection to the broker</li>
-	 * <li></li>
 	 * </ol>
 	 * If the synchronous client is used this method blocks until these actions are completed. If the asynchronous client is used the
 	 * {@link AsyncClientListener#disconnected(MqttClient, Throwable, boolean) disconnected} method is called after these actions are completed.
