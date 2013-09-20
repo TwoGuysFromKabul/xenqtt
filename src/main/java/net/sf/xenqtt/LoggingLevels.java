@@ -11,6 +11,7 @@ public final class LoggingLevels {
 	public static final int WARN_FLAG = 0x08;
 	public static final int ERROR_FLAG = 0x10;
 	public static final int FATAL_FLAG = 0x20;
+	public static final int DEFAULT_LOGGING_LEVELS = WARN_FLAG | ERROR_FLAG | FATAL_FLAG;
 
 	public final boolean traceEnabled;
 	public final boolean debugEnabled;
