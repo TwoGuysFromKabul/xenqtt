@@ -29,7 +29,7 @@ public class XenqttTest {
 		PrintStream out = new PrintStream(baos);
 		System.setOut(out);
 
-		Xenqtt.main(new String[] { "proxe", "-vv" });
+		Xenqtt.main(new String[] { "-vv", "proxe" });
 		assertTrue(new String(baos.toByteArray(), "US-ASCII").startsWith("usage: "));
 	}
 
@@ -44,16 +44,6 @@ public class XenqttTest {
 	}
 
 	@Test
-	public void testMain_InvalidSwitch() throws Exception {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		PrintStream out = new PrintStream(baos);
-		System.setOut(out);
-
-		Xenqtt.main(new String[] { "proxy", "-verbose" });
-		assertTrue(new String(baos.toByteArray(), "US-ASCII").startsWith("usage: "));
-	}
-
-	@Test
 	public void testMain_NoArgs() throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		PrintStream out = new PrintStream(baos);
@@ -61,11 +51,6 @@ public class XenqttTest {
 
 		Xenqtt.main(new String[0]);
 		assertTrue(new String(baos.toByteArray(), "US-ASCII").startsWith("usage: "));
-	}
-
-	@Test
-	public void testAsync() {
-		assertTrue(Boolean.parseBoolean(System.getProperty("xenqtt.logging.async")));
 	}
 
 }

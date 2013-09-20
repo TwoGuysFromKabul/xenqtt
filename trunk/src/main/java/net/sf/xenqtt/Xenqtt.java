@@ -2,6 +2,9 @@ package net.sf.xenqtt;
 
 import java.io.InputStream;
 
+import net.sf.xenqtt.ArgumentExtractor.Arguments;
+import net.sf.xenqtt.ArgumentExtractor.Mode;
+
 /**
  * The entry point into the application when either the proxy or the gateway are run.
  */
@@ -10,7 +13,6 @@ public final class Xenqtt {
 	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] proxy|gateway|help\n\tproxy - Run the MQTT proxy for clustered clients\n\t"
 			+ "gateway - Run the MQTT gateway that facilitates HTTP <-> MQTT communication\n\thelp - Display information on xenqtt and how it can be used\n\t"
 			+ "-v: Increase logging verbosity. v = info, vv = debug";
-	private static final String ARG_REGEX = "^\\-(?i:v){1,2}$";
 
 	static {
 		System.setProperty("xenqtt.logging.async", "true");
@@ -55,64 +57,15 @@ public final class Xenqtt {
 	 *            </table>
 	 */
 	public static void main(String... args) {
-		Arguments arguments = extractArguments(args);
+		Arguments arguments = ArgumentExtractor.extractArguments(args);
 		if (arguments == null) {
 			System.out.println(USAGE);
 
 			return;
 		}
 
-		Log.setLoggingLevels(arguments.levels);
+		Log.setLoggingLevels(arguments.determineLoggingLevels());
 		runInMode(arguments.mode);
-	}
-
-	private static Arguments extractArguments(String[] args) {
-		if (args == null || args.length == 0) {
-			return null;
-		}
-
-		try {
-			String mode = extractMode(args);
-			if (mode == null) {
-				return null;
-			}
-
-			int loggingLevels = getLoggingLevels(args);
-			return new Arguments(Mode.lookup(mode), new LoggingLevels(loggingLevels));
-		} catch (Exception ex) {
-			return null;
-		}
-	}
-
-	private static String extractMode(String[] args) {
-		for (String arg : args) {
-			if (arg.indexOf('-') == -1) {
-				return arg;
-			}
-		}
-
-		return null;
-	}
-
-	private static int getLoggingLevels(String[] args) {
-		int loggingLevels = 0x38;
-		if (args.length > 1) {
-			for (int i = 0; i < args.length; i++) {
-				String arg = args[i];
-				if (!arg.matches(ARG_REGEX) && !Mode.isValidMode(arg)) {
-					throw new IllegalArgumentException(String.format("Invalid command-line option: %s", arg));
-				}
-
-				int toShift = arg.length() - 1;
-				for (int j = 0; j < toShift; j++) {
-					loggingLevels >>= 1;
-					loggingLevels |= 0x20;
-				}
-
-			}
-		}
-
-		return loggingLevels;
 	}
 
 	private static void runInMode(Mode mode) {
@@ -121,7 +74,7 @@ public final class Xenqtt {
 			displayHelpInformation();
 			return;
 		default:
-			Log.info("The following mode is not presently supported: %s", mode.mode);
+			Log.info("The following mode is not presently supported: %s", mode.getMode());
 		}
 
 		try {
@@ -192,50 +145,6 @@ public final class Xenqtt {
 		wrappedHelpDocumentation.append(currentLine.toString());
 
 		return wrappedHelpDocumentation.toString();
-	}
-
-	private static enum Mode {
-
-		PROXY("proxy"), GATEWAY("gateway"), HELP("help");
-
-		private final String mode;
-
-		private Mode(String mode) {
-			this.mode = mode;
-		}
-
-		private static Mode lookup(String mode) {
-			for (Mode m : values()) {
-				if (m.mode.equalsIgnoreCase(mode)) {
-					return m;
-				}
-			}
-
-			throw new IllegalArgumentException(String.format("Invalid mode specified: %s", mode));
-		}
-
-		private static boolean isValidMode(String mode) {
-			for (Mode m : values()) {
-				if (m.mode.equalsIgnoreCase(mode)) {
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-	}
-
-	private static final class Arguments {
-
-		private final Mode mode;
-		private final LoggingLevels levels;
-
-		private Arguments(Mode mode, LoggingLevels levels) {
-			this.mode = mode;
-			this.levels = levels;
-		}
-
 	}
 
 }
