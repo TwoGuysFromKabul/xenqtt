@@ -16,25 +16,16 @@ import net.sf.xenqtt.message.QoS;
 final class Subscription {
 
 	private final String clientId;
-	private final QoS subscribedQos;
+	QoS subscribedQos;
 	private final Queue<PubMessage> messageQueue;
 
 	/**
-	 * Creates a subscription to a topic that had no previous subscription from the same client
+	 * Creates a subscription to a topic
 	 */
 	Subscription(String clientId, QoS subscribedQos) {
 		this.clientId = clientId;
 		this.subscribedQos = subscribedQos;
 		this.messageQueue = new LinkedList<PubMessage>();
-	}
-
-	/**
-	 * Creates a subscription to a topic that already had a subscription from the same client
-	 */
-	Subscription(Subscription copyFrom, QoS subscribedQos) {
-		this.clientId = copyFrom.clientId;
-		this.subscribedQos = subscribedQos;
-		this.messageQueue = copyFrom.messageQueue;
 	}
 
 	/**
