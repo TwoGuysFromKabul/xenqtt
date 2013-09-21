@@ -5,10 +5,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -28,7 +25,7 @@ public final class MockBroker {
 
 	private final ConcurrentHashMap<String, String> credentials = new ConcurrentHashMap<String, String>();
 
-	private final List<BrokerEvent> events = Collections.synchronizedList(new LinkedList<BrokerEvent>());
+	private final BrokerEvents events;
 
 	private final CountDownLatch readyLatch = new CountDownLatch(1);
 	private final ChannelManager manager;
@@ -40,10 +37,10 @@ public final class MockBroker {
 	private volatile int port;
 
 	/**
-	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, and allows anonymous access
+	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, allows anonymous access, and does not print events
 	 */
 	public MockBroker() {
-		this(null, 15, 1883, true);
+		this(null, 15, 1883, true, false);
 	}
 
 	/**
@@ -56,8 +53,11 @@ public final class MockBroker {
 	 *            calling {@link #init()}.
 	 * @param allowAnonymousAccess
 	 *            If true then {@link ConnectMessage} with no username/password will be accepted. Otherwise only valid credentials will be accepted.
+	 * @param logEvents
+	 *            If true events will logged at info level as they occur
 	 */
-	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess) {
+	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean logEvents) {
+		this.events = new BrokerEvents(logEvents);
 		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess);
 		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds);
 		this.port = port;
@@ -131,42 +131,28 @@ public final class MockBroker {
 	 * @return All broker events. This list is a copy.
 	 */
 	public List<BrokerEvent> getEvents() {
-		synchronized (events) {
-			return new ArrayList<BrokerEvent>(events);
-		}
+		return events.getEvents();
 	}
 
 	/**
 	 * @return All broker events for the specified client ID. This list is a copy.
 	 */
 	public List<BrokerEvent> getEvents(String clientId) {
-		List<BrokerEvent> list = new ArrayList<BrokerEvent>();
-		synchronized (events) {
-			for (BrokerEvent event : events) {
-				if (clientId == null) {
-					if (event.getClientId() == null) {
-						list.add(event);
-					}
-				} else if (clientId.equals(event.getClientId())) {
-					list.add(event);
-				}
-			}
-		}
-		return list;
+		return events.getEvents(clientId);
 	}
 
 	/**
 	 * Removes all broker events
 	 */
 	public void clearEvents() {
-		events.clear();
+		events.clearEvents();
 	}
 
 	/**
 	 * Removes the specified broker events.
 	 */
 	public void removeEvents(Collection<BrokerEvent> eventsToRemove) {
-		events.removeAll(eventsToRemove);
+		events.removeEvents(eventsToRemove);
 	}
 
 	private void doIo() throws Exception {
