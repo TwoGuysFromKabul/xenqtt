@@ -81,7 +81,7 @@ public class MockBrokerTest {
 	@Test
 	public void testConnect_Credentials_BadCredentials() throws Exception {
 
-		client = new AsyncMqttClient("tcp://q.m2m.io:1883", listener, reconnectionStrategy, 5, 5);
+		client = new AsyncMqttClient(brokerUri, listener, reconnectionStrategy, 5, 5);
 		client.connect("testclient2", true, 90, "not_a_user", "not_a_password");
 
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.BAD_CREDENTIALS);
