@@ -8,13 +8,9 @@ import net.sf.xenqtt.message.MqttMessage;
  */
 public final class BrokerEvent {
 
+	private final Client client;
 	private final BrokerEventType eventType;
 	private final MqttMessage message;
-	private final Client client;
-
-	BrokerEvent(BrokerEventType eventType, Client client) {
-		this(eventType, client, null);
-	}
 
 	BrokerEvent(BrokerEventType eventType, Client client, MqttMessage message) {
 		this.eventType = eventType;
@@ -51,11 +47,20 @@ public final class BrokerEvent {
 	}
 
 	/**
-	 * @return The message that triggered the event. Only applicable for {@link BrokerEventType#MSG_RECEIVED} and {@link BrokerEventType#MSG_SENT}
+	 * @return The message that triggered the event. Only applicable for {@link BrokerEventType#MESSAGE_RECEIVED} and {@link BrokerEventType#MESSAGE_SENT}
 	 */
 	public <T extends MqttMessage> T getMessage() {
 		@SuppressWarnings("unchecked")
 		T m = (T) message;
 		return m;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		String clientId = client == null ? null : client.clientId;
+		return "BrokerEvent [clientId=" + clientId + ", eventType=" + eventType + ", message=" + message + "]";
 	}
 }

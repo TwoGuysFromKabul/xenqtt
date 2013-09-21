@@ -1,7 +1,5 @@
 package net.sf.xenqtt.mockbroker;
 
-import java.util.List;
-
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttMessage;
@@ -15,9 +13,9 @@ public final class Client {
 	boolean cleanSession;
 	private int nextMessageId;
 	private final MqttChannel channel;
-	private final List<BrokerEvent> events;
+	private final BrokerEvents events;
 
-	Client(MqttChannel channel, List<BrokerEvent> events) {
+	Client(MqttChannel channel, BrokerEvents events) {
 		this.channel = channel;
 		this.events = events;
 	}
@@ -35,7 +33,7 @@ public final class Client {
 	public void send(MqttMessage message) {
 
 		channel.send(message, null);
-		events.add(new BrokerEvent(BrokerEventType.MSG_SENT, this, message));
+		events.addEvent(BrokerEventType.MESSAGE_SENT, this, message);
 	}
 
 	/**
@@ -53,6 +51,13 @@ public final class Client {
 	 * Called whenever an {@link MqttMessage} is received
 	 */
 	void messageReceived(MqttMessage message) {
-		events.add(new BrokerEvent(BrokerEventType.MSG_RECEIVED, this, message));
+		events.addEvent(BrokerEventType.MESSAGE_RECEIVED, this, message);
+	}
+
+	/**
+	 * @return The client's address
+	 */
+	String remoteAddress() {
+		return channel.getRemoteAddress();
 	}
 }

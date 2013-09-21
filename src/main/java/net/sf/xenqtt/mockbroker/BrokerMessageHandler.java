@@ -5,7 +5,6 @@ import static net.sf.xenqtt.mockbroker.BrokerEventType.*;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,11 +37,11 @@ final class BrokerMessageHandler implements MessageHandler {
 	private final Map<MqttChannel, Client> clientByChannel = new IdentityHashMap<MqttChannel, Client>();
 
 	private final MockBrokerHandler brokerHandler;
-	private final List<BrokerEvent> events;
+	private final BrokerEvents events;
 	private final ConcurrentHashMap<String, String> credentials;
 	private final boolean allowAnonymousAccess;
 
-	BrokerMessageHandler(MockBrokerHandler brokerHandler, List<BrokerEvent> events, ConcurrentHashMap<String, String> credentials, boolean allowAnonymousAccess) {
+	BrokerMessageHandler(MockBrokerHandler brokerHandler, BrokerEvents events, ConcurrentHashMap<String, String> credentials, boolean allowAnonymousAccess) {
 		this.credentials = credentials;
 		this.allowAnonymousAccess = allowAnonymousAccess;
 		this.brokerHandler = brokerHandler == null ? new MockBrokerHandler() : brokerHandler;
@@ -288,7 +287,7 @@ final class BrokerMessageHandler implements MessageHandler {
 
 		Client client = new Client(channel, events);
 		clientByChannel.put(channel, client);
-		events.add(new BrokerEvent(CHANNEL_OPENED, client));
+		events.addEvent(CHANNEL_OPENED, client);
 
 		brokerHandler.channelOpened(client);
 	}
@@ -300,7 +299,7 @@ final class BrokerMessageHandler implements MessageHandler {
 	public void channelClosed(MqttChannel channel, Throwable cause) {
 
 		Client client = clientByChannel.remove(channel);
-		events.add(new BrokerEvent(CHANNEL_CLOSED, client));
+		events.addEvent(CHANNEL_CLOSED, client);
 		clientById.remove(client.clientId);
 
 		if (client.cleanSession) {
