@@ -214,7 +214,8 @@ final class BrokerMessageHandler implements MessageHandler {
 
 		for (int i = 0; i < topics.length; i++) {
 			Topic topic = getTopic(topics[i]);
-			grantedQoses[i] = topic.subscribe(requestedQoses[i], client);
+			Subscription subscription = getSubscription(client.clientId, topics[i]);
+			grantedQoses[i] = topic.subscribe(requestedQoses[i], client, subscription);
 		}
 
 		client.send(new SubAckMessage(message.getMessageId(), grantedQoses));
@@ -324,5 +325,29 @@ final class BrokerMessageHandler implements MessageHandler {
 		}
 
 		return topic;
+	}
+
+	/**
+	 * If there is a subscription existing in another topic that matches the specified topic (including wildcard matching) it is returned. Otherwise a new
+	 * subscription is created.
+	 */
+	private Subscription getSubscription(String clientId, String topicName) {
+
+		Subscription subscription = null;
+
+		if (topicName.charAt(0) == '/') {
+			topicName += "r";
+		}
+		// FIXME [jim] - need to validate topic names - no + or # expect as appropriate wildcards, no //, etc
+		// FIXME [jim] - add a quicksplit method?
+		String[] topicLevels = topicName.split("/");
+		for (Topic topic : topicByName.values()) {
+			if (topic.nameMatches(topicLevels)) {
+				subscription = topic.getSubscription(clientId);
+				break;
+			}
+		}
+
+		return subscription != null ? subscription : new Subscription(clientId);
 	}
 }
