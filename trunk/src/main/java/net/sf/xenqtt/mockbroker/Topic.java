@@ -98,12 +98,13 @@ final class Topic {
 	}
 
 	private PubMessage addSubscription(Client client, QoS qos) {
+
 		Subscription subscription = getSubscription(client);
 
 		if (subscription == null) {
 			subscription = new Subscription(client.clientId, qos);
 		} else {
-			subscription = new Subscription(subscription, qos);
+			subscription.subscribedQos = qos;
 		}
 
 		subscriptionByClientId.put(client.clientId, subscription);
