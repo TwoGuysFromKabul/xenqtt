@@ -19,6 +19,7 @@ import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,10 +36,22 @@ public class AsyncMqttClientIT {
 	@Captor ArgumentCaptor<PublishMessage> messageCaptor;;
 
 	AsyncMqttClient client;
+	AsyncMqttClient client2;
 
 	@Before
 	public void before() {
 		MockitoAnnotations.initMocks(this);
+	}
+
+	@After
+	public void after() {
+
+		if (client != null) {
+			client.shutdown();
+		}
+		if (client2 != null) {
+			client2.shutdown();
+		}
 	}
 
 	@Test
@@ -128,7 +141,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient3", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/will/topic1", QoS.AT_LEAST_ONCE) });
@@ -169,7 +182,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient6", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/will/topic2", QoS.AT_LEAST_ONCE) });
@@ -195,7 +208,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient8", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/will/topic3", QoS.AT_LEAST_ONCE) });
@@ -234,7 +247,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient9", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/will/topic4", QoS.AT_LEAST_ONCE) });
@@ -325,7 +338,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient13", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/topic5", QoS.AT_LEAST_ONCE) });
@@ -374,7 +387,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient15", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/topic6", QoS.AT_LEAST_ONCE) });
@@ -407,7 +420,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient15", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/topic7", QoS.AT_LEAST_ONCE) });
@@ -448,7 +461,7 @@ public class AsyncMqttClientIT {
 
 		// connect and subscribe a client to get the message
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		AsyncMqttClient client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
+		client2 = new AsyncMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5);
 		client2.connect("testclient18", true, 90);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/topic7", QoS.AT_LEAST_ONCE) });
