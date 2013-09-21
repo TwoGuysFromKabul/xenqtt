@@ -138,4 +138,9 @@ public interface MqttChannel extends MqttChannelRef {
 	 * @return All messages that have not been sent. This includes messages queued to be sent, any partially sent message, and all in flight messages.
 	 */
 	List<MqttMessage> getUnsentMessages();
+
+	/**
+	 * @return The channel's remote address
+	 */
+	String getRemoteAddress();
 }

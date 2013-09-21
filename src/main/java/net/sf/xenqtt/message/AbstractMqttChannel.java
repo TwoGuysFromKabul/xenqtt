@@ -352,6 +352,16 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#getRemoteAddress()
+	 */
+	@Override
+	public String getRemoteAddress() {
+
+		Socket socket = channel.socket();
+		return socket.isBound() ? socket.getRemoteSocketAddress().toString() : "";
+	}
+
+	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -362,10 +372,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A]";
 		}
 		if (!channel.isOpen()) {
-			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:" + channel.socket().getRemoteSocketAddress() + "]";
+			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:" + socket.getRemoteSocketAddress() + "]";
 		}
-		return getClass().getSimpleName() + "[localAddress:" + channel.socket().getLocalSocketAddress() + ",remoteAddress:"
-				+ channel.socket().getRemoteSocketAddress() + "]";
+		return getClass().getSimpleName() + "[localAddress:" + socket.getLocalSocketAddress() + ",remoteAddress:" + socket.getRemoteSocketAddress() + "]";
 	}
 
 	/**
