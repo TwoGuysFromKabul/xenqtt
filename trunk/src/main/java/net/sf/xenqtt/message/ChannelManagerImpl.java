@@ -215,6 +215,8 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private void doIO() {
 
+		Log.info("Channel manager thread started");
+
 		readyLatch.countDown();
 
 		try {
@@ -243,7 +245,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			}
 
 		} catch (ClosedSelectorException e) {
-			Log.info("Channel manager thread shutting down");
+			Log.info("Channel manager thread stopping");
 		} catch (Throwable t) {
 			Log.fatal(t, "Channel manager thread caught a fatal exception and is dying");
 		}
