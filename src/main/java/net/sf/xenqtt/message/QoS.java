@@ -8,7 +8,7 @@ public enum QoS {
 
 	AT_MOST_ONCE, // Fire and Forget
 	AT_LEAST_ONCE, // Acknowledged delivery
-	// EXACTLY_ONCE // Assured delivery
+	EXACTLY_ONCE // Assured delivery
 	;
 
 	/**
