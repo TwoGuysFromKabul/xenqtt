@@ -17,6 +17,7 @@ final class Topic {
 
 	private final Map<String, Subscription> subscriptionByClientId = new HashMap<String, Subscription>();
 	private final String topicName;
+	private String[] topicLevels;
 	PubMessage retainedMessage;
 
 	Topic(String topicName) {
@@ -29,8 +30,8 @@ final class Topic {
 	 * @return true if this specified message is in a subscription queue in this topic for the specified client
 	 */
 	boolean pubAcked(Client client, int messageId) {
-		Subscription subscription = getSubscription(client);
-		if (subscription.pubAcked(messageId)) {
+		Subscription subscription = getSubscription(client.clientId);
+		if (subscription != null && subscription.pubAcked(messageId)) {
 			return true;
 		}
 		return false;
@@ -46,7 +47,7 @@ final class Topic {
 			return;
 		}
 
-		Subscription subscription = getSubscription(client);
+		Subscription subscription = getSubscription(client.clientId);
 		if (subscription != null) {
 			subscription.connected(client);
 		}
@@ -77,13 +78,15 @@ final class Topic {
 	 * 
 	 * @return The granted {@link QoS}
 	 */
-	QoS subscribe(QoS qos, Client client) {
+	QoS subscribe(QoS qos, Client client, Subscription subscription) {
 
 		qos = qos.value() > 1 ? QoS.AT_LEAST_ONCE : qos;
-		PubMessage retainedMessage = addSubscription(client, qos);
-		if (retainedMessage != null) {
-			PubMessage msg = new PubMessage(qos, true, topicName, client.getNextMessageId(), retainedMessage.getPayload());
-			client.send(msg);
+		if (subscription.subscribe(topicName, qos)) {
+			subscriptionByClientId.put(client.clientId, subscription);
+			if (retainedMessage != null) {
+				PubMessage msg = new PubMessage(qos, true, topicName, client.getNextMessageId(), retainedMessage.getPayload());
+				client.send(msg);
+			}
 		}
 
 		return qos;
@@ -94,25 +97,53 @@ final class Topic {
 	 */
 	void unsubscribe(Client client) {
 
-		subscriptionByClientId.remove(client.clientId);
+		Subscription subscription = subscriptionByClientId.remove(client.clientId);
+		if (subscription != null) {
+			subscription.unsubscribe(topicName);
+		}
 	}
 
-	private PubMessage addSubscription(Client client, QoS qos) {
+	/**
+	 * @return True if this topic's name matches the specified topic name including wildcard resolution.
+	 */
+	boolean nameMatches(String[] topicLevels) {
 
-		Subscription subscription = getSubscription(client);
-
-		if (subscription == null) {
-			subscription = new Subscription(client.clientId, qos);
-		} else {
-			subscription.subscribedQos = qos;
+		if (this.topicLevels == null) {
+			// FIXME [jim] - need quicksplit method??
+			this.topicLevels = topicName.split("/");
 		}
 
-		subscriptionByClientId.put(client.clientId, subscription);
+		// if they are not the same depth and neither ends in # they can't match
+		if (topicLevels.length != this.topicLevels.length && !"#".equals(topicLevels[topicLevels.length - 1])
+				&& !"#".equals(this.topicLevels[this.topicLevels.length - 1])) {
+			return false;
+		}
 
-		return retainedMessage;
+		int size = topicLevels.length < this.topicLevels.length ? topicLevels.length : this.topicLevels.length;
+		for (int i = 0; i < size; i++) {
+
+			String s1 = topicLevels[i];
+			String s2 = this.topicLevels[i];
+
+			// if either has a # the rest doesn't matter - presumably the topic was already validated so # can only be the last level
+			if ("#".equals(s1) || "#".equals(s2)) {
+				return true;
+			}
+
+			// if neither has a + and the this level is not equal then the topics don't match
+			if (!"+".equals(s1) && !"+".equals(s2) && !s1.equals(s2)) {
+				return false;
+			}
+		}
+
+		// if everything else matched then they are equal only if they have the same length
+		return topicLevels.length == this.topicLevels.length;
 	}
 
-	private Subscription getSubscription(Client client) {
-		return subscriptionByClientId.get(client.clientId);
+	/**
+	 * @return The {@link Subscription} for the specified client ID. Null if the specified client is not subscribed to this topic.
+	 */
+	Subscription getSubscription(String clientId) {
+		return subscriptionByClientId.get(clientId);
 	}
 }

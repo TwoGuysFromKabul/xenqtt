@@ -380,6 +380,7 @@ public class MockBrokerTest {
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
+	// FIXME [jim] - need to add tests for various wildcard subscribe/unsubscribe scenarios
 	@Test
 	public void testPublish_Qos0_NoRetain() throws Exception {
 
