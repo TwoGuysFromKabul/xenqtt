@@ -18,6 +18,7 @@ import net.sf.xenqtt.message.QoS;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -59,6 +60,7 @@ public class MockBrokerTest {
 		broker.shutdown(5000);
 	}
 
+	@Ignore
 	@Test
 	public void test() {
 		fail("Not yet implemented");
@@ -91,6 +93,7 @@ public class MockBrokerTest {
 		verifyZeroInteractions(reconnectionStrategy);
 	}
 
+	@Ignore
 	@Test
 	public void testConnect_Credentials_Accepted() throws Exception {
 
@@ -235,6 +238,7 @@ public class MockBrokerTest {
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
+	@Ignore
 	@Test
 	public void testConnect_CredentialsAndWill_Accepted() throws Exception {
 
@@ -461,30 +465,35 @@ public class MockBrokerTest {
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
+	@Ignore
 	@Test
 	public void testClose() throws Exception {
 
 		fail("not implemented");
 	}
 
+	@Ignore
 	@Test
 	public void testConnectionLost_ReconnectSucceeds() throws Exception {
 
 		fail("not implemented");
 	}
 
+	@Ignore
 	@Test
 	public void testConnectionLost_AllReconnectsFail() throws Exception {
 
 		fail("not implemented");
 	}
 
+	@Ignore
 	@Test
 	public void testDisconnect() throws Exception {
 
 		fail("not implemented");
 	}
 
+	@Ignore
 	@Test
 	public void testSendWhileReconnectionInProgress() throws Exception {
 

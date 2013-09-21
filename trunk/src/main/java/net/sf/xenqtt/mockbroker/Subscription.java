@@ -43,8 +43,7 @@ final class Subscription {
 	void connected(Client client) {
 
 		for (PubMessage pub : messageQueue) {
-			pub.setMessageId(client.getNextMessageId());
-			client.send(pub);
+			send(client, pub);
 		}
 	}
 
@@ -71,23 +70,26 @@ final class Subscription {
 	 */
 	void publish(PubMessage message, Map<String, Client> clientById) {
 
-		PubMessage subscribedMessage = addAndSetQos(message);
-		Client subscribingClient = clientById.get(clientId);
-		if (subscribingClient != null) {
-			subscribingClient.send(subscribedMessage);
+		if (message.getQoSLevel() > 0 && subscribedQos.value() > 0) {
+			messageQueue.add(message);
+		}
+
+		Client client = clientById.get(clientId);
+		if (client != null) {
+			send(client, message);
 		}
 	}
 
-	private PubMessage addAndSetQos(PubMessage message) {
+	private void send(Client client, PubMessage message) {
 
 		if (subscribedQos.value() < message.getQoSLevel()) {
 			message = new PubMessage(subscribedQos, message.isRetain(), message.getTopicName(), 0, message.getPayload());
 		}
 
 		if (message.getQoSLevel() > 0) {
-			messageQueue.add(message);
+			message.setMessageId(client.getNextMessageId());
 		}
 
-		return message;
+		client.send(message);
 	}
 }
