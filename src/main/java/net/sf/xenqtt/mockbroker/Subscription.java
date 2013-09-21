@@ -83,10 +83,11 @@ final class Subscription {
 	private void send(Client client, PubMessage message) {
 
 		if (subscribedQos.value() < message.getQoSLevel()) {
-			message = new PubMessage(subscribedQos, message.isRetain(), message.getTopicName(), 0, message.getPayload());
-		}
-
-		if (message.getQoSLevel() > 0) {
+			if (subscribedQos.value() > 0) {
+				message.setMessageId(client.getNextMessageId());
+			}
+			message = new PubMessage(subscribedQos, message.isRetain(), message.getTopicName(), message.getMessageId(), message.getPayload());
+		} else if (message.getQoSLevel() > 0) {
 			message.setMessageId(client.getNextMessageId());
 		}
 
