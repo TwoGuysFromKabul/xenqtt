@@ -3,6 +3,7 @@ package net.sf.xenqtt.mockbroker;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
@@ -109,8 +110,7 @@ final class Topic {
 	boolean nameMatches(String[] topicLevels) {
 
 		if (this.topicLevels == null) {
-			// FIXME [jim] - need quicksplit method??
-			this.topicLevels = topicName.split("/");
+			this.topicLevels = XenqttUtil.quickSplit(topicName, '/');
 		}
 
 		// if they are not the same depth and neither ends in # they can't match
