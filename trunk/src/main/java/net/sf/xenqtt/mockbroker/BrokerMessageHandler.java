@@ -8,6 +8,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
@@ -339,8 +340,7 @@ final class BrokerMessageHandler implements MessageHandler {
 			topicName += "r";
 		}
 		// FIXME [jim] - need to validate topic names - no + or # expect as appropriate wildcards, no //, etc
-		// FIXME [jim] - add a quicksplit method?
-		String[] topicLevels = topicName.split("/");
+		String[] topicLevels = XenqttUtil.quickSplit(topicName, '/');
 		for (Topic topic : topicByName.values()) {
 			if (topic.nameMatches(topicLevels)) {
 				subscription = topic.getSubscription(clientId);
