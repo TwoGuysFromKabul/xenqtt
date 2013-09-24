@@ -8,6 +8,21 @@ public class ProgressiveReconnectionStrategyTest {
 
 	ProgressiveReconnectionStrategy strategy = new ProgressiveReconnectionStrategy(1000, 7, 5);
 
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_BaseMillisZero() {
+		new ProgressiveReconnectionStrategy(0, 7, 5);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_ProgressiveIntervalZero() {
+		new ProgressiveReconnectionStrategy(1000, 0, 5);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_RetriesLessThanZero() {
+		new ProgressiveReconnectionStrategy(1000, 7, -1);
+	}
+
 	@Test
 	public void testConnectionLost() {
 		assertEquals(1000, strategy.connectionLost(null, null));
