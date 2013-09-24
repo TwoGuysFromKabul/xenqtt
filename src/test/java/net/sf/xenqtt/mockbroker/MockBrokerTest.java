@@ -43,7 +43,7 @@ public class MockBrokerTest {
 
 		MockitoAnnotations.initMocks(this);
 
-		broker = new MockBroker(null, 15, 0, true, true);
+		broker = new MockBroker(null, 15, 0, true);
 		broker.init();
 		brokerUri = "tcp://localhost:" + broker.getPort();
 	}
