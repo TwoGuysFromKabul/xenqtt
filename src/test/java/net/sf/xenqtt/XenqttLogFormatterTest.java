@@ -23,7 +23,7 @@ public class XenqttLogFormatterTest {
 		record.setThrown(null);
 
 		String logMessage = formatter.format(record);
-		String expected = String.format("%s [%s] - %s", format(now), "TRACE", message);
+		String expected = String.format("%s [%s] - %s\n", format(now), "TRACE", message);
 		assertEquals(expected, logMessage);
 	}
 
@@ -36,7 +36,7 @@ public class XenqttLogFormatterTest {
 		record.setThrown(null);
 
 		String logMessage = formatter.format(record);
-		String expected = String.format("%s [%s] - %s", format(now), "TRACE", message);
+		String expected = String.format("%s [%s] - %s\n", format(now), "TRACE", message);
 		assertEquals(expected, logMessage);
 	}
 
@@ -49,7 +49,7 @@ public class XenqttLogFormatterTest {
 		record.setThrown(null);
 
 		String logMessage = formatter.format(record);
-		String expected = String.format("%s [%s] - %s", format(now), "DEBUG", message);
+		String expected = String.format("%s [%s] - %s\n", format(now), "DEBUG", message);
 		assertEquals(expected, logMessage);
 	}
 
@@ -62,7 +62,7 @@ public class XenqttLogFormatterTest {
 		record.setThrown(null);
 
 		String logMessage = formatter.format(record);
-		String expected = String.format("%s [%s] - %s", format(now), "DEBUG", message);
+		String expected = String.format("%s [%s] - %s\n", format(now), "DEBUG", message);
 		assertEquals(expected, logMessage);
 	}
 
@@ -75,7 +75,7 @@ public class XenqttLogFormatterTest {
 		record.setThrown(null);
 
 		String logMessage = formatter.format(record);
-		String expected = String.format("%s [%s] - %s", format(now), "INFO", message);
+		String expected = String.format("%s [%s] - %s\n", format(now), "INFO", message);
 		assertEquals(expected, logMessage);
 	}
 
@@ -88,7 +88,7 @@ public class XenqttLogFormatterTest {
 		record.setThrown(null);
 
 		String logMessage = formatter.format(record);
-		String expected = String.format("%s [%s] - %s", format(now), "WARN", message);
+		String expected = String.format("%s [%s] - %s\n", format(now), "WARN", message);
 		assertEquals(expected, logMessage);
 	}
 
@@ -116,7 +116,7 @@ public class XenqttLogFormatterTest {
 		record.setThrown(null);
 
 		String logMessage = formatter.format(record);
-		String expected = String.format("%s [%s] - %s", format(now), "ERROR", message);
+		String expected = String.format("%s [%s] - %s\n", format(now), "ERROR", message);
 		assertEquals(expected, logMessage);
 	}
 

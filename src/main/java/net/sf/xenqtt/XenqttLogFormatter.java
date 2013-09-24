@@ -58,7 +58,7 @@ public class XenqttLogFormatter extends Formatter {
 		String level = getLevel(record.getLevel());
 		String stackTrace = getStackTraceIfApplicable(record.getThrown());
 
-		return String.format("%s [%s] - %s%s", timestamp, level, record.getMessage(), stackTrace);
+		return String.format("%s [%s] - %s%s\n", timestamp, level, record.getMessage(), stackTrace);
 	}
 
 	private String getTimestamp(long millis) {
