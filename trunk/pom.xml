@@ -96,7 +96,7 @@
 						<id>bundle-javadoc</id>
 						<phase>package</phase>
 						<goals>
-							<goal>jar</goal>
+							<goal>javadoc</goal>
 						</goals>
 					</execution>
 				</executions>
