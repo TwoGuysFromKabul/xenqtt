@@ -160,6 +160,12 @@ public interface ChannelManager {
 	List<MqttMessage> getUnsentMessages(MqttChannelRef channel);
 
 	/**
+	 * Transfers unsent messages from oldChannel to newChannel and changes oldChannel such that any messages sent to it will actually go to newChannel. This is
+	 * used by reconnection logic to safely use a new connection in place of one that closed.
+	 */
+	void transfer(MqttChannelRef oldChannel, MqttChannelRef newChannel);
+
+	/**
 	 * Starts this channel manager. Must be called before any other methods
 	 */
 	void init();

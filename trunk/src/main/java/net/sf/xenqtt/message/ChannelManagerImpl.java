@@ -202,6 +202,15 @@ public final class ChannelManagerImpl implements ChannelManager {
 		return addCommand(new GetUnsentMessagesCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
+	/**
+	 * @see net.sf.xenqtt.message.ChannelManager#transfer(net.sf.xenqtt.message.MqttChannelRef, net.sf.xenqtt.message.MqttChannelRef)
+	 */
+	@Override
+	public void transfer(MqttChannelRef oldChannel, MqttChannelRef newChannel) {
+		// FIXME [jim] - test transfer channel
+		addCommand(new TransferCommand(oldChannel, newChannel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+	}
+
 	private void closeAll() {
 
 		Log.debug("Channel manager closing all channels");
@@ -411,6 +420,29 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 	}
 
+	private final class TransferCommand extends Command<Void> {
+
+		private final DelegatingMqttChannel oldChannel;
+		private final DelegatingMqttChannel newChannel;
+
+		public TransferCommand(MqttChannelRef oldChannel, MqttChannelRef newChannel) {
+			super(true);
+			this.oldChannel = (DelegatingMqttChannel) oldChannel;
+			this.newChannel = (DelegatingMqttChannel) newChannel;
+		}
+
+		@Override
+		public void doExecute() {
+
+			List<MqttMessage> unsentMessages = oldChannel.getUnsentMessages();
+			for (MqttMessage message : unsentMessages) {
+				message.blockingCommand.setFailureCause(null);
+				newChannel.send(message, message.blockingCommand);
+			}
+			oldChannel.delegate = newChannel.delegate;
+		}
+	}
+
 	private final class GetUnsentMessagesCommand extends Command<List<MqttMessage>> {
 
 		private final MqttChannel channel;
@@ -428,12 +460,12 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 	}
 
-	private final class NewClientChannelCommand extends Command<MqttClientChannel> {
+	private final class NewClientChannelCommand extends Command<MqttChannel> {
 
 		private final String host;
 		private final int port;
 		private final MessageHandler messageHandler;
-		private MqttClientChannel channel;
+		private MqttChannel channel;
 
 		public NewClientChannelCommand(String host, int port, MessageHandler messageHandler) {
 			super(!blocking);
@@ -445,7 +477,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		@Override
 		public void doExecute() {
 			try {
-				channel = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this);
+				channel = new DelegatingMqttChannel(new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this));
 				openChannels.add(channel);
 				setResult(channel);
 			} catch (Exception e) {
