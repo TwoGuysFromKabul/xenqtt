@@ -2,6 +2,8 @@ package net.sf.xenqtt.client;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import net.sf.xenqtt.XenqttUtil;
+
 /**
  * <p>
  * A {@link ReconnectionStrategy} implementation that allows for progressive reconnection attempts to the broker. Reconnect attempts begin at an aggressive
@@ -36,9 +38,9 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 	 *            The maximum number of reconnect attempts to make
 	 */
 	ProgressiveReconnectionStrategy(long baseReconnectMillis, int progressiveFactor, int maxNumberOfReconnects) {
-		this.baseReconnectMillis = baseReconnectMillis;
-		this.progressiveFactor = progressiveFactor;
-		this.maxNumberOfReconnects = maxNumberOfReconnects;
+		this.baseReconnectMillis = (Long) XenqttUtil.validateGreaterThan("baseReconnectMillis", baseReconnectMillis, 0);
+		this.progressiveFactor = XenqttUtil.validateGreaterThan("progressiveFactor", progressiveFactor, 0);
+		this.maxNumberOfReconnects = XenqttUtil.validateGreaterThanOrEqualTo("maxNumberOfReconnects", maxNumberOfReconnects, 0);
 		currentRetry = new AtomicInteger();
 	}
 
