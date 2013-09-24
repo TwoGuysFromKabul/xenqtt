@@ -177,4 +177,10 @@ public class ApplicationArgumentsTest {
 		assertFalse(arguments.wereAllFlagsInterrogated());
 	}
 
+	@Test
+	public void testIsEmpty() {
+		assertFalse(arguments.isEmpty());
+		assertTrue(new ApplicationArguments().isEmpty());
+	}
+
 }
