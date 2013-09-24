@@ -14,7 +14,7 @@ public class ArgumentExtractorTest {
 
 		assertTrue(arguments.globalOptions.isEmpty());
 		assertSame(Mode.PROXY, arguments.mode);
-		assertEquals(0, arguments.modeArguments.length);
+		assertNull(arguments.applicationArguments);
 	}
 
 	@Test
@@ -29,32 +29,52 @@ public class ArgumentExtractorTest {
 
 	@Test
 	public void testExtractArguments_ModeAndModeArguments() {
-		Arguments arguments = ArgumentExtractor.extractArguments("proxy", "1", "2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("proxy", "-p", "1883", "-a");
 
 		assertTrue(arguments.globalOptions.isEmpty());
 		assertSame(Mode.PROXY, arguments.mode);
-		assertEquals(3, arguments.modeArguments.length);
-		int expectedArgument = 1;
-		for (String modeArgument : arguments.modeArguments) {
-			assertEquals(expectedArgument++, Integer.parseInt(modeArgument));
-		}
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
+		assertEquals(1883, arguments.applicationArguments.getArgAsInt("-p"));
+		assertTrue(arguments.applicationArguments.wereAllFlagsInterrogated());
 	}
 
 	@Test
-	public void testExtractArguments_ModeAndModeArguments_SomeArgumentsStartWithADash() {
-		Arguments arguments = ArgumentExtractor.extractArguments("proxy", "1", "-2", "3");
+	public void testExtractArguments_ModeAndModeArguments_MultipleFlagsRunTogether() {
+		Arguments arguments = ArgumentExtractor.extractArguments("proxy", "-p", "1883", "-abcd");
 
 		assertTrue(arguments.globalOptions.isEmpty());
 		assertSame(Mode.PROXY, arguments.mode);
-		assertEquals(3, arguments.modeArguments.length);
-		int expectedArgument = 1;
-		for (String modeArgument : arguments.modeArguments) {
-			if (expectedArgument != 2) {
-				assertEquals(expectedArgument++, Integer.parseInt(modeArgument));
-			} else {
-				assertEquals(expectedArgument++, Math.abs(Integer.parseInt(modeArgument)));
-			}
-		}
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-b"));
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-c"));
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-d"));
+		assertEquals(1883, arguments.applicationArguments.getArgAsInt("-p"));
+		assertTrue(arguments.applicationArguments.wereAllFlagsInterrogated());
+	}
+
+	@Test
+	public void testExtractArguments_ModeAndModeArguments_MultipleFlagsRunTogether_FinalParameterIsArg() {
+		Arguments arguments = ArgumentExtractor.extractArguments("proxy", "-p", "1883", "-abcd", "true");
+
+		assertTrue(arguments.globalOptions.isEmpty());
+		assertSame(Mode.PROXY, arguments.mode);
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-b"));
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-c"));
+		assertFalse(arguments.applicationArguments.isFlagSpecified("-d"));
+		assertEquals(1883, arguments.applicationArguments.getArgAsInt("-p"));
+		assertTrue(arguments.applicationArguments.getArgAsBoolean("-d"));
+		assertTrue(arguments.applicationArguments.wereAllFlagsInterrogated());
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testExtractArguments_ModeAndModeArguments_MultipleValuesToOneParameter() {
+		ArgumentExtractor.extractArguments("proxy", "-p", "1883", "8883");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testExtractArguments_ModeAndModeArguments_DashOnlyForFlagOrArg() {
+		ArgumentExtractor.extractArguments("proxy", "-", "1883");
 	}
 
 	@Test
@@ -66,48 +86,26 @@ public class ArgumentExtractorTest {
 			assertEquals("-v", globalOption);
 		}
 		assertSame(Mode.PROXY, arguments.mode);
-		assertEquals(0, arguments.modeArguments.length);
+		assertNull(arguments.applicationArguments);
 	}
 
 	@Test
 	public void testExtractArguments_AllOptions() {
-		Arguments arguments = ArgumentExtractor.extractArguments("-v", "-v", "proxy", "1", "2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("-v", "-v", "proxy", "-p", "1883", "-a");
 
 		assertEquals(2, arguments.globalOptions.size());
 		for (String globalOption : arguments.globalOptions) {
 			assertEquals("-v", globalOption);
 		}
 		assertSame(Mode.PROXY, arguments.mode);
-		assertEquals(3, arguments.modeArguments.length);
-		int expectedArgument = 1;
-		for (String modeArgument : arguments.modeArguments) {
-			assertEquals(expectedArgument++, Integer.parseInt(modeArgument));
-		}
-	}
-
-	@Test
-	public void testExtractArguments_AllOptions_SomeModeArgumentsStartWithADash() {
-		Arguments arguments = ArgumentExtractor.extractArguments("-v", "-v", "proxy", "1", "-2", "3");
-
-		assertEquals(2, arguments.globalOptions.size());
-		for (String globalOption : arguments.globalOptions) {
-			assertEquals("-v", globalOption);
-		}
-		assertSame(Mode.PROXY, arguments.mode);
-		assertEquals(3, arguments.modeArguments.length);
-		int expectedArgument = 1;
-		for (String modeArgument : arguments.modeArguments) {
-			if (expectedArgument != 2) {
-				assertEquals(expectedArgument++, Integer.parseInt(modeArgument));
-			} else {
-				assertEquals(expectedArgument++, Math.abs(Integer.parseInt(modeArgument)));
-			}
-		}
+		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
+		assertEquals(1883, arguments.applicationArguments.getArgAsInt("-p"));
+		assertTrue(arguments.applicationArguments.wereAllFlagsInterrogated());
 	}
 
 	@Test
 	public void testDetermineLoggingLevels_Default() {
-		Arguments arguments = ArgumentExtractor.extractArguments("proxy", "1", "-2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("proxy", "-p", "1883", "-a");
 		LoggingLevels levels = arguments.determineLoggingLevels();
 
 		assertEquals(0x38, levels.flags());
@@ -115,7 +113,7 @@ public class ArgumentExtractorTest {
 
 	@Test
 	public void testDetermineLoggingLevels_Info() {
-		Arguments arguments = ArgumentExtractor.extractArguments("-v", "proxy", "1", "-2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("-v", "proxy", "-p", "1883", "-a");
 		LoggingLevels levels = arguments.determineLoggingLevels();
 
 		assertEquals(0x3c, levels.flags());
@@ -123,7 +121,7 @@ public class ArgumentExtractorTest {
 
 	@Test
 	public void testDetermineLoggingLevels_DebugTwoFlags() {
-		Arguments arguments = ArgumentExtractor.extractArguments("-v", "-v", "proxy", "1", "-2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("-v", "-v", "proxy", "-p", "1883", "-a");
 		LoggingLevels levels = arguments.determineLoggingLevels();
 
 		assertEquals(0x3e, levels.flags());
@@ -131,7 +129,7 @@ public class ArgumentExtractorTest {
 
 	@Test
 	public void testDetermineLoggingLevels_DebugOneFlag() {
-		Arguments arguments = ArgumentExtractor.extractArguments("-vv", "proxy", "1", "-2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("-vv", "proxy", "-p", "1883", "-a");
 		LoggingLevels levels = arguments.determineLoggingLevels();
 
 		assertEquals(0x3e, levels.flags());
@@ -139,7 +137,7 @@ public class ArgumentExtractorTest {
 
 	@Test
 	public void testDetermineLoggingLevels_DebugEvenWithMoreThanTwoSpecifiers() {
-		Arguments arguments = ArgumentExtractor.extractArguments("-vv", "-v", "proxy", "1", "-2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("-vv", "-v", "proxy", "-p", "1883", "-a");
 		LoggingLevels levels = arguments.determineLoggingLevels();
 
 		assertEquals(0x3e, levels.flags());
@@ -147,7 +145,7 @@ public class ArgumentExtractorTest {
 
 	@Test
 	public void testDetermineLoggingLevels_DefaultIfOneSpecifierIsTooAggressive() {
-		Arguments arguments = ArgumentExtractor.extractArguments("-vvv", "proxy", "1", "-2", "3");
+		Arguments arguments = ArgumentExtractor.extractArguments("-vvv", "proxy", "-p", "1883", "-a");
 		LoggingLevels levels = arguments.determineLoggingLevels();
 
 		assertEquals(0x38, levels.flags());

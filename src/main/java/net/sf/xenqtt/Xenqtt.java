@@ -1,18 +1,22 @@
 package net.sf.xenqtt;
 
 import java.io.InputStream;
+import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.ArgumentExtractor.Arguments;
 import net.sf.xenqtt.ArgumentExtractor.Mode;
+import net.sf.xenqtt.mockbroker.MockBrokerApplication;
 
 /**
  * The entry point into the application when either the proxy or the gateway are run.
  */
 public final class Xenqtt {
 
-	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] proxy|gateway|help\n\tproxy - Run the MQTT proxy for clustered clients\n\t"
-			+ "gateway - Run the MQTT gateway that facilitates HTTP <-> MQTT communication\n\thelp - Display information on xenqtt and how it can be used\n\t"
-			+ "-v: Increase logging verbosity. v = info, vv = debug";
+	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class };
+	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] proxy|gateway|mockbroker|help [args.or.flags]"
+			+ "\n\tproxy - Run the MQTT proxy for clustered clients\n\tgateway - Run the MQTT gateway that facilitates HTTP <-> MQTT communication"
+			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\thelp - Display information on xenqtt and how it can be used"
+			+ "\n\n\t-v: Increase logging verbosity. v = info, vv = debug";
 
 	static {
 		System.setProperty("xenqtt.logging.async", "true");
@@ -65,21 +69,61 @@ public final class Xenqtt {
 		}
 
 		Log.setLoggingLevels(arguments.determineLoggingLevels());
-		runInMode(arguments.mode);
+		XenqttApplication application = loadXenqttApplication(arguments.mode);
+
+		final CountDownLatch applicationLatch = new CountDownLatch(1);
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+
+			@Override
+			public void run() {
+				applicationLatch.countDown();
+			}
+
+		});
+
+		runInMode(arguments.mode, application, arguments.applicationArguments, applicationLatch);
 	}
 
-	private static void runInMode(Mode mode) {
-		switch (mode) {
-		case HELP:
+	private static XenqttApplication loadXenqttApplication(Mode mode) {
+		String modeName = mode.getMode().toLowerCase();
+		for (Class<?> clazz : APPLICATIONS) {
+			String className = clazz.getSimpleName().toLowerCase();
+			if (className.startsWith(modeName)) {
+				try {
+					return (XenqttApplication) clazz.newInstance();
+				} catch (Exception ex) {
+					throw new RuntimeException(String.format("Unable to instantiate the Xenqtt application %s.", className));
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private static void runInMode(Mode mode, XenqttApplication application, ApplicationArguments applicationArguments, CountDownLatch applicationLatch) {
+		if (application == null) {
+			Log.info("The following mode is not presently supported: %s", mode.getMode());
+			return;
+		}
+
+		if (mode == Mode.HELP) {
 			displayHelpInformation();
 			return;
-		default:
-			Log.info("The following mode is not presently supported: %s", mode.getMode());
 		}
 
 		try {
-			Thread.currentThread().join();
-		} catch (InterruptedException ignore) {
+			Log.info("Starting the following application: %s", application.getClass().getSimpleName());
+			application.start(applicationArguments);
+			applicationLatch.await();
+			application.stop();
+			Log.info("Application shutdown complete.");
+		} catch (Exception ex) {
+			System.err.printf("Unable to launch the application. Details: %s\n", ex.getMessage());
+			ex.printStackTrace();
+			Class<?> exceptionClass = ex.getClass();
+			if (exceptionClass == IllegalArgumentException.class || exceptionClass == IllegalStateException.class) {
+				System.out.printf("USAGE: %s\n", application.getUsageText());
+			}
 		}
 	}
 
