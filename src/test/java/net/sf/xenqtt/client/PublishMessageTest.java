@@ -59,6 +59,27 @@ public class PublishMessageTest {
 		assertTrue(message.isRetain());
 	}
 
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_BlankTopic() {
+		new PublishMessage("", QoS.AT_MOST_ONCE, new byte[] { 97, 98, 99 }, true);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_NullTopic() {
+		new PublishMessage(null, QoS.AT_MOST_ONCE, new byte[] { 97, 98, 99 }, true);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_NullQoS() {
+		new PublishMessage("grand/foo/bar", null, new byte[] { 97, 98, 99 }, true);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_NullPayload() {
+		byte[] payload = null;
+		new PublishMessage("grand/foo/bar", QoS.AT_MOST_ONCE, payload, true);
+	}
+
 	@Test
 	public void testGetTopic() throws Exception {
 		assertEquals("my topic", message.getTopic());
