@@ -19,7 +19,7 @@ import net.sf.xenqtt.message.MqttMessage;
 
 // TODO [jim] - update javadoc
 /**
- * Mock MQTT broker used to test MQTT clients and applications
+ * Mock MQTT broker used to test MQTT clients and applications. If debug level logging is enabled all broker events will be logged.
  */
 public final class MockBroker {
 
@@ -36,11 +36,15 @@ public final class MockBroker {
 	private volatile Exception ioException;
 	private volatile int port;
 
+	public static void main(String[] args) {
+
+	}
+
 	/**
-	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, allows anonymous access, and does not print events
+	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, and allows anonymous access
 	 */
 	public MockBroker() {
-		this(null, 15, 1883, true, false);
+		this(null, 15, 1883, true);
 	}
 
 	/**
@@ -53,11 +57,9 @@ public final class MockBroker {
 	 *            calling {@link #init()}.
 	 * @param allowAnonymousAccess
 	 *            If true then {@link ConnectMessage} with no username/password will be accepted. Otherwise only valid credentials will be accepted.
-	 * @param logEvents
-	 *            If true events will logged at info level as they occur
 	 */
-	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean logEvents) {
-		this.events = new BrokerEvents(logEvents);
+	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess) {
+		this.events = new BrokerEvents();
 		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess);
 		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds);
 		this.port = port;
