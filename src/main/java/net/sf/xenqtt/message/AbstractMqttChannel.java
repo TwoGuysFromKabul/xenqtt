@@ -25,9 +25,6 @@ import net.sf.xenqtt.Log;
  */
 abstract class AbstractMqttChannel implements MqttChannel {
 
-	// FIXME [jim] - try backing off the time on each message retry.
-	// FIXME [jim] - limit the number of retries?
-
 	private final Map<Integer, IdentifiableMqttMessage> inFlightMessages = new HashMap<Integer, IdentifiableMqttMessage>();
 	private final List<IdentifiableMqttMessage> messagesToResend = new ArrayList<IdentifiableMqttMessage>();
 	private final long messageResendIntervalMillis;
@@ -103,7 +100,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	AbstractMqttChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
 
-		// FIXME [jim] - if there is no conn ack response to a connect in some amount of time we need to close the channel
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.connectionCompleteCommand = null;

@@ -43,6 +43,8 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 abstract class AbstractMqttClient implements MqttClient {
 
+	// FIXME [jim] - if there is no conn ack response to a connect in some amount of time we need to close the channel
+
 	private final String brokerUri;
 	private final ChannelManager manager;
 

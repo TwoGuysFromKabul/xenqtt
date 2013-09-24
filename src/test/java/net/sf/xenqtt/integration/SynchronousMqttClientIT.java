@@ -209,7 +209,7 @@ public class SynchronousMqttClientIT {
 		// connect and close a client to generate the will message
 		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient7", true, 90, "my/will/topic3", "it died dude", QoS.AT_LEAST_ONCE, true));
-		// FIXME [jim] - should close() and disconnect () block until the channel is actually closed and the handler called?
+
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
