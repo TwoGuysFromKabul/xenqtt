@@ -101,13 +101,13 @@ public final class Xenqtt {
 	}
 
 	private static void runApplication(Mode mode, XenqttApplication application, ApplicationArguments applicationArguments, CountDownLatch applicationLatch) {
-		if (application == null) {
-			Log.info("The following mode is not presently supported: %s", mode.getMode());
+		if (mode == Mode.HELP) {
+			displayHelpInformation();
 			return;
 		}
 
-		if (mode == Mode.HELP) {
-			displayHelpInformation();
+		if (application == null) {
+			Log.info("The following mode is not presently supported: %s", mode.getMode());
 			return;
 		}
 
