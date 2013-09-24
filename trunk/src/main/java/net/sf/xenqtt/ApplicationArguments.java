@@ -1,6 +1,8 @@
 package net.sf.xenqtt;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +13,13 @@ public final class ApplicationArguments {
 
 	private final List<Flag> flags;
 	private final Map<String, String> arguments;
+
+	/**
+	 * Create a new instance of this class.
+	 */
+	public ApplicationArguments() {
+		this(Collections.<String> emptyList(), new HashMap<String, String>());
+	}
 
 	/**
 	 * Create a new instance of this class.
@@ -363,6 +372,13 @@ public final class ApplicationArguments {
 		}
 
 		return argOrFlag;
+	}
+
+	/**
+	 * @return {@code true} if there are no flags or arguments, {@code false} if there is at least one flag or argument
+	 */
+	public boolean isEmpty() {
+		return flags.isEmpty() && arguments.isEmpty();
 	}
 
 	private static final class Flag {

@@ -63,7 +63,7 @@ final class ArgumentExtractor {
 
 	private static ApplicationArguments getApplicationArguments(List<String> modeArguments) {
 		if (modeArguments.isEmpty()) {
-			return null;
+			return new ApplicationArguments();
 		}
 
 		List<String> flags = new ArrayList<String>();

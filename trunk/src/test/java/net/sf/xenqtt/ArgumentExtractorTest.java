@@ -14,7 +14,7 @@ public class ArgumentExtractorTest {
 
 		assertTrue(arguments.globalOptions.isEmpty());
 		assertSame(Mode.PROXY, arguments.mode);
-		assertNull(arguments.applicationArguments);
+		assertNotNull(arguments.applicationArguments);
 	}
 
 	@Test
@@ -86,7 +86,7 @@ public class ArgumentExtractorTest {
 			assertEquals("-v", globalOption);
 		}
 		assertSame(Mode.PROXY, arguments.mode);
-		assertNull(arguments.applicationArguments);
+		assertNotNull(arguments.applicationArguments);
 	}
 
 	@Test
