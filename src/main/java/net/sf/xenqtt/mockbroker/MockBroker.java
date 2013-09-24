@@ -36,10 +36,6 @@ public final class MockBroker {
 	private volatile Exception ioException;
 	private volatile int port;
 
-	public static void main(String[] args) {
-
-	}
-
 	/**
 	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, and allows anonymous access
 	 */
