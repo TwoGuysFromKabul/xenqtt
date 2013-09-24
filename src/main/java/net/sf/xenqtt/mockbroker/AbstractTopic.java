@@ -56,15 +56,16 @@ abstract class AbstractTopic {
 			throw new MqttInvalidTopicNameException("Invalid topic. A topic may not contain a trailing slash ('/'): " + topicName);
 		}
 
+		boolean wildcard = false;
+
 		int poundIndex = topicName.indexOf('#');
 		if (poundIndex >= 0) {
-			if (poundIndex == lastIndex) {
-				return true;
+			if (poundIndex != lastIndex) {
+				throw new MqttInvalidTopicNameException("Invalid topic. The '#' wildcard can only be used as the last character in a topic name: " + topicName);
 			}
-			throw new MqttInvalidTopicNameException("Invalid topic. The '#' wildcard can only be used as the last character in a topic name: " + topicName);
+			wildcard = true;
 		}
 
-		boolean wildcard = false;
 		for (int plusIndex = topicName.indexOf('+'); plusIndex >= 0; plusIndex = topicName.indexOf('+', plusIndex + 1)) {
 			wildcard = true;
 			if (plusIndex > 0 && topicName.charAt(plusIndex - 1) != '/') {
@@ -90,14 +91,14 @@ abstract class AbstractTopic {
 	final boolean nameMatches(AbstractTopic that) {
 
 		// if they are not the same depth and neither ends in # they can't match
-		if (that.topicLevels.length != this.topicLevels.length && that.endsWithPound && this.endsWithPound) {
+		if (that.topicLevels.length != this.topicLevels.length && !that.endsWithPound && !this.endsWithPound) {
 			return false;
 		}
 
-		int size = topicLevels.length < this.topicLevels.length ? topicLevels.length : this.topicLevels.length;
+		int size = that.topicLevels.length < this.topicLevels.length ? that.topicLevels.length : this.topicLevels.length;
 		for (int i = 0; i < size; i++) {
 
-			String s1 = topicLevels[i];
+			String s1 = that.topicLevels[i];
 			String s2 = this.topicLevels[i];
 
 			// if either has a # the rest doesn't matter - presumably the topic was already validated so # can only be the last level
