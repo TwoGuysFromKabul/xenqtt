@@ -102,10 +102,8 @@ final class StandardTopic extends AbstractTopic {
 	void subscribe(WildcardTopic wildcardTopic, QoS qos, Client client) {
 
 		if (nameMatches(wildcardTopic)) {
-			Subscription subscription = getSubscription(client.clientId);
-			if (subscription != null) {
-				doSubscribe(subscription, wildcardTopic, qos, client);
-			}
+			Subscription subscription = getOrAddSubscription(client.clientId);
+			doSubscribe(subscription, wildcardTopic, qos, client);
 		}
 	}
 
