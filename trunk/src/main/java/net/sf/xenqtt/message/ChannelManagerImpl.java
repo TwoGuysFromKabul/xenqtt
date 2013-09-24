@@ -383,7 +383,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		@Override
 		public void doExecute() {
-			// TODO [jim] - what to do if this returns false
 			channel.send(message, this);
 		}
 	}

@@ -11,7 +11,6 @@ import net.sf.xenqtt.message.QoS;
  */
 public interface AsyncClientListener extends MqttClientListener {
 
-	// FIXME [jim] - maybe should have a connectFailed with the return code when it is not ACCEPTED
 	/**
 	 * Called after the client has received a connect acknowledgment from the broker.
 	 * 
