@@ -2,6 +2,7 @@ package net.sf.xenqtt.client;
 
 import java.nio.charset.Charset;
 
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.MqttChannelRef;
 import net.sf.xenqtt.message.MqttMessage;
@@ -37,6 +38,10 @@ public class PublishMessage {
 	 *            zero-length payload and the Retain flag set on the same topic.
 	 */
 	public PublishMessage(String topicName, QoS qos, byte[] payload, boolean retain) {
+		XenqttUtil.validateNotEmpty("topicName", topicName);
+		XenqttUtil.validateNotNull("qos", qos);
+		XenqttUtil.validateNotNull("payload", payload);
+
 		this.channel = null;
 		this.manager = null;
 		this.pubMessage = new PubMessage(qos, retain, topicName, 0, payload);
