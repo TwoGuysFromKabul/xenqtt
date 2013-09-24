@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttTimeoutException;
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ChannelManagerImpl;
 import net.sf.xenqtt.message.MqttMessage;
@@ -65,12 +66,13 @@ public final class MqttClientFactory {
 			int blockingTimeoutSeconds) {
 
 		this.blocking = blockingTimeoutSeconds >= 0;
-		this.brokerUri = brokerUri;
-		this.executor = executor;
+		this.brokerUri = XenqttUtil.validateNotEmpty("brokerUri", brokerUri);
+		this.executor = XenqttUtil.validateNotNull("executor", executor);
 		this.executorService = null;
 		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
-		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds, blockingTimeoutSeconds);
+		this.manager = new ChannelManagerImpl(XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0),
+				blockingTimeoutSeconds);
 		this.manager.init();
 	}
 
@@ -147,6 +149,7 @@ public final class MqttClientFactory {
 	 *             If this factory was constructed to create asynchronous clients and not synchronous clients.
 	 */
 	public MqttClient newSynchronousClient(MqttClientListener mqttClientListener) throws IllegalStateException {
+		XenqttUtil.validateNotNull("mqttClientListener", mqttClientListener);
 
 		if (!blocking) {
 			throw new IllegalStateException("You may not create a synchronous client using a client factory configured to create asynchronous clients");
@@ -179,19 +182,20 @@ public final class MqttClientFactory {
 			int blockingTimeoutSeconds) {
 
 		this.blocking = blockingTimeoutSeconds >= 0;
-		this.brokerUri = brokerUri;
-		this.executor = executorService;
+		this.brokerUri = XenqttUtil.validateNotEmpty("brokerUri", brokerUri);
+		this.executor = XenqttUtil.validateNotNull("executorService", executorService);
 		this.executorService = executorService;
 		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
-		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds, blockingTimeoutSeconds);
+		this.manager = new ChannelManagerImpl(XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0),
+				blockingTimeoutSeconds);
 		this.manager.init();
 	}
 
 	private static final class FactoryClient extends AbstractMqttClient {
 
-		FactoryClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy,
-				Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
+		FactoryClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
+				ReconnectionStrategy reconnectionStrategy, Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
 			super(brokerUri, mqttClientListener, asyncClientListener, reconnectionStrategy, executor, manager, reconnectionExecutor);
 		}
 	};
