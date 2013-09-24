@@ -60,9 +60,9 @@ abstract class AbstractMqttClient implements MqttClient {
 	private final AtomicInteger messageIdGenerator = new AtomicInteger();
 
 	private volatile MqttChannelRef channel;
+	private volatile MqttChannelRef newChannel;
 	private volatile ConnectMessage connectMessage;
 	private volatile boolean firstConnectPending = true;
-	private volatile List<MqttMessage> unsentMessages;
 
 	// FIXME [jim] - add constructors that take host/port and ctors that take URI
 	/**
@@ -160,7 +160,7 @@ abstract class AbstractMqttClient implements MqttClient {
 			String willMessage, QoS willQos, boolean willRetain) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds, userName, password, willTopic, willMessage, willQos, willRetain);
-		return doConnect(message);
+		return doConnect(channel, message);
 	}
 
 	/**
@@ -171,7 +171,7 @@ abstract class AbstractMqttClient implements MqttClient {
 			MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds);
-		return doConnect(message);
+		return doConnect(channel, message);
 	}
 
 	/**
@@ -182,7 +182,7 @@ abstract class AbstractMqttClient implements MqttClient {
 			throws MqttCommandCancelledException, MqttTimeoutException, InterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds, userName, password);
-		return doConnect(message);
+		return doConnect(channel, message);
 	}
 
 	/**
@@ -193,7 +193,7 @@ abstract class AbstractMqttClient implements MqttClient {
 			boolean willRetain) throws MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, keepAliveSeconds, willTopic, willMessage, willQos, willRetain);
-		return doConnect(message);
+		return doConnect(channel, message);
 	}
 
 	/**
@@ -375,7 +375,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		return next;
 	}
 
-	private ConnectReturnCode doConnect(ConnectMessage message) {
+	private ConnectReturnCode doConnect(MqttChannelRef channel, ConnectMessage message) {
 
 		connectMessage = message;
 		MqttMessage ack = manager.send(channel, message);
@@ -386,7 +386,6 @@ abstract class AbstractMqttClient implements MqttClient {
 
 		boolean match = true;
 
-		// TODO [jim] - what if the number of granted qoses does not match the number of requested subscriptions?
 		QoS[] grantedQoses = ack.getGrantedQoses();
 		Subscription[] grantedSubscriptions = new Subscription[requestedSubscriptions.length];
 		for (int i = 0; i < requestedSubscriptions.length; i++) {
@@ -403,8 +402,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		return grantedSubscriptions;
 	}
 
-	// FIXME [jim] - what happens if the client sends messages after the channel closes but before the reconnect is done? I think they will get lost.
-	private void tryReconnect(MqttChannel closedChannel, Throwable cause) {
+	private void tryReconnect(Throwable cause) {
 
 		boolean reconnecting = false;
 
@@ -414,12 +412,11 @@ abstract class AbstractMqttClient implements MqttClient {
 			reconnecting = reconnectDelay >= 0;
 
 			if (reconnecting) {
-				unsentMessages = manager.getUnsentMessages(closedChannel);
-				reconnectionExecutor.schedule(new ClientReconnector(closedChannel), reconnectDelay, TimeUnit.MILLISECONDS);
+				reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
 			}
 		}
 		if (!reconnecting) {
-			manager.cancelBlockingCommands(closedChannel);
+			manager.cancelBlockingCommands(channel);
 		}
 
 		mqttClientListener.disconnected(this, cause, reconnecting);
@@ -451,10 +448,10 @@ abstract class AbstractMqttClient implements MqttClient {
 					public void run() {
 
 						reconnectionStrategy.connectionEstablished();
-						if (unsentMessages != null) {
-							for (MqttMessage message : unsentMessages) {
-								manager.send(channel, message);
-							}
+						if (newChannel != null) {
+							manager.transfer(channel, newChannel);
+							AbstractMqttClient.this.channel = newChannel;
+							newChannel = null;
 						}
 					}
 				});
@@ -623,7 +620,7 @@ abstract class AbstractMqttClient implements MqttClient {
 					@Override
 					public void run() {
 						try {
-							doConnect(connectMessage);
+							doConnect(channel, connectMessage);
 						} catch (Exception e) {
 							Log.error(e, "Failed to process channelOpened for %s: cause=", channel);
 						}
@@ -646,7 +643,7 @@ abstract class AbstractMqttClient implements MqttClient {
 				@Override
 				public void run() {
 					try {
-						tryReconnect(channel, cause);
+						tryReconnect(cause);
 					} catch (Exception e) {
 						Log.error(e, "Failed to process channelClosed for %s: cause=", channel, cause);
 					}
@@ -658,12 +655,6 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private final class ClientReconnector implements Runnable {
 
-		private final MqttChannel closedChannel;
-
-		public ClientReconnector(MqttChannel closedChannel) {
-			this.closedChannel = closedChannel;
-		}
-
 		/**
 		 * @see java.lang.Runnable#run()
 		 */
@@ -671,9 +662,9 @@ abstract class AbstractMqttClient implements MqttClient {
 		public void run() {
 
 			try {
-				channel = manager.newClientChannel(brokerUri, messageHandler);
+				newChannel = manager.newClientChannel(brokerUri, messageHandler);
 			} catch (Throwable t) {
-				tryReconnect(closedChannel, t);
+				tryReconnect(t);
 			}
 		}
 	}
