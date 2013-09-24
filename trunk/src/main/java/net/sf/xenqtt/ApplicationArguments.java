@@ -72,6 +72,19 @@ public final class ApplicationArguments {
 		return true;
 	}
 
+	/**
+	 * Get an argument value interpreted as an {@code int}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * 
+	 * @return The value associated with the argument interpreted as an {@code int}
+	 * 
+	 * @throws IllegalStateException
+	 *             If the argument is not found
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as an {@code int}
+	 */
 	public int getArgAsInt(String argument) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
@@ -90,6 +103,19 @@ public final class ApplicationArguments {
 		}
 	}
 
+	/**
+	 * Get an argument value interpreted as an {@code int}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * @param defaultValue
+	 *            The default value to use if the argument is not found
+	 * 
+	 * @return The value associated with the argument interpreted as an {@code int}
+	 * 
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as an {@code int}
+	 */
 	public int getArgAsInt(String argument, int defaultValue) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
@@ -106,6 +132,19 @@ public final class ApplicationArguments {
 		}
 	}
 
+	/**
+	 * Get an argument value interpreted as a {@code long}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * 
+	 * @return The value associated with the argument interpreted as a {@code long}
+	 * 
+	 * @throws IllegalStateException
+	 *             If the argument is not found
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as a {@code long}
+	 */
 	public long getArgAsLong(String argument) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
@@ -124,6 +163,19 @@ public final class ApplicationArguments {
 		}
 	}
 
+	/**
+	 * Get an argument value interpreted as a {@code long}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * @param defaultValue
+	 *            The default value to use if the argument is not found
+	 * 
+	 * @return The value associated with the argument interpreted as a {@code long}
+	 * 
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as a {@code long}
+	 */
 	public long getArgAsLong(String argument, long defaultValue) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
@@ -140,6 +192,79 @@ public final class ApplicationArguments {
 		}
 	}
 
+	/**
+	 * Get an argument value interpreted as a {@code double}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * 
+	 * @return The value associated with the argument interpreted as a {@code double}
+	 * 
+	 * @throws IllegalStateException
+	 *             If the argument is not found
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as a {@code double}
+	 */
+	public double getArgAsDouble(String argument) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			String message = String.format("The argument %s was required but not found.", argument);
+			Log.error(message);
+			throw new IllegalStateException(message);
+		}
+
+		try {
+			return Double.parseDouble(arg);
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to parse the argument %s as a double.", argument);
+			throw new RuntimeException(ex);
+		}
+	}
+
+	/**
+	 * Get an argument value interpreted as a {@code double}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * @param defaultValue
+	 *            The default value to use if the argument is not found
+	 * 
+	 * @return The value associated with the argument interpreted as a {@code double}
+	 * 
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as a {@code double}
+	 */
+	public double getArgAsDouble(String argument, double defaultValue) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			return defaultValue;
+		}
+
+		try {
+			return Double.parseDouble(arg);
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to parse the argument %s as a double.", argument);
+			throw new RuntimeException(ex);
+		}
+	}
+
+	/**
+	 * Get an argument value interpreted as a {@code boolean}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * 
+	 * @return The value associated with the argument interpreted as a {@code boolean}
+	 * 
+	 * @throws IllegalStateException
+	 *             If the argument is not found
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as a {@code boolean}
+	 */
 	public boolean getArgAsBoolean(String argument) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
@@ -158,6 +283,19 @@ public final class ApplicationArguments {
 		}
 	}
 
+	/**
+	 * Get an argument value interpreted as a {@code boolean}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * @param defaultValue
+	 *            The default value to use if the argument is not found
+	 * 
+	 * @return The value associated with the argument interpreted as a {@code boolean}
+	 * 
+	 * @throws NumberFormatException
+	 *             If the argument is found but cannot be interpreted as a {@code boolean}
+	 */
 	public boolean getArgAsBoolean(String argument, boolean defaultValue) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
@@ -174,6 +312,17 @@ public final class ApplicationArguments {
 		}
 	}
 
+	/**
+	 * Get an argument value interpreted as a {@link String string}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * 
+	 * @return The value associated with the argument interpreted as a string
+	 * 
+	 * @throws IllegalStateException
+	 *             If the argument is not found
+	 */
 	public String getArgAsString(String argument) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
@@ -187,6 +336,16 @@ public final class ApplicationArguments {
 		return arg;
 	}
 
+	/**
+	 * Get an argument value interpreted as a {@link String string}.
+	 * 
+	 * @param argument
+	 *            The name of the argument
+	 * @param defaultValue
+	 *            The default value to use if the argument is not found
+	 * 
+	 * @return The value associated with the argument interpreted as a string
+	 */
 	public String getArgAsString(String argument, String defaultValue) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
