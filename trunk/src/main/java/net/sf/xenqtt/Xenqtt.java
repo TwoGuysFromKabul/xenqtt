@@ -81,7 +81,7 @@ public final class Xenqtt {
 
 		});
 
-		runInMode(arguments.mode, application, arguments.applicationArguments, applicationLatch);
+		runApplication(arguments.mode, application, arguments.applicationArguments, applicationLatch);
 	}
 
 	private static XenqttApplication loadXenqttApplication(Mode mode) {
@@ -100,7 +100,7 @@ public final class Xenqtt {
 		return null;
 	}
 
-	private static void runInMode(Mode mode, XenqttApplication application, ApplicationArguments applicationArguments, CountDownLatch applicationLatch) {
+	private static void runApplication(Mode mode, XenqttApplication application, ApplicationArguments applicationArguments, CountDownLatch applicationLatch) {
 		if (application == null) {
 			Log.info("The following mode is not presently supported: %s", mode.getMode());
 			return;
