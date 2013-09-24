@@ -72,6 +72,7 @@ public final class MockBroker {
 	 */
 	public void init() {
 		manager.init();
+		serverThread.setName("MockBrokerServer");
 		serverThread.start();
 		try {
 			readyLatch.await();
@@ -169,6 +170,7 @@ public final class MockBroker {
 	}
 
 	private final class ServerThread extends Thread {
+
 		@Override
 		public void run() {
 
