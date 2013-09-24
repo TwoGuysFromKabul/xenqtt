@@ -1,12 +1,13 @@
 package net.sf.xenqtt.client;
 
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.QoS;
 
 /**
  * An MQTT topic subscription
  */
 public final class Subscription {
-	// FIXME [jim] - need to add argument validation at least to all public APIs
+
 	private final String topic;
 	private final QoS qos;
 
@@ -23,8 +24,8 @@ public final class Subscription {
 	 *            received from the broker this is the granted qos.
 	 */
 	public Subscription(String topic, QoS qos) {
-		this.topic = topic;
-		this.qos = qos;
+		this.topic = XenqttUtil.validateNotEmpty("topic", topic);
+		this.qos = XenqttUtil.validateNotNull("qos", qos);
 	}
 
 	/**
