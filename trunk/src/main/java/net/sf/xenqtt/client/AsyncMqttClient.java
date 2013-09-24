@@ -2,6 +2,7 @@ package net.sf.xenqtt.client;
 
 import java.util.concurrent.Executor;
 
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
@@ -25,7 +26,11 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
 			int messageResendIntervalSeconds) {
-		super(brokerUri, listener, reconnectionStrategy, messageHandlerThreadPoolSize, messageResendIntervalSeconds);
+		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
+				XenqttUtil.validateNotNull("listener", listener), //
+				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
+				XenqttUtil.validateGreaterThan("messageHandlerThreadPoolSize", messageHandlerThreadPoolSize, 0), //
+				messageResendIntervalSeconds);
 	}
 
 	/**
@@ -45,6 +50,10 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor,
 			int messageResendIntervalSeconds) {
-		super(brokerUri, listener, reconnectionStrategy, executor, messageResendIntervalSeconds);
+		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
+				XenqttUtil.validateNotNull("listener", listener), //
+				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
+				XenqttUtil.validateNotNull("executor", executor), //
+				messageResendIntervalSeconds);
 	}
 }
