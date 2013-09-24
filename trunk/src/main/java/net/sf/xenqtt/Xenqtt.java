@@ -45,6 +45,7 @@ public final class Xenqtt {
 	 *            <ul>
 	 *            <li>proxy</li>
 	 *            <li>gateway</li>
+	 *            <li>mockbroker</li>
 	 *            <li>help</li>
 	 *            </ul>
 	 *            </td>
