@@ -15,16 +15,10 @@ import net.sf.xenqtt.message.MqttMessage;
 final class BrokerEvents {
 
 	private final List<BrokerEvent> events = Collections.synchronizedList(new LinkedList<BrokerEvent>());
-	private final boolean logEvents;
 	private final String shortStringFormat;
 	private final String longStringFormat;
 
-	/**
-	 * @param logEvents
-	 *            If true events will by printed to system.out as they occur
-	 */
-	public BrokerEvents(boolean logEvents) {
-		this.logEvents = logEvents;
+	BrokerEvents() {
 		int maxLen = 0;
 		for (BrokerEventType type : BrokerEventType.values()) {
 			int len = type.toString().length();
@@ -84,13 +78,11 @@ final class BrokerEvents {
 
 	void addEvent(BrokerEventType eventType, Client client, MqttMessage message) {
 		events.add(new BrokerEvent(eventType, client, message));
-		if (logEvents) {
-			String clientId = client == null || client.clientId == null ? "" : client.clientId;
-			if (message == null) {
-				Log.info(shortStringFormat, eventType, client.remoteAddress(), clientId);
-			} else {
-				Log.info(longStringFormat, eventType, client.remoteAddress(), clientId, message);
-			}
+		String clientId = client == null || client.clientId == null ? "" : client.clientId;
+		if (message == null) {
+			Log.info(shortStringFormat, eventType, client.remoteAddress(), clientId);
+		} else {
+			Log.info(longStringFormat, eventType, client.remoteAddress(), clientId, message);
 		}
 	}
 }
