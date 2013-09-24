@@ -22,6 +22,9 @@ public final class Xenqtt {
 		System.setProperty("xenqtt.logging.async", "true");
 	}
 
+	private static final CountDownLatch shutdownLatch = new CountDownLatch(1);
+	private static XenqttApplication application;
+
 	/**
 	 * The entry point into Xenqtt.
 	 * 
@@ -60,7 +63,7 @@ public final class Xenqtt {
 	 *            </tr>
 	 *            </table>
 	 */
-	public static void main(String... args) {
+	public static void main(String... args) throws InterruptedException {
 		Arguments arguments = ArgumentExtractor.extractArguments(args);
 		if (arguments == null) {
 			System.out.println(USAGE);
@@ -69,19 +72,23 @@ public final class Xenqtt {
 		}
 
 		Log.setLoggingLevels(arguments.determineLoggingLevels());
-		XenqttApplication application = loadXenqttApplication(arguments.mode);
+		application = loadXenqttApplication(arguments.mode);
 
-		final CountDownLatch applicationLatch = new CountDownLatch(1);
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 
 			@Override
 			public void run() {
-				applicationLatch.countDown();
+				if (application != null) {
+					application.stop();
+				}
+
+				shutdownLatch.countDown();
 			}
 
 		});
 
-		runApplication(arguments.mode, application, arguments.applicationArguments, applicationLatch);
+		runApplication(arguments.mode, arguments.applicationArguments);
+		shutdownLatch.await();
 	}
 
 	private static XenqttApplication loadXenqttApplication(Mode mode) {
@@ -100,23 +107,20 @@ public final class Xenqtt {
 		return null;
 	}
 
-	private static void runApplication(Mode mode, XenqttApplication application, ApplicationArguments applicationArguments, CountDownLatch applicationLatch) {
+	private static void runApplication(Mode mode, ApplicationArguments applicationArguments) {
 		if (mode == Mode.HELP) {
 			displayHelpInformation();
-			return;
+			System.exit(0);
 		}
 
 		if (application == null) {
 			Log.info("The following mode is not presently supported: %s", mode.getMode());
-			return;
+			System.exit(0);
 		}
 
 		try {
 			Log.info("Starting the following application: %s", application.getClass().getSimpleName());
 			application.start(applicationArguments);
-			applicationLatch.await();
-			application.stop();
-			Log.info("Application shutdown complete.");
 		} catch (Exception ex) {
 			System.err.printf("Unable to launch the application. Details: %s\n", ex.getMessage());
 			ex.printStackTrace();
