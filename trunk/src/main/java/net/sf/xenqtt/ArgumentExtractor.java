@@ -114,6 +114,14 @@ final class ArgumentExtractor {
 			throw new IllegalArgumentException(String.format("Invalid mode specified: %s", m));
 		}
 
+		/**
+		 * Determine if a particular mode string represents a valid operating {@link Mode mode}.
+		 * 
+		 * @param m
+		 *            The mode string
+		 * 
+		 * @return {@code true} if {@code m} represents a valid operating mode, {@code false} if it does not
+		 */
 		static boolean isValidMode(String m) {
 			for (Mode mode : values()) {
 				if (mode.mode.equalsIgnoreCase(m)) {
