@@ -96,6 +96,14 @@ public final class Log {
 		((AsynchronousLogger) LOGGER).setLoggingLevels(levels);
 	}
 
+	public static void setLoggingDestination(String outputFile) {
+		if (LOGGER instanceof SynchronousLogger) {
+			return;
+		}
+
+		((AsynchronousLogger) LOGGER).setLoggingDestination(outputFile);
+	}
+
 	/**
 	 * Log a message at the TRACE log level, if possible.
 	 * 
@@ -245,7 +253,7 @@ public final class Log {
 
 		protected static enum WorkType {
 
-			MESSAGE, LEVELS;
+			MESSAGE, LEVELS, DESTINATION_CHANGE;
 
 		}
 
@@ -289,6 +297,21 @@ public final class Log {
 		@Override
 		protected WorkType workType() {
 			return WorkType.LEVELS;
+		}
+
+	}
+
+	private static final class LoggingDestinationChange extends LogWork {
+
+		private final String outputFile;
+
+		private LoggingDestinationChange(String outputFile) {
+			this.outputFile = outputFile;
+		}
+
+		@Override
+		protected WorkType workType() {
+			return WorkType.DESTINATION_CHANGE;
 		}
 
 	}
@@ -387,6 +410,10 @@ public final class Log {
 			loggingManager.offerWork(new LoggingLevelsChange(levels));
 		}
 
+		private void setLoggingDestination(String outputFile) {
+			loggingManager.offerWork(new LoggingDestinationChange(outputFile));
+		}
+
 	}
 
 	private static final class LoggingManager extends Thread {
@@ -409,6 +436,11 @@ public final class Log {
 					LogWork presentWork = work.take();
 					if (presentWork instanceof LoggingLevelsChange) {
 						this.levels = ((LoggingLevelsChange) presentWork).levels;
+					} else if (presentWork instanceof LoggingDestinationChange) {
+						if (DELEGATE instanceof JavaLoggingDelegate) {
+							String outputFile = ((LoggingDestinationChange) presentWork).outputFile;
+							((JavaLoggingDelegate) DELEGATE).updateLoggingDestination(outputFile);
+						}
 					} else {
 						logMessage((LogMessage) presentWork);
 					}

@@ -18,34 +18,39 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 
 	static {
 		if (!isJavaUtilLoggingEnabled()) {
-			LogManager logManager = LogManager.getLogManager();
-			try {
-				Properties properties = new Properties();
-				properties.setProperty("handlers", "java.util.logging.FileHandler");
-				properties.setProperty(".level", "ALL"); // Actual logging levels will be controlled by the Log class.
-				properties.setProperty("java.util.logging.FileHandler.limit", "5368709120");
-				properties.setProperty("java.util.logging.FileHandler.count", "20");
-				properties.setProperty("java.util.logging.FileHandler.formatter", "net.sf.xenqtt.XenqttLogFormatter");
-				String jarDirectory = getDirectoryHostingRunningXenqttJar();
-				if (jarDirectory != null) {
-					properties.setProperty("java.util.logging.FileHandler.pattern", String.format("%s/xenqtt.log", jarDirectory));
-				} else {
-					properties.setProperty("java.util.logging.FileHandler.pattern", "%h/xenqtt.log");
-				}
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				properties.store(baos, null);
-
-				ByteArrayInputStream bain = new ByteArrayInputStream(baos.toByteArray());
-				logManager.readConfiguration(bain);
-			} catch (Exception ex) {
-				System.err.println("Unable to load the logging configuration for JUL.");
-				ex.printStackTrace();
-			}
+			initializeLogging(null);
 		}
 	}
 
 	private static boolean isJavaUtilLoggingEnabled() {
 		return System.getProperty("java.util.logging.config.file") != null || System.getProperty("java.util.logging.config.class") != null;
+	}
+
+	private static void initializeLogging(String outputFile) {
+		LogManager logManager = LogManager.getLogManager();
+		try {
+			Properties properties = new Properties();
+			properties.setProperty("handlers", "java.util.logging.FileHandler");
+			properties.setProperty(".level", "ALL"); // Actual logging levels will be controlled by the Log class.
+			properties.setProperty("java.util.logging.FileHandler.limit", "5368709120");
+			properties.setProperty("java.util.logging.FileHandler.count", "20");
+			properties.setProperty("java.util.logging.FileHandler.formatter", "net.sf.xenqtt.XenqttLogFormatter");
+			String jarDirectory = getDirectoryHostingRunningXenqttJar();
+			outputFile = outputFile != null ? outputFile : "xenqtt.log";
+			if (jarDirectory != null) {
+				properties.setProperty("java.util.logging.FileHandler.pattern", String.format("%s/%s", jarDirectory, outputFile));
+			} else {
+				properties.setProperty("java.util.logging.FileHandler.pattern", "%h/" + outputFile);
+			}
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			properties.store(baos, null);
+
+			ByteArrayInputStream bain = new ByteArrayInputStream(baos.toByteArray());
+			logManager.readConfiguration(bain);
+		} catch (Exception ex) {
+			System.err.println("Unable to load the logging configuration for JUL.");
+			ex.printStackTrace();
+		}
 	}
 
 	private static String getDirectoryHostingRunningXenqttJar() {
@@ -168,6 +173,12 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 	@Override
 	public void fatal(Throwable t, String message, Object... parameters) {
 		log.log(Level.SEVERE, String.format(message, parameters), t);
+	}
+
+	void updateLoggingDestination(String outputFile) {
+		if (outputFile != null) {
+			initializeLogging(outputFile);
+		}
 	}
 
 }

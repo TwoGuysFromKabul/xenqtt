@@ -73,6 +73,8 @@ public final class Xenqtt {
 		}
 
 		Log.setLoggingLevels(arguments.determineLoggingLevels());
+		String outputFile = String.format("xenqtt-%s.log", arguments.mode.getMode().toLowerCase());
+		Log.setLoggingDestination(outputFile);
 		application = loadXenqttApplication(arguments.mode);
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
