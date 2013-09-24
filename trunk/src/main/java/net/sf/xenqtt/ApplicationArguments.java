@@ -106,6 +106,98 @@ public final class ApplicationArguments {
 		}
 	}
 
+	public long getArgAsLong(String argument) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			String message = String.format("The argument %s was required but not found.", argument);
+			Log.error(message);
+			throw new IllegalStateException(message);
+		}
+
+		try {
+			return Long.parseLong(arg);
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to parse the argument %s as a long.", argument);
+			throw new RuntimeException(ex);
+		}
+	}
+
+	public long getArgAsLong(String argument, long defaultValue) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			return defaultValue;
+		}
+
+		try {
+			return Long.parseLong(arg);
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to parse the argument %s as a long.", argument);
+			throw new RuntimeException(ex);
+		}
+	}
+
+	public boolean getArgAsBoolean(String argument) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			String message = String.format("The argument %s was required but not found.", argument);
+			Log.error(message);
+			throw new IllegalStateException(message);
+		}
+
+		try {
+			return Boolean.parseBoolean(arg);
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to parse the argument %s as a boolean.", argument);
+			throw new RuntimeException(ex);
+		}
+	}
+
+	public boolean getArgAsBoolean(String argument, boolean defaultValue) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			return defaultValue;
+		}
+
+		try {
+			return Boolean.parseBoolean(arg);
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to parse the argument %s as a boolean.", argument);
+			throw new RuntimeException(ex);
+		}
+	}
+
+	public String getArgAsString(String argument) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			String message = String.format("The argument %s was required but not found.", argument);
+			Log.error(message);
+			throw new IllegalStateException(message);
+		}
+
+		return arg;
+	}
+
+	public String getArgAsString(String argument, String defaultValue) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			return defaultValue;
+		}
+
+		return arg;
+	}
+
 	private String format(String argOrFlag) {
 		if (!argOrFlag.startsWith("-")) {
 			return String.format("-%s", argOrFlag);
