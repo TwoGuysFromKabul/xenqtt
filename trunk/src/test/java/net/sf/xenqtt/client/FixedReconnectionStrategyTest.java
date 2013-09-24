@@ -8,6 +8,16 @@ public class FixedReconnectionStrategyTest {
 
 	FixedReconnectionStrategy strategy = new FixedReconnectionStrategy(7000, 3);
 
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_ReconnectMillisZero() {
+		new FixedReconnectionStrategy(0, 1);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_ReconnectAttemptsLessThanZero() {
+		new FixedReconnectionStrategy(7000, -1);
+	}
+
 	@Test
 	public void testConnectionLost() {
 		assertEquals(7000, strategy.connectionLost(null, null));

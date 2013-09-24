@@ -2,6 +2,8 @@ package net.sf.xenqtt.client;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import net.sf.xenqtt.XenqttUtil;
+
 /**
  * <p>
  * A {@link ReconnectStrategy} implementation that attempts to reconnect a fixed intervals up to a maximum number of reconnection attempts.
@@ -26,8 +28,8 @@ public final class FixedReconnectionStrategy implements ReconnectionStrategy {
 	 *            The maximum number of times to attempt a reconnect before no further attempts will be made
 	 */
 	FixedReconnectionStrategy(long reconnectDelayMillis, int maxReconnectAttempts) {
-		this.reconnectDelayMillis = reconnectDelayMillis;
-		this.maxReconnectAttempts = maxReconnectAttempts;
+		this.reconnectDelayMillis = (Long) XenqttUtil.validateGreaterThan("reconnectDelayMillis", reconnectDelayMillis, 0);
+		this.maxReconnectAttempts = XenqttUtil.validateGreaterThanOrEqualTo("maxReconnectAttempts", maxReconnectAttempts, 0);
 		currentReconnectAttempts = new AtomicInteger();
 	}
 
