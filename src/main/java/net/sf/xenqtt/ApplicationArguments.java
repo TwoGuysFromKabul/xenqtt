@@ -35,7 +35,15 @@ public final class ApplicationArguments {
 		return flags;
 	}
 
-	public boolean wasFlagSpecified(String flag) {
+	/**
+	 * Determine if a particular flag was specified.
+	 * 
+	 * @param flag
+	 *            The flag to check for
+	 * 
+	 * @return {@code true} if the specified {@code flag} was found in the flags that were given by the user, {@code false} if it was not
+	 */
+	public boolean isFlagSpecified(String flag) {
 		XenqttUtil.validateNotEmpty("flag", flag);
 
 		flag = format(flag);
@@ -49,6 +57,11 @@ public final class ApplicationArguments {
 		return false;
 	}
 
+	/**
+	 * Determine if each of the flags that was specified by the user was interrogated by the application.
+	 * 
+	 * @return {@code true} if each user-specified flag was interrogated, {@code false} if at least one was not
+	 */
 	public boolean wereAllFlagsInterrogated() {
 		for (Flag flag : flags) {
 			if (!flag.interrogated) {
@@ -59,16 +72,34 @@ public final class ApplicationArguments {
 		return true;
 	}
 
-	public Integer getArgumentAsInteger(String argument) {
+	public int getArgAsInt(String argument) {
 		XenqttUtil.validateNotEmpty("argument", argument);
 
 		String arg = arguments.get(format(argument));
 		if (arg == null) {
-			return null;
+			String message = String.format("The argument %s was required but not found.", argument);
+			Log.error(message);
+			throw new IllegalStateException(message);
 		}
 
 		try {
-			return Integer.valueOf(arg);
+			return Integer.parseInt(arg);
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to parse the argument %s as an integer.", argument);
+			throw new RuntimeException(ex);
+		}
+	}
+
+	public int getArgAsInt(String argument, int defaultValue) {
+		XenqttUtil.validateNotEmpty("argument", argument);
+
+		String arg = arguments.get(format(argument));
+		if (arg == null) {
+			return defaultValue;
+		}
+
+		try {
+			return Integer.parseInt(arg);
 		} catch (Exception ex) {
 			Log.error(ex, "Unable to parse the argument %s as an integer.", argument);
 			throw new RuntimeException(ex);
