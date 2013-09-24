@@ -2,13 +2,11 @@ package net.sf.xenqtt.mockbroker;
 
 import static net.sf.xenqtt.mockbroker.BrokerEventType.*;
 
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
@@ -31,11 +29,9 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 final class BrokerMessageHandler implements MessageHandler {
 
-	private static final Charset ASCII = Charset.forName("ASCII");
-
-	private final Map<String, Topic> topicByName = new HashMap<String, Topic>();
-	private final Map<String, Client> clientById = new HashMap<String, Client>();
 	private final Map<MqttChannel, Client> clientByChannel = new IdentityHashMap<MqttChannel, Client>();
+	private final Map<String, Client> clientById = new HashMap<String, Client>();
+	private final TopicManager topicManager = new TopicManager(clientById);
 
 	private final MockBrokerHandler brokerHandler;
 	private final BrokerEvents events;
@@ -83,18 +79,9 @@ final class BrokerMessageHandler implements MessageHandler {
 			returnCode = ConnectReturnCode.UNACCEPTABLE_PROTOCOL_VERSION;
 		}
 
-		if (message.isWillMessageFlag()) {
-			Topic topic = getTopic(message.getWillTopic());
-			String willMessage = message.getWillMessage();
-			byte[] payload = willMessage == null ? null : willMessage.getBytes(ASCII);
-			PubMessage msg = new PubMessage(message.getWillQoS(), message.isWillRetain(), message.getWillTopic(), 0, payload);
-			topic.publish(msg, clientById);
-		}
+		topicManager.connected(client, message);
 
 		client.send(new ConnAckMessage(returnCode));
-		for (Topic topic : topicByName.values()) {
-			topic.connected(client);
-		}
 	}
 
 	/**
@@ -120,8 +107,7 @@ final class BrokerMessageHandler implements MessageHandler {
 			return;
 		}
 
-		Topic topic = getTopic(message.getTopicName());
-		topic.publish(message, clientById);
+		topicManager.publish(message);
 
 		if (message.getQoSLevel() > 0) {
 			client.send(new PubAckMessage(message.getMessageId()));
@@ -141,12 +127,7 @@ final class BrokerMessageHandler implements MessageHandler {
 			return;
 		}
 
-		int messageId = message.getMessageId();
-		for (Topic topic : topicByName.values()) {
-			if (topic.pubAcked(client, messageId)) {
-				return;
-			}
-		}
+		topicManager.pubAcked(client, message);
 	}
 
 	/**
@@ -209,15 +190,7 @@ final class BrokerMessageHandler implements MessageHandler {
 			return;
 		}
 
-		String[] topics = message.getTopics();
-		QoS[] requestedQoses = message.getRequestedQoSes();
-		QoS[] grantedQoses = new QoS[requestedQoses.length];
-
-		for (int i = 0; i < topics.length; i++) {
-			Topic topic = getTopic(topics[i]);
-			Subscription subscription = getSubscription(client.clientId, topics[i]);
-			grantedQoses[i] = topic.subscribe(requestedQoses[i], client, subscription);
-		}
+		QoS[] grantedQoses = topicManager.subscribe(client, message);
 
 		client.send(new SubAckMessage(message.getMessageId(), grantedQoses));
 	}
@@ -247,12 +220,7 @@ final class BrokerMessageHandler implements MessageHandler {
 			return;
 		}
 
-		for (String topicName : message.getTopics()) {
-			Topic topic = topicByName.get(topicName);
-			if (topic != null) {
-				topic.unsubscribe(client);
-			}
-		}
+		topicManager.unsubscribe(client, message);
 
 		client.send(new UnsubAckMessage(message.getMessageId()));
 	}
@@ -304,50 +272,12 @@ final class BrokerMessageHandler implements MessageHandler {
 		events.addEvent(CHANNEL_CLOSED, client);
 		clientById.remove(client.clientId);
 
-		if (client.cleanSession) {
-			for (Topic topic : topicByName.values()) {
-				topic.unsubscribe(client);
-			}
-		}
+		topicManager.clientClosed(client);
 
 		brokerHandler.channelClosed(client, cause);
 	}
 
 	private Client getClient(MqttChannel channel) {
 		return clientByChannel.get(channel);
-	}
-
-	private Topic getTopic(String topicName) {
-
-		Topic topic = topicByName.get(topicName);
-		if (topic == null) {
-			topic = new Topic(topicName);
-			topicByName.put(topicName, topic);
-		}
-
-		return topic;
-	}
-
-	/**
-	 * If there is a subscription existing in another topic that matches the specified topic (including wildcard matching) it is returned. Otherwise a new
-	 * subscription is created.
-	 */
-	private Subscription getSubscription(String clientId, String topicName) {
-
-		Subscription subscription = null;
-
-		if (topicName.charAt(0) == '/') {
-			topicName += "r";
-		}
-		// FIXME [jim] - need to validate topic names - no + or # expect as appropriate wildcards, no //, etc
-		String[] topicLevels = XenqttUtil.quickSplit(topicName, '/');
-		for (Topic topic : topicByName.values()) {
-			if (topic.nameMatches(topicLevels)) {
-				subscription = topic.getSubscription(clientId);
-				break;
-			}
-		}
-
-		return subscription != null ? subscription : new Subscription(clientId);
 	}
 }

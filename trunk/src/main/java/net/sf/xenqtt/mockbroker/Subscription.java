@@ -10,25 +10,23 @@ import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
-import net.sf.xenqtt.message.SubscribeMessage;
 
 /**
- * A {@link Client client's} subscription to a {@link Topic topic}
+ * A {@link Client client's} subscription to a set of {@link StandardTopic topics}
  */
 final class Subscription {
 
 	private final List<TopicSubscription> topicSubscriptions = new LinkedList<TopicSubscription>();
 
+	private final Queue<PubMessage> messageQueue = new LinkedList<PubMessage>();
 	private final String clientId;
-	QoS subscribedQos = QoS.AT_MOST_ONCE;
-	private final Queue<PubMessage> messageQueue;
+	private QoS subscribedQos = QoS.AT_MOST_ONCE;
 
 	/**
 	 * Creates a subscription to a topic
 	 */
 	Subscription(String clientId) {
 		this.clientId = clientId;
-		this.messageQueue = new LinkedList<PubMessage>();
 	}
 
 	/**
@@ -60,7 +58,12 @@ final class Subscription {
 	}
 
 	/**
-	 * Called when a {@link PubMessage} is received
+	 * Published the specified message to this subscription
+	 * 
+	 * @param message
+	 *            The message to publish
+	 * @param clientById
+	 *            Map of currently connected clients by ID. If the client this subscription is for then the message is sent to the client immediately
 	 */
 	void publish(PubMessage message, Map<String, Client> clientById) {
 
@@ -74,46 +77,44 @@ final class Subscription {
 		}
 	}
 
-	private void send(Client client, PubMessage message) {
-
-		if (subscribedQos.value() < message.getQoSLevel()) {
-			if (subscribedQos.value() > 0) {
-				message.setMessageId(client.getNextMessageId());
-			}
-			message = new PubMessage(subscribedQos, message.isRetain(), message.getTopicName(), message.getMessageId(), message.getPayload());
-		} else if (message.getQoSLevel() > 0) {
-			message.setMessageId(client.getNextMessageId());
-		}
-
-		client.send(message);
-	}
-
 	/**
-	 * Called when a {@link SubscribeMessage} is received. Adds/updates the specified topic's association with this subscription.
+	 * Adds/updates the specified topic's association with this subscription. If the topic is already associated with the same qos this method does nothing. If
+	 * the topic is already associated but with a different qos this method {@link #unsubscribe(String) unsubscribes} the original subscription then adds this
+	 * subscription as a new one.
 	 * 
 	 * @param topicName
 	 *            Name of the topic to associate with this subscription
 	 * @param qos
 	 *            The qos level subscribed by this topic
+	 * 
 	 * @return True if the subscription was added. False if it already existed even if the qos was updated
 	 */
 	public boolean subscribe(String topicName, QoS qos) {
 
-		boolean found = unsubscribe(topicName);
+		for (TopicSubscription topicSubscription : topicSubscriptions) {
+			if (topicSubscription.topicName.equals(topicName)) {
+				if (topicSubscription.topicQos == qos) {
+					return false;
+				}
+			}
+		}
+
+		int oldSize = topicSubscriptions.size();
+		int newSize = unsubscribe(topicName);
 
 		TopicSubscription topicSubscription = new TopicSubscription(topicName, qos);
 		topicSubscriptions.add(0, topicSubscription);
 		subscribedQos = qos;
 
-		return !found;
+		return newSize == oldSize;
 	}
 
 	/**
 	 * Removes the specified topic's association with this subscription
 	 * 
-	 * @return True if the topic was removed. False if was not associated with this subscription
+	 * @return Number of topics still subscribed
 	 */
-	public boolean unsubscribe(String topicName) {
+	public int unsubscribe(String topicName) {
 
 		Iterator<TopicSubscription> iter = topicSubscriptions.iterator();
 		int i = 0;
@@ -129,11 +130,25 @@ final class Subscription {
 						subscribedQos = QoS.AT_MOST_ONCE;
 					}
 				}
-				return true;
+				return topicSubscriptions.size();
 			}
 		}
 
-		return false;
+		return topicSubscriptions.size();
+	}
+
+	private void send(Client client, PubMessage message) {
+
+		if (subscribedQos.value() < message.getQoSLevel()) {
+			if (subscribedQos.value() > 0) {
+				message.setMessageId(client.getNextMessageId());
+			}
+			message = new PubMessage(subscribedQos, message.isRetain(), message.getTopicName(), message.getMessageId(), message.getPayload());
+		} else if (message.getQoSLevel() > 0) {
+			message.setMessageId(client.getNextMessageId());
+		}
+
+		client.send(message);
 	}
 
 	private static class TopicSubscription {
