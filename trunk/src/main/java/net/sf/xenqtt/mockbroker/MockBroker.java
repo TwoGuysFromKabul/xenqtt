@@ -30,7 +30,7 @@ public final class MockBroker {
 	private final CountDownLatch readyLatch = new CountDownLatch(1);
 	private final ChannelManager manager;
 	private final ServerSocketChannel server;
-	private final Thread serverThread = new ServerThread();;
+	private final Thread serverThread = new ServerThread();
 	private final MessageHandler messageHandler;
 
 	private volatile Exception ioException;
@@ -109,11 +109,10 @@ public final class MockBroker {
 	}
 
 	/**
-	 * Adds the specified credentials for authentication by {@link ConnectMessage}s. If userName is null any existing credentials for that user are removed. If
-	 * userName is not null the password may not be null.
+	 * Adds the specified credentials for authentication by {@link ConnectMessage}s. If password is null any existing credentials for the user are removed.
 	 */
 	public void addCredentials(String userName, String password) {
-		if (userName == null) {
+		if (password == null) {
 			credentials.remove(userName);
 		} else {
 			credentials.put(userName, password);
