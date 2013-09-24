@@ -1,7 +1,9 @@
 package net.sf.xenqtt;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -54,7 +56,54 @@ final class ArgumentExtractor {
 			return null;
 		}
 
-		return new Arguments(globalOptions, mode, modeArguments.toArray(new String[0]));
+		ApplicationArguments applicationArguments = getApplicationArguments(modeArguments);
+
+		return new Arguments(globalOptions, mode, applicationArguments);
+	}
+
+	private static ApplicationArguments getApplicationArguments(List<String> modeArguments) {
+		if (modeArguments.isEmpty()) {
+			return null;
+		}
+
+		List<String> flags = new ArrayList<String>();
+		Map<String, String> arguments = new HashMap<String, String>();
+		char previousFlagOrArg = '\u0000';
+		for (String modeArgument : modeArguments) {
+			if (modeArgument.startsWith("-")) {
+				if (modeArgument.length() < 2) {
+					throw new IllegalArgumentException("You cannot specify a flag or an argument identifier that just has the -");
+				}
+
+				if (previousFlagOrArg != '\u0000') {
+					flags.add(String.format("-%c", previousFlagOrArg));
+				}
+				previousFlagOrArg = parseFlags(modeArgument, flags);
+			} else {
+				if (previousFlagOrArg == '\u0000') {
+					throw new IllegalArgumentException(String.format("Cannot specify an argument value without an argument. Value: %s", modeArgument));
+				}
+
+				arguments.put(String.format("-%c", previousFlagOrArg), modeArgument);
+				previousFlagOrArg = '\u0000';
+			}
+		}
+
+		if (previousFlagOrArg != '\u0000') {
+			flags.add(String.format("-%c", previousFlagOrArg));
+		}
+
+		return new ApplicationArguments(flags, arguments);
+	}
+
+	private static char parseFlags(String modeArgument, List<String> flags) {
+		char previous = modeArgument.charAt(1);
+		for (int i = 2; i < modeArgument.length(); i++) {
+			flags.add(String.format("-%c", previous));
+			previous = modeArgument.charAt(i);
+		}
+
+		return previous;
 	}
 
 	/**
@@ -151,20 +200,21 @@ final class ArgumentExtractor {
 		final Mode mode;
 
 		/**
-		 * The arguments to pass into the mode in the order they should be passed. These arguments are optional and can be {@code null}.
+		 * The {@link ApplicationArguments arguments} to pass into the application. These arguments are optional and can be {@code null}.
 		 */
-		final String[] modeArguments;
+		final ApplicationArguments applicationArguments;
 
 		/**
 		 * Create a new instance of this class.
 		 * 
 		 * @param mode
 		 *            The mode to run Xenqtt in. This is required and cannot be empty or {@code null}
-		 * @param modeArguments
-		 *            The arguments to pass to the application being started as specified by the {@code mode} given. These are optional and may be {@code null}
+		 * @param applicationArguments
+		 *            The {@link ApplicationArguments arguments} to pass to the application being started as specified by the {@code mode} given. These are
+		 *            optional and may be {@code null}
 		 */
-		Arguments(String mode, String[] modeArguments) {
-			this(null, mode, modeArguments);
+		Arguments(String mode, ApplicationArguments applicationArguments) {
+			this(null, mode, applicationArguments);
 		}
 
 		/**
@@ -186,17 +236,18 @@ final class ArgumentExtractor {
 		 *            The global options to use system-wide. These are optional and may be {@code null}
 		 * @param mode
 		 *            The mode to run Xenqtt in. This is required and cannot be empty or {@code null}
-		 * @param modeArguments
-		 *            The arguments to pass to the application being started as specified by the {@code mode} given. These are optional and may be {@code null}
+		 * @param applicationArguments
+		 *            The {@link ApplicationArguments arguments} to pass to the application being started as specified by the {@code mode} given. These are
+		 *            optional and may be {@code null}
 		 */
-		Arguments(List<String> globalOptions, String mode, String[] modeArguments) {
+		Arguments(List<String> globalOptions, String mode, ApplicationArguments applicationArguments) {
 			if (mode == null || mode.trim().equals("")) {
 				throw new IllegalArgumentException("The mode cannot be empty or null.");
 			}
 
 			this.globalOptions = globalOptions;
 			this.mode = Mode.lookup(mode);
-			this.modeArguments = modeArguments;
+			this.applicationArguments = applicationArguments;
 		}
 
 		/**
