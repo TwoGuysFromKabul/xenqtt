@@ -157,6 +157,15 @@ final class Subscription {
 		return topicSubscriptions.size();
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Subscription [clientId=" + clientId + ", subscribedQos=" + subscribedQos + ", topicSubscriptions=" + topicSubscriptions
+				+ ", queuedMessageCount=" + messageQueue.size() + "]";
+	}
+
 	private void send(Client client, PubMessage message) {
 
 		if (subscribedQos.value() < message.getQoSLevel()) {
@@ -179,6 +188,14 @@ final class Subscription {
 		public TopicSubscription(String topicName, QoS topicQos) {
 			this.topicName = topicName;
 			this.topicQos = topicQos;
+		}
+
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "[topicName=" + topicName + ", topicQos=" + topicQos + "]";
 		}
 	}
 }
