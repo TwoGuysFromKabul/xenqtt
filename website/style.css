@@ -1,0 +1,291 @@
+/*
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 3.0 License
+
+Name       : Singular
+Description: A two-column, fixed-width design with a neutral color scheme.
+Version    : 1.0
+Released   : 20121119
+*/
+
+* {
+	padding: 0;
+	margin: 0;
+}
+
+a {
+	color: #FF3867;
+	text-decoration: underline;
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+body {
+	font-size: 11.5pt;
+	line-height: 2em;
+	color: #353B3A;
+	background: #D5ECE7 url(images/bg.png);
+	letter-spacing: 0.025em;
+}
+
+body,input {
+	font-family: Georgia, serif;
+}
+
+p {
+	text-align: justify;
+}
+
+br.clearfix {
+	clear: both;
+}
+
+strong {
+	color: #455350;
+}
+
+h1,h2,h3,h4 {
+	letter-spacing: -1px;
+	text-transform: uppercase;
+	letter-spacing: 0.25em;
+	font-family: Arial, sans-serif;
+}
+
+h2 {
+	font-size: 1.75em;
+}
+
+h2,h3,h4 {
+	margin-bottom: 1.5em;
+	color: #455350;
+}
+
+h3 {
+	font-size: 1.25em;
+}
+
+h4 {
+	font-size: 1em;
+}
+
+img.alignleft {
+	margin: 5px 30px 30px 0;
+	float: left;
+}
+
+img.aligntop {
+	margin: 5px 0 20px 0;
+}
+
+p {
+	margin-bottom: 1.5em;
+}
+
+ul {
+	margin-bottom: 1.5em;
+}
+
+ul h4 {
+	margin-bottom: 0.35em;
+}
+
+.post {
+	overflow: hidden;
+	border-bottom: dashed 2px #d7dfdf;
+	margin-bottom: 40px;
+	padding-bottom: 20px;
+}
+
+.post-last {
+	border-bottom: 0;
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+
+#content {
+	padding: 55px 35px 45px 35px;
+	width: 910px;
+	background: #FFF;
+	color: #595959;
+	box-shadow: 0px 5px 0px 0px rgba(0,0,0,0.1);
+}
+
+#header {
+	position: relative;
+	background: #9DB3A4;
+	width: 910px;
+	color: #000;
+	padding: 35px;
+	height: 105px;
+	box-shadow: 0px 5px 0px 0px rgba(0,0,0,0.15);
+}
+
+#footer {
+	text-align: center;
+	padding: 20px 0 80px 0;
+	text-transform: uppercase;
+	letter-spacing: 0.5em;
+	font-size: 0.75em;
+	font-family: Arial, sans-serif;
+	color: #95ADA7;
+}
+
+#footer a {
+	color: #95ADA7;
+}
+
+#logo {
+	line-height: 129px;
+	top: 0;
+	left: 35px;
+	height: 129px;
+	position: absolute;
+}
+
+#logo a {
+	color: #fff;
+	text-decoration: none;
+	text-shadow: 3px 3px 0px rgba(0,0,0,0.075);
+	text-transform: uppercase;
+	letter-spacing: 0.25em;
+}
+
+#logo h1 {
+	font-size: 3em;
+}
+
+#menu {
+	padding: 0 30px 0 25px;
+	height: 46px;
+	width: 925px;
+	position: absolute;
+	background: #5C8068;
+	margin: 35px 0 0 0;
+	line-height: 46px;
+	bottom: 0;
+	left: 0;
+	font-family: Arial, sans-serif;
+}
+
+#menu a {
+	font-size: 1.25em;
+	letter-spacing: -1px;
+	text-decoration: none;
+	text-decoration: none;
+	text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+	text-transform: uppercase;
+	color: #fff;
+	letter-spacing: 0.25em;
+	padding: 5px 5px 5px 10px;
+	transition: background-color .25s ease-in-out;
+	-moz-transition: background-color .25s ease-in-out;
+	-webkit-transition: background-color .25s ease-in-out;
+}
+
+#menu a:hover {
+	background: rgba(0,0,0,0.1);
+}
+
+#menu ul {
+	list-style: none;
+}
+
+#menu ul li {
+	display: inline;
+	padding: 0 10px 0 10px;
+}
+
+#menu ul li.first {
+	padding-left: 0;
+}
+
+#page {
+	position: relative;
+	margin: 20px 0 20px 0;
+	padding: 0;
+	width: 980px;
+}
+
+#page .section-list {
+	list-style: none;
+	padding-left: 0;
+}
+
+#page .section-list li {
+	clear: both;
+	padding: 20px 0 20px 0;
+}
+
+#page ul {
+	list-style: none;
+}
+
+#page ul li {
+	padding: 10px 0 10px 0;
+	border-top: dotted 1px #c7cfcf;
+}
+
+#page ul li.first {
+	border-top: 0;
+	padding-top: 0;
+}
+
+#search input.form-submit {
+	background: #FF3867;
+	margin-left: 1em;
+	border: 0;
+	color: #000;
+	padding: 5px;
+}
+
+#search input.form-text {
+	padding: 5px;
+	border: solid 1px #C5917E;
+}
+
+#splash {
+	width: 930px;
+	position: relative;
+	padding: 25px;
+	background: #FFF;
+	margin: 25px 0 25px 0;
+	height: 230px;
+	box-shadow: 0px 5px 0px 0px rgba(0,0,0,0.1);
+}
+
+#wrapper {
+	margin: 35px auto 0 auto;
+	width: 980px;
+	position: relative;
+}
+
+.table {
+	border: 1px solid #c7cfcf;
+	width: 700px;
+	margin-bottom: 1em;
+}
+
+.tableHeader {
+	border-right: 1px solid #c7cfcf;
+	padding: 0.2em;
+	font-weight: bold;
+}
+
+.tableHeader-last {
+	padding: 0.2em;
+	font-weight: bold;
+}
+
+.tableData {
+	border-top: 1px solid #c7cfcf;
+	border-right: 1px solid #c7cfcf;
+	padding: 0.2em;
+}
+
+.tableData-last {
+	border-top: 1px solid #c7cfcf;
+	padding: 0.2em;
+}
