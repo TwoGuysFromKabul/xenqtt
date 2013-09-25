@@ -68,7 +68,7 @@ final class WildcardTopic extends AbstractTopic {
 		QoS qos = qosByClientId.remove(client.clientId);
 		if (qos != null) {
 			for (StandardTopic standardTopic : standardTopics) {
-				standardTopic.unsubscribe(client);
+				standardTopic.unsubscribe(this, client);
 			}
 		}
 	}
