@@ -5,5 +5,5 @@ if [ -z "$USER" ]; then
 fi
 
 echo Deploying web site...
-scp -r website/htdocs $USER@web.sf.net:/home/project-web/xenqtt
+rsync -avP -e ssh --delete --exclude=.svn --exclude=apidocs website/htdocs $USER,xenqtt@web.sf.net:/home/project-web/xenqtt
 echo

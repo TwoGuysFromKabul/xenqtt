@@ -16,7 +16,8 @@ mkdir target/deploy-jars
 JARDIR=target/deploy-jars/$VERSION
 mkdir $JARDIR
 cp target/xenqtt-$VERSION*.jar $JARDIR
-scp -r $JARDIR $USER@frs.sf.net:/home/frs/project/xenqtt
+cp README.txt $JARDIR
+rsync -avP -e ssh  --delete-excluded --exclude=.svn $JARDIR $USER,xenqtt@frs.sf.net:/home/frs/project/xenqtt
 echo
 
 echo Deploying javadoc...
@@ -25,5 +26,5 @@ mkdir target/deploy-docs
 DOCDIR=target/deploy-docs/$VERSION
 mkdir $DOCDIR
 cp -a target/site/apidocs/* $DOCDIR
-scp -r $DOCDIR $USER@web.sf.net:/home/project-web/xenqtt/htdocs/apidocs
+rsync -avP -e ssh  --delete-excluded --exclude=.svn $DOCDIR $USER,xenqtt@web.sf.net:/home/project-web/xenqtt/htdocs/apidocs
 echo
