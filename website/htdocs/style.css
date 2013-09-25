@@ -289,3 +289,17 @@ ul h4 {
 	border-top: 1px solid #c7cfcf;
 	padding: 0.2em;
 }
+
+.code {
+	font-size: 10pt;
+	line-height: normal;
+	background-color: #f7f7f7;
+	overflow-x: scroll;
+	margin-bottom: 0.5em;
+}
+
+.code-header {
+	margin-bottom: 0.5em;
+	font-weight: bold;
+	font-size: 10pt;
+}
