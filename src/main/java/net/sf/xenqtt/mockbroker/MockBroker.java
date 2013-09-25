@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.Log;
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ChannelManagerImpl;
 import net.sf.xenqtt.message.ConnectMessage;
@@ -45,7 +46,7 @@ public final class MockBroker {
 
 	/**
 	 * @param brokerHandler
-	 *            Called when events happen. Can be null if you don't need to do any custom message handling.
+	 *            Called when events happen. Can be {@code null} if you don't need to do any custom message handling.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends.
 	 * @param port
@@ -55,10 +56,12 @@ public final class MockBroker {
 	 *            If true then {@link ConnectMessage} with no username/password will be accepted. Otherwise only valid credentials will be accepted.
 	 */
 	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess) {
+		XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0);
+
 		this.events = new BrokerEvents();
 		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess);
 		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds);
-		this.port = port;
+		this.port = XenqttUtil.validateInRange("port", port, 0, 65535);
 
 		try {
 			server = ServerSocketChannel.open();
@@ -93,6 +96,7 @@ public final class MockBroker {
 	 * @return true if shutdown is successful, otherwise false.
 	 */
 	public boolean shutdown(long millis) {
+		XenqttUtil.validateGreaterThanOrEqualTo("millis", millis, 0);
 
 		try {
 			server.close();
@@ -108,12 +112,15 @@ public final class MockBroker {
 	}
 
 	/**
-	 * Adds the specified credentials for authentication by {@link ConnectMessage}s. If password is null any existing credentials for the user are removed.
+	 * Adds the specified credentials for authentication by {@link ConnectMessage}s. If password is {@code null} any existing credentials for the user are
+	 * removed.
 	 */
 	public void addCredentials(String userName, String password) {
 		if (password == null) {
 			credentials.remove(userName);
 		} else {
+			XenqttUtil.validateNotNull("userName", userName);
+
 			credentials.put(userName, password);
 		}
 	}
@@ -150,6 +157,8 @@ public final class MockBroker {
 	 * Removes the specified broker events.
 	 */
 	public void removeEvents(Collection<BrokerEvent> eventsToRemove) {
+		XenqttUtil.validateNotNull("eventsToRemove", eventsToRemove);
+
 		events.removeEvents(eventsToRemove);
 	}
 
