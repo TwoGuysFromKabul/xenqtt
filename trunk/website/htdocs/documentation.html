@@ -15,9 +15,11 @@ Released   : 20121119
 		<meta name="description" content="" />
 		<meta name="keywords" content="" />
 		<title>Xenqtt - A Simple and Innovative Tookit for MQTT Integration</title>
+		<link href="resources/prettify.css" type="text/css" rel="stylesheet" />
+		<script type="text/javascript" src="resources/prettify.js"></script>
 		<link rel="stylesheet" type="text/css" href="style.css" />
 	</head>
-	<body>
+	<body onload="prettyPrint()">
 		<div id="wrapper">
 			<div id="header">
 				<div id="logo">
@@ -36,9 +38,161 @@ Released   : 20121119
 			</div>
 			<div id="page">
 				<div id="content">
-					<div class="post post-last">
+					<div class="post">
 						<h2>Documentation</h2>
+						<p>
+						This page provides documentation related to the Xenqtt project. On this page you will find:
+						</p>
+						<ul class="list">
+						<li class="first">Links to the API documentation (JavaDoc)</li>
+						<li>Code samples demonstrating how to use Xenqtt</li>
+						<li>Frequently asked questions</li>
+						<li class="last">Links to resources related to MQTT</li>
+						</ul>
+					</div>
+					<div class="post">
+						<h3>API Documentation</h3>
 						<a href="apidocs/">JavaDoc</a>
+					</div>
+					<div class="post">
+						<h3>Using Xenqtt - Code Samples and Examples</h3>
+						<p>
+						In this section you will find examples and code samples showing how to use Xenqtt. This section is divided into examples for the client,
+						the proxy, the gateway, and the mock broker.
+						</p>
+						<h4>Client</h4>
+						<strong>Overview</strong>
+						<p>
+						Xenqtt provides two distinct MQTT clients for interfacing with MQTT brokers. One is a synchronous client where all operations to the
+						broker (connect, publish, subscribe, etc.) are blocking. The other is an asynchronous client where operations to the broker are
+						non-blocking. Interaction with broker events in the asynchronous client are handled via callbacks in a specific interface that the
+						user must implement.
+						</p>
+						<p>
+						The following sections show how to use both the synchronous and asynchronous clients. You are taken through a subscriber and publisher
+						model where the subscriber attempts to build up a musical catalog of classic rock with a paired publisher that is only too happy to
+						provide.
+						</p>
+						<strong>Synchronous Client Example</strong>
+						<p class="code-header">Synchronous Subscriber</p>
+						<pre class="prettyprint code">
+final Log log = Logger.getLogger("musicLover");
+final List<String> catalog = new ArrayList<String>();
+final CountDownLatch catalogLatch = new CountDownLatch(7);
+MqttClientListener listener = new MqttClientListener() {
+
+	@Override
+	public void publishReceived(MqttClient client, PublishMessage message) {
+		catalog.add(message.getPayloadString());
+		message.ack();
+		catalogLatch.countDown();
+	}
+
+	@Override
+	public void disconnected(MqttClient client, Throwable cause, boolean reconnecting) {
+		if (cause != null) {
+			log.error(cause, "Disconnected from the broker due to an exception.");
+		} else {
+			log.info("Disconnecting from the broker.");
+		}
+
+		if (reconnecting) {
+			log.info("Attempting to reconnect to the broker.");
+		}
+	}
+
+};
+
+// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
+SynchronousMqttClient client = new SynchronousMqttClient("tcp://mqtt.broker:1883", listener, new FixedReconnectionStrategy(5000, 3), 5, 90, 15, 5);
+
+// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
+ConnectReturnCode returnCode = client.connect("musicLover", true, 15);
+if (returnCode != ConnectReturnCode.ACCEPTED) {
+	log.error("Unable to connect to the MQTT broker. Reason: " + returnCode);
+	return;
+}
+
+// Create your subscriptions. In this case we want to build up a catalog of classic rock.
+List<Subscription> subscriptions = new ArrayList<Subscription>();
+subscriptions.add(new Subscription("grand/funk/railroad", QoS.AT_MOST_ONCE));
+subscriptions.add(new Subscription("jefferson/airplane", QoS.AT_MOST_ONCE));
+subscriptions.add(new Subscription("seventies/prog/#", QoS.AT_MOST_ONCE));
+client.subscribe(subscriptions);
+
+// Build up your catalog
+try {
+	catalogLatch.await();
+} catch (InterruptedException ignore) {
+}
+
+// We are done. Unsubscribe and disconnect.
+List<String> topics = new ArrayList<String>();
+for (Subscription subscription : subscriptions) {
+	topics.add(subscription.getTopic());
+}
+client.unsubscribe(topics);
+client.disconnect();
+						</pre>
+						<p class="code-header">Synchronous Publisher</p>
+						<pre class="prettyprint code">
+final Log log = Logger.getLogger("musicProducer");
+MqttClientListener listener = new MqttClientListener() {
+
+	@Override
+	public void publishReceived(MqttClient client, PublishMessage message) {
+		log.warn("Received a message when we had no subscriptions. Check your broker ;)");
+	}
+
+	@Override
+	public void disconnected(MqttClient client, Throwable cause, boolean reconnecting) {
+		if (cause != null) {
+			log.error(cause, "Disconnected from the broker due to an exception.");
+		} else {
+			log.info("Disconnecting from the broker.");
+		}
+
+		if (reconnecting) {
+			log.info("Attempting to reconnect to the broker.");
+		}
+	}
+
+};
+
+// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
+SynchronousMqttClient client = new SynchronousMqttClient("tcp://mqtt.broker:1883", listener, new FixedReconnectionStrategy(5000, 3), 5, 90, 15, 5);
+
+// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
+ConnectReturnCode returnCode = client.connect("musicProducer", true, 15);
+if (returnCode != ConnectReturnCode.ACCEPTED) {
+	log.error("Unable to connect to the MQTT broker. Reason: " + returnCode);
+	return;
+}
+
+// Publish a musical catalog.
+client.publish(new PublishMessage("grand/funk/railroad", QoS.AT_MOST_ONCE, "On Time"));
+client.publish(new PublishMessage("grand/funk/railroad", QoS.AT_MOST_ONCE, "Closer to Home"));
+client.publish(new PublishMessage("grand/funk/railroad", QoS.AT_MOST_ONCE, "E Pluribus Funk"));
+client.publish(new PublishMessage("jefferson/airplane", QoS.AT_MOST_ONCE, "Surrealistic Pillow"));
+client.publish(new PublishMessage("jefferson/airplane", QoS.AT_MOST_ONCE, "Crown of Creation"));
+client.publish(new PublishMessage("seventies/prog/rush", QoS.AT_MOST_ONCE, "2112"));
+client.publish(new PublishMessage("seventies/prog/rush", QoS.AT_MOST_ONCE, "A Farewell to Kings"));
+client.publish(new PublishMessage("seventies/prog/rush", QoS.AT_MOST_ONCE, "Hemispheres"));
+
+// We are done. Disconnect.
+client.disconnect();
+						</pre>
+						<strong>Asynchronous Client Example</strong>
+						<h4>Proxy</h4>
+						<h4>Gateway</h4>
+						<h4>Mock Broker</h4>
+					</div>
+					<div class="post">
+						<h3>FAQ</h3>
+					</div>
+					<div class="post post-last">
+						<h3>Related Resources</h3>
+						<a href="http://mqtt.org">MQTT Overview</a><img src="images/ext-link.gif" height="10" width="10" />
 					</div>
 				</div>
 			</div>
