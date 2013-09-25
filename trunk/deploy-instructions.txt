@@ -1,9 +1,0 @@
-To deploy javadoc:
-	mv target/site/apidocs target/site/{version}
-	scp -r target/site/{version} {username}@web.sf.net/home/project-web/xenqtt/apidocs/{version}
-
-To deploy release files:
-	mkdir target/{version}
-	cp target/*.jar target/{version}/*.jar
-	scp -r target/{version} {username}@frs.sf.net/home/frs/project/xenqtt
-
