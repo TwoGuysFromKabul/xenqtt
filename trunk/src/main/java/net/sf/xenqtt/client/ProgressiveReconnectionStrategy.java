@@ -37,7 +37,7 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 	 * @param maxNumberOfReconnects
 	 *            The maximum number of reconnect attempts to make
 	 */
-	ProgressiveReconnectionStrategy(long baseReconnectMillis, int progressiveFactor, int maxNumberOfReconnects) {
+	public ProgressiveReconnectionStrategy(long baseReconnectMillis, int progressiveFactor, int maxNumberOfReconnects) {
 		this.baseReconnectMillis = XenqttUtil.validateGreaterThan("baseReconnectMillis", baseReconnectMillis, 0L);
 		this.progressiveFactor = XenqttUtil.validateGreaterThan("progressiveFactor", progressiveFactor, 0);
 		this.maxNumberOfReconnects = XenqttUtil.validateGreaterThanOrEqualTo("maxNumberOfReconnects", maxNumberOfReconnects, 0);
