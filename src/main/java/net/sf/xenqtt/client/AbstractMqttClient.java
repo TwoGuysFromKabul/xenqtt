@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,7 +44,7 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 abstract class AbstractMqttClient implements MqttClient {
 
-	// FIXME [jim] - if there is no conn ack response to a connect in some amount of time we need to close the channel
+	// FIXME [jim] - need to test connect timeout
 
 	private final String brokerUri;
 	private final ChannelManager manager;
@@ -52,11 +53,12 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private final Executor executor;
 	private final ExecutorService executorService;
-	private final ScheduledExecutorService reconnectionExecutor;
+	private final ScheduledExecutorService scheduledExecutor;
 
 	private final MessageHandler messageHandler;
 	private final MqttClientListener mqttClientListener;
 	private final AsyncClientListener asyncClientListener;
+	private final long connectTimeoutMillis;
 
 	private final Map<Integer, Object> dataByMessageId;
 	private final AtomicInteger messageIdGenerator = new AtomicInteger();
@@ -65,6 +67,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	private volatile MqttChannelRef newChannel;
 	private volatile ConnectMessage connectMessage;
 	private volatile boolean firstConnectPending = true;
+	private volatile Future<?> connectTimeoutFuture;
 
 	/**
 	 * Constructs a synchronous instance of this class using an {@link Executor} owned by this class.
@@ -77,6 +80,9 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
 	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param blockingTimeoutSeconds
@@ -84,8 +90,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
 	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
-			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
-		this(brokerUri, mqttClientListener, null, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize),
+			int connectTimeoutSeconds, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+		this(brokerUri, mqttClientListener, null, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), connectTimeoutSeconds,
 				messageResendIntervalSeconds, blockingTimeoutSeconds);
 	}
 
@@ -101,6 +107,9 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @param executor
 	 *            The executor used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods. This class will NOT shut down the
 	 *            executor.
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param blockingTimeoutSeconds
@@ -108,8 +117,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
 	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, ReconnectionStrategy reconnectionStrategy, Executor executor,
-			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
-		this(brokerUri, mqttClientListener, null, reconnectionStrategy, executor, messageResendIntervalSeconds, blockingTimeoutSeconds);
+			int connectTimeoutSeconds, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+		this(brokerUri, mqttClientListener, null, reconnectionStrategy, executor, connectTimeoutSeconds, messageResendIntervalSeconds, blockingTimeoutSeconds);
 	}
 
 	/**
@@ -123,13 +132,16 @@ abstract class AbstractMqttClient implements MqttClient {
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
 	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
 	AbstractMqttClient(String brokerUri, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
-			int messageResendIntervalSeconds) {
+			int connectTimeoutSeconds, int messageResendIntervalSeconds) {
 		this(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize),
-				messageResendIntervalSeconds, -1);
+				connectTimeoutSeconds, messageResendIntervalSeconds, -1);
 	}
 
 	/**
@@ -144,12 +156,15 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @param executor
 	 *            The executor used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods. This class will NOT shut down the
 	 *            executor.
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
 	AbstractMqttClient(String brokerUri, AsyncClientListener asyncClientListener, ReconnectionStrategy reconnectionStrategy, Executor executor,
-			int messageResendIntervalSeconds) {
-		this(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy, executor, messageResendIntervalSeconds, -1);
+			int connectTimeoutSeconds, int messageResendIntervalSeconds) {
+		this(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy, executor, connectTimeoutSeconds, messageResendIntervalSeconds, -1);
 	}
 
 	/**
@@ -292,9 +307,9 @@ abstract class AbstractMqttClient implements MqttClient {
 
 		this.manager.shutdown();
 
-		reconnectionExecutor.shutdownNow();
+		scheduledExecutor.shutdownNow();
 		try {
-			reconnectionExecutor.awaitTermination(1, TimeUnit.DAYS);
+			scheduledExecutor.awaitTermination(1, TimeUnit.DAYS);
 		} catch (InterruptedException e) {
 			throw new MqttInterruptedException(e);
 		}
@@ -313,12 +328,14 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * Package visible and only for use by the {@link MqttClientFactory}
 	 */
 	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
-			ReconnectionStrategy reconnectionStrategy, Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
+			ReconnectionStrategy reconnectionStrategy, Executor executor, ChannelManager manager, ScheduledExecutorService scheduledExecutor,
+			int connectTimeoutSeconds) {
 		this.brokerUri = brokerUri;
+		this.connectTimeoutMillis = connectTimeoutSeconds * 1000;
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executor;
-		this.reconnectionExecutor = reconnectionExecutor;
+		this.scheduledExecutor = scheduledExecutor;
 		this.executorService = null;
 		this.messageHandler = new AsyncMessageHandler();
 		this.reconnectionStrategy = reconnectionStrategy;
@@ -328,13 +345,15 @@ abstract class AbstractMqttClient implements MqttClient {
 	}
 
 	private AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
-			ReconnectionStrategy reconnectionStrategy, Executor executor, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+			ReconnectionStrategy reconnectionStrategy, Executor executor, int connectTimeoutSeconds, int messageResendIntervalSeconds,
+			int blockingTimeoutSeconds) {
 		this.brokerUri = brokerUri;
+		this.connectTimeoutMillis = connectTimeoutSeconds * 1000;
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executor;
 		this.executorService = null;
-		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
+		this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.messageHandler = new AsyncMessageHandler();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
 		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
@@ -344,13 +363,15 @@ abstract class AbstractMqttClient implements MqttClient {
 	}
 
 	private AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
-			ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+			ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int connectTimeoutSeconds, int messageResendIntervalSeconds,
+			int blockingTimeoutSeconds) {
 		this.brokerUri = brokerUri;
+		this.connectTimeoutMillis = connectTimeoutSeconds * 1000;
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
 		this.executor = executorService;
 		this.executorService = executorService;
-		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
+		this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.messageHandler = new AsyncMessageHandler();
 		this.reconnectionStrategy = reconnectionStrategy != null ? reconnectionStrategy : new NullReconnectStrategy();
 		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
@@ -379,6 +400,9 @@ abstract class AbstractMqttClient implements MqttClient {
 	private ConnectReturnCode doConnect(MqttChannelRef channel, ConnectMessage message) {
 
 		connectMessage = message;
+		if (connectTimeoutMillis > 0) {
+			connectTimeoutFuture = scheduledExecutor.schedule(new ConnectTimeout(), connectTimeoutMillis, TimeUnit.MILLISECONDS);
+		}
 		MqttMessage ack = manager.send(channel, message);
 		return ack == null ? null : ((ConnAckMessage) ack).getReturnCode();
 	}
@@ -413,7 +437,7 @@ abstract class AbstractMqttClient implements MqttClient {
 			reconnecting = reconnectDelay >= 0;
 
 			if (reconnecting) {
-				reconnectionExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
+				scheduledExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
 			}
 		}
 		if (!reconnecting) {
@@ -440,6 +464,10 @@ abstract class AbstractMqttClient implements MqttClient {
 		 */
 		@Override
 		public void connAck(final MqttChannel channel, final ConnAckMessage message) throws Exception {
+
+			if (connectTimeoutFuture != null) {
+				connectTimeoutFuture.cancel(false);
+			}
 
 			if (message.getReturnCode() == ConnectReturnCode.ACCEPTED) {
 
@@ -654,11 +682,16 @@ abstract class AbstractMqttClient implements MqttClient {
 		}
 	}
 
+	private final class ConnectTimeout implements Runnable {
+
+		@Override
+		public void run() {
+			manager.close(channel);
+		}
+	}
+
 	private final class ClientReconnector implements Runnable {
 
-		/**
-		 * @see java.lang.Runnable#run()
-		 */
 		@Override
 		public void run() {
 

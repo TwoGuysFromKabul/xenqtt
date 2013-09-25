@@ -23,6 +23,7 @@ import net.sf.xenqtt.message.QoS;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -63,7 +64,7 @@ public class SynchronousMqttClientIT {
 	public void testConstructor_InvalidScheme() throws Exception {
 
 		try {
-			client = new SynchronousMqttClient("ftp://foo:1883", listener, reconnectionStrategy, 5, 5, 10);
+			client = new SynchronousMqttClient("ftp://foo:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 			fail("expected exception");
 		} catch (MqttException e) {
 			assertEquals("Invalid broker URI (scheme must be 'tcp'): ftp://foo:1883", e.getMessage());
@@ -77,7 +78,7 @@ public class SynchronousMqttClientIT {
 
 		Throwable thrown = null;
 		try {
-			client = new SynchronousMqttClient("tcp://foo:1883", listener, reconnectionStrategy, 5, 5, 10);
+			client = new SynchronousMqttClient("tcp://foo:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 			fail("expected exception");
 		} catch (MqttException e) {
 			thrown = e.getCause();
@@ -91,12 +92,12 @@ public class SynchronousMqttClientIT {
 	}
 
 	// This test can take over a minute to run so ignore it by default
-	// @Ignore
+	@Ignore
 	@Test
 	public void testConstructor_InvalidPort() throws Exception {
 
 		try {
-			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 5, 1000);
+			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 0, 5, 1000);
 			fail("expected exception");
 		} catch (MqttCommandCancelledException e) {
 			verifyZeroInteractions(listener, reconnectionStrategy);
@@ -111,7 +112,7 @@ public class SynchronousMqttClientIT {
 	public void testConstructorTimesOut() throws Exception {
 
 		try {
-			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 5, 1);
+			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 0, 5, 1);
 			fail("expected exception");
 		} catch (MqttTimeoutException e) {
 			verifyZeroInteractions(listener, reconnectionStrategy);
@@ -121,7 +122,7 @@ public class SynchronousMqttClientIT {
 	@Test
 	public void testConnectDisconnect_NoCredentialsNoWill() throws Exception {
 
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient1", true, 90));
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 
@@ -134,7 +135,7 @@ public class SynchronousMqttClientIT {
 	@Test
 	public void testConnect_Credentials_BadCredentials() throws Exception {
 
-		client = new SynchronousMqttClient("tcp://q.m2m.io:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://q.m2m.io:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.BAD_CREDENTIALS, client.connect("testclient2", true, 90, "not_a_user", "not_a_password"));
 
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -154,12 +155,12 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient3", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic1", QoS.AT_LEAST_ONCE) }));
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient4", true, 90, "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false));
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -184,14 +185,14 @@ public class SynchronousMqttClientIT {
 	public void testConnect_Will_NoRetain_NotSubscribed() throws Exception {
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient5", true, 90, "my/will/topic2", "it died dude", QoS.AT_LEAST_ONCE, false));
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient6", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic2", QoS.AT_LEAST_ONCE) }));
 		// verify no will message
@@ -207,7 +208,7 @@ public class SynchronousMqttClientIT {
 	public void testConnect_Will_Retain_NotSubscribed() throws Exception {
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient7", true, 90, "my/will/topic3", "it died dude", QoS.AT_LEAST_ONCE, true));
 
 		client.close();
@@ -215,7 +216,7 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient8", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic3", QoS.AT_LEAST_ONCE) }));
 
@@ -243,14 +244,14 @@ public class SynchronousMqttClientIT {
 	public void testConnect_Will_Retain_Subscribed() throws Exception {
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient10", true, 90, "my/will/topic4", "it died dude", QoS.AT_LEAST_ONCE, true));
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient9", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic4", QoS.AT_LEAST_ONCE) }));
 
@@ -284,7 +285,7 @@ public class SynchronousMqttClientIT {
 	public void testSubscribeUnsubscribe_Array() throws Exception {
 
 		// connect client
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient11", true, 90));
 
 		// test subscribing
@@ -308,7 +309,7 @@ public class SynchronousMqttClientIT {
 	public void testSubscribeUnsubscribe_List() throws Exception {
 
 		// connect client
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient12", true, 90));
 
 		// test subscribing
@@ -333,12 +334,12 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient13", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic5", QoS.AT_LEAST_ONCE) }));
 
 		// connect a client and generate the messages
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient14", true, 90));
 		for (int i = 0; i < 10; i++) {
 			client.publish(new PublishMessage("my/topic5", QoS.AT_LEAST_ONCE, "my message " + i));
@@ -368,7 +369,7 @@ public class SynchronousMqttClientIT {
 	public void testPublish_Qos1_Retain() throws Exception {
 
 		// connect a client and generate the message
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient16", true, 90));
 		client.publish(new PublishMessage("my/topic6", QoS.AT_LEAST_ONCE, "my message", true));
 		client.disconnect();
@@ -376,7 +377,7 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient15", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic6", QoS.AT_LEAST_ONCE) }));
 
@@ -406,12 +407,12 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient15", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic7", QoS.AT_LEAST_ONCE) }));
 
 		// connect a client and generate the messages
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient16", true, 90));
 		for (int i = 0; i < 10; i++) {
 			client.publish(new PublishMessage("my/topic7", QoS.AT_MOST_ONCE, "my message " + i));
@@ -444,12 +445,12 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 5, 10);
+		client2 = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener2, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient18", true, 90));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic7", QoS.AT_LEAST_ONCE) }));
 
 		// connect a client and generate the message
-		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 5, 10);
+		client = new SynchronousMqttClient("tcp://test.mosquitto.org:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
 		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient17", true, 90));
 		client.publish(new PublishMessage("my/topic7", QoS.AT_LEAST_ONCE, "my message"));
 		client.disconnect();

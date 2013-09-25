@@ -11,6 +11,8 @@ import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ChannelManagerImpl;
+import net.sf.xenqtt.message.ConnAckMessage;
+import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
@@ -18,6 +20,7 @@ import net.sf.xenqtt.message.MqttMessage;
  */
 public final class MqttClientFactory {
 
+	private final int connectTimeoutSeconds;
 	private final boolean blocking;
 	private final ChannelManager manager;
 	private final ReconnectionStrategy reconnectionStrategy;
@@ -35,15 +38,19 @@ public final class MqttClientFactory {
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
 	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
-	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize, int messageResendIntervalSeconds,
-			int blockingTimeoutSeconds) {
-		this(brokerUri, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), messageResendIntervalSeconds, blockingTimeoutSeconds);
+	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize, int connectTimeoutSeconds,
+			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
+		this(brokerUri, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), connectTimeoutSeconds, messageResendIntervalSeconds,
+				blockingTimeoutSeconds);
 	}
 
 	/**
@@ -56,15 +63,19 @@ public final class MqttClientFactory {
 	 * @param executor
 	 *            The executor used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods. This class will NOT shut down the
 	 *            executor.
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
-	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, Executor executor, int messageResendIntervalSeconds,
-			int blockingTimeoutSeconds) {
+	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, Executor executor, int connectTimeoutSeconds,
+			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 
+		this.connectTimeoutSeconds = connectTimeoutSeconds;
 		this.blocking = blockingTimeoutSeconds >= 0;
 		this.brokerUri = XenqttUtil.validateNotEmpty("brokerUri", brokerUri);
 		this.executor = XenqttUtil.validateNotNull("executor", executor);
@@ -85,11 +96,16 @@ public final class MqttClientFactory {
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
 	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize, int messageResendIntervalSeconds) {
-		this(brokerUri, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), messageResendIntervalSeconds, -1);
+	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize, int connectTimeoutSeconds,
+			int messageResendIntervalSeconds) {
+		this(brokerUri, reconnectionStrategy, Executors.newFixedThreadPool(messageHandlerThreadPoolSize), connectTimeoutSeconds, messageResendIntervalSeconds,
+				-1);
 	}
 
 	/**
@@ -102,14 +118,18 @@ public final class MqttClientFactory {
 	 * @param executor
 	 *            The executor used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods. This class will NOT shut down the
 	 *            executor.
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
 	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
-	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, Executor executor, int messageResendIntervalSeconds) {
-		this(brokerUri, reconnectionStrategy, executor, messageResendIntervalSeconds, -1);
+	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, Executor executor, int connectTimeoutSeconds,
+			int messageResendIntervalSeconds) {
+		this(brokerUri, reconnectionStrategy, executor, connectTimeoutSeconds, messageResendIntervalSeconds, -1);
 	}
 
 	/**
@@ -155,7 +175,8 @@ public final class MqttClientFactory {
 			throw new IllegalStateException("You may not create a synchronous client using a client factory configured to create asynchronous clients");
 		}
 
-		return new FactoryClient(brokerUri, mqttClientListener, null, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor);
+		return new FactoryClient(brokerUri, mqttClientListener, null, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor,
+				connectTimeoutSeconds);
 	}
 
 	/**
@@ -175,12 +196,14 @@ public final class MqttClientFactory {
 			throw new IllegalStateException("You may not create aa asynchronous client using a client factory configured to create synchronous clients");
 		}
 
-		return new FactoryClient(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor);
+		return new FactoryClient(brokerUri, asyncClientListener, asyncClientListener, reconnectionStrategy.clone(), executor, manager, reconnectionExecutor,
+				connectTimeoutSeconds);
 	}
 
-	private MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int messageResendIntervalSeconds,
-			int blockingTimeoutSeconds) {
+	private MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, ExecutorService executorService, int connectTimeoutSeconds,
+			int messageResendIntervalSeconds, int blockingTimeoutSeconds) {
 
+		this.connectTimeoutSeconds = connectTimeoutSeconds;
 		this.blocking = blockingTimeoutSeconds >= 0;
 		this.brokerUri = XenqttUtil.validateNotEmpty("brokerUri", brokerUri);
 		this.executor = XenqttUtil.validateNotNull("executorService", executorService);
@@ -195,8 +218,9 @@ public final class MqttClientFactory {
 	private static final class FactoryClient extends AbstractMqttClient {
 
 		FactoryClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
-				ReconnectionStrategy reconnectionStrategy, Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor) {
-			super(brokerUri, mqttClientListener, asyncClientListener, reconnectionStrategy, executor, manager, reconnectionExecutor);
+				ReconnectionStrategy reconnectionStrategy, Executor executor, ChannelManager manager, ScheduledExecutorService reconnectionExecutor,
+				int connectTimeoutSeconds) {
+			super(brokerUri, mqttClientListener, asyncClientListener, reconnectionStrategy, executor, manager, reconnectionExecutor, connectTimeoutSeconds);
 		}
 	};
 }
