@@ -1,4 +1,4 @@
-package net.sf.xenqtt.mockbroker;
+package net.sf.xenqtt.integration;
 
 import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.*;
@@ -15,6 +15,7 @@ import net.sf.xenqtt.client.ReconnectionStrategy;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.mockbroker.MockBroker;
 
 import org.junit.After;
 import org.junit.Before;
