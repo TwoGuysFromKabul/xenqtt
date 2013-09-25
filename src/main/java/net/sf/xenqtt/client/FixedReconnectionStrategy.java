@@ -28,7 +28,7 @@ public final class FixedReconnectionStrategy implements ReconnectionStrategy {
 	 *            The maximum number of times to attempt a reconnect before no further attempts will be made
 	 */
 	FixedReconnectionStrategy(long reconnectDelayMillis, int maxReconnectAttempts) {
-		this.reconnectDelayMillis = (Long) XenqttUtil.validateGreaterThan("reconnectDelayMillis", reconnectDelayMillis, 0);
+		this.reconnectDelayMillis = XenqttUtil.validateGreaterThan("reconnectDelayMillis", reconnectDelayMillis, 0L);
 		this.maxReconnectAttempts = XenqttUtil.validateGreaterThanOrEqualTo("maxReconnectAttempts", maxReconnectAttempts, 0);
 		currentReconnectAttempts = new AtomicInteger();
 	}
