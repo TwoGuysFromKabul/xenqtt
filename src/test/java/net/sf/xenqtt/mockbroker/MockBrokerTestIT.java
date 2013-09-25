@@ -25,7 +25,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class MockBrokerTest {
+public class MockBrokerTestIT {
 
 	MockBroker broker;
 	String brokerUri;
