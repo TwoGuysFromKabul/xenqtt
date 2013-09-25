@@ -1,5 +1,6 @@
 package net.sf.xenqtt.mockbroker;
 
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttMessage;
@@ -31,6 +32,7 @@ public final class Client {
 	 * Sends the message to this client
 	 */
 	public void send(MqttMessage message) {
+		XenqttUtil.validateNotNull("message", message);
 
 		channel.send(message, null);
 		events.addEvent(BrokerEventType.MESSAGE_SENT, this, message);

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
@@ -90,6 +91,8 @@ final class Subscription {
 	 * @return True if the subscription was added. False if it already existed even if the qos was updated
 	 */
 	public boolean subscribe(String topicName, QoS qos) {
+		XenqttUtil.validateNotEmpty("topicName", topicName);
+		XenqttUtil.validateNotNull("qos", qos);
 
 		for (TopicSubscription topicSubscription : topicSubscriptions) {
 			if (topicSubscription.topicName.equals(topicName)) {
@@ -115,6 +118,7 @@ final class Subscription {
 	 * @return Number of topics still subscribed
 	 */
 	public int unsubscribe(String topicName) {
+		XenqttUtil.validateNotEmpty("topicName", topicName);
 
 		Iterator<TopicSubscription> iter = topicSubscriptions.iterator();
 		int i = 0;
@@ -132,6 +136,7 @@ final class Subscription {
 				}
 				return topicSubscriptions.size();
 			}
+			i++;
 		}
 
 		return topicSubscriptions.size();
