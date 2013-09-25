@@ -432,16 +432,18 @@ abstract class AbstractMqttClient implements MqttClient {
 		boolean reconnecting = false;
 
 		// if channel is null then it didn't even finish construction so we definitely don't want to reconnect
-		if (channel != null && cause != null && !(cause instanceof ConnectException)) {
-			long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
-			reconnecting = reconnectDelay >= 0;
+		if (channel != null) {
+			if (cause != null && !(cause instanceof ConnectException)) {
+				long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
+				reconnecting = reconnectDelay >= 0;
 
-			if (reconnecting) {
-				scheduledExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
+				if (reconnecting) {
+					scheduledExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
+				}
 			}
-		}
-		if (!reconnecting) {
-			manager.cancelBlockingCommands(channel);
+			if (!reconnecting) {
+				manager.cancelBlockingCommands(channel);
+			}
 		}
 
 		mqttClientListener.disconnected(this, cause, reconnecting);
