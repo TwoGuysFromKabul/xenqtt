@@ -117,6 +117,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	public void shutdown() {
 
 		try {
+			// FIXME [jim] - need a different way to trigger shutdown as this causes issues when callbacks are made to open channels while closing them
 			selector.close();
 		} catch (IOException ignore) {
 		}
