@@ -3,6 +3,8 @@ package net.sf.xenqtt.client;
 import java.util.concurrent.Executor;
 
 import net.sf.xenqtt.XenqttUtil;
+import net.sf.xenqtt.message.ConnAckMessage;
+import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
@@ -21,16 +23,20 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
 	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
-			int messageResendIntervalSeconds) {
+			int connectTimeoutSeconds, int messageResendIntervalSeconds) {
 		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
 				XenqttUtil.validateNotNull("listener", listener), //
 				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
 				XenqttUtil.validateGreaterThan("messageHandlerThreadPoolSize", messageHandlerThreadPoolSize, 0), //
-				messageResendIntervalSeconds);
+				XenqttUtil.validateGreaterThanOrEqualTo("connectTimeoutSeconds", connectTimeoutSeconds, 0), //
+				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0));
 	}
 
 	/**
@@ -45,15 +51,19 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 * @param executor
 	 *            The executor used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods. This class will NOT shut down the
 	 *            executor.
+	 * @param connectTimeoutSeconds
+	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
+	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor,
-			int messageResendIntervalSeconds) {
+			int connectTimeoutSeconds, int messageResendIntervalSeconds) {
 		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
 				XenqttUtil.validateNotNull("listener", listener), //
 				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
 				XenqttUtil.validateNotNull("executor", executor), //
-				messageResendIntervalSeconds);
+				XenqttUtil.validateGreaterThanOrEqualTo("connectTimeoutSeconds", connectTimeoutSeconds, 0), //
+				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0));
 	}
 }

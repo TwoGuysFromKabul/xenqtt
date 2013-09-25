@@ -7,46 +7,46 @@ import org.junit.Test;
 
 public class MqttClientFactoryTest {
 
-	MqttClientFactory factory = new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, 10, 0);
+	MqttClientFactory factory = new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, 0, 10, 0);
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_BlankBrokerUri() {
-		new MqttClientFactory("", new NullReconnectStrategy(), 1, 10, 0);
+	public void testCtor_Blocking_BlankBrokerUri() {
+		new MqttClientFactory("", new NullReconnectStrategy(), 1, 0, 10, 0);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_BlankBrokerUri_NonBlocking() {
-		new MqttClientFactory("", new NullReconnectStrategy(), 1, 10);
+	public void testCtor_NonBlocking_BlankBrokerUri() {
+		new MqttClientFactory("", new NullReconnectStrategy(), 1, 0, 10);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_NullBrokerUri() {
-		new MqttClientFactory(null, new NullReconnectStrategy(), 1, 10, 0);
+	public void testCtor_Blocking_NullBrokerUri() {
+		new MqttClientFactory(null, new NullReconnectStrategy(), 1, 0, 10, 0);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_NullBrokerUri_NonBlocking() {
-		new MqttClientFactory(null, new NullReconnectStrategy(), 1, 10);
+	public void testCtor_NonBlocking_NullBrokerUri() {
+		new MqttClientFactory(null, new NullReconnectStrategy(), 1, 0, 10);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_MessageHandlerThreadPoolSizeZero() {
-		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 0, 10, 0);
+	public void testCtor_Blocking_MessageHandlerThreadPoolSizeZero() {
+		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 0, 0, 10, 0);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_MessageHandlerThreadPoolSizeZero_NonBlocking() {
-		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 0, 10);
+	public void testCtor_NonBlocking_MessageHandlerThreadPoolSizeZero() {
+		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 0, 0, 10);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_MessageResendIntervalSecondsLessThanZero() {
-		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, -1, 0);
+	public void testCtor_Blocking_MessageResendIntervalSecondsLessThanZero() {
+		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, 0, -1, 0);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_MessageResendIntervalSecondsLessThanZero_NonBlocking() {
-		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, -1);
+	public void testCtor_NonBlocking_MessageResendIntervalSecondsLessThanZero() {
+		new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, 0, -1);
 	}
 
 	@Test
@@ -57,7 +57,7 @@ public class MqttClientFactoryTest {
 
 	@Test
 	public void testNewAsyncClient() {
-		factory = new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, 1, -1);
+		factory = new MqttClientFactory("tcp://q.m2m.io:1883", new NullReconnectStrategy(), 1, 0, 1, -1);
 		assertNotNull(factory.newAsyncClient(new TestAsyncClientListener()));
 	}
 
