@@ -175,7 +175,7 @@ public class PublishMessage {
 	@Override
 	public String toString() {
 
-		return "PublishMessage [topic=" + pubMessage.getTopicName() + ", QoS=" + pubMessage.getQoS() + ", Payload="
-				+ MqttMessage.bytesToHex(pubMessage.getPayload()) + "]";
+		return "PublishMessage [topic=" + pubMessage.getTopicName() + ", QoS=" + pubMessage.getQoS() + ", duplicate=" + pubMessage.isDuplicate() + ", retain="
+				+ pubMessage.isRetain() + ", Payload=" + MqttMessage.bytesToHex(pubMessage.getPayload()) + "]";
 	}
 }
