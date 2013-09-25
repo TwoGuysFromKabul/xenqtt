@@ -84,9 +84,12 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		addMessages(clientChannel, "writesPending", writesPendingMessages);
 
 		List<MqttMessage> messagesToResend = new ArrayList<MqttMessage>();
-		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
-		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
-		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.add(new IdentifiableMqttMessage(MessageType.PUBLISH, 0) {
+		});
+		messagesToResend.add(new IdentifiableMqttMessage(MessageType.PUBLISH, 0) {
+		});
+		messagesToResend.add(new IdentifiableMqttMessage(MessageType.PUBLISH, 0) {
+		});
 		messagesToResend.get(0).blockingCommand = mock(BlockingCommand.class);
 		messagesToResend.get(1).blockingCommand = mock(BlockingCommand.class);
 		messagesToResend.get(2).blockingCommand = mock(BlockingCommand.class);
@@ -141,9 +144,12 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		addMessages(clientChannel, "writesPending", writesPendingMessages);
 
 		List<MqttMessage> messagesToResend = new ArrayList<MqttMessage>();
-		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
-		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
-		messagesToResend.add(new MqttMessage(MessageType.PUBLISH, 0));
+		messagesToResend.add(new IdentifiableMqttMessage(MessageType.PUBLISH, 0) {
+		});
+		messagesToResend.add(new IdentifiableMqttMessage(MessageType.PUBLISH, 0) {
+		});
+		messagesToResend.add(new IdentifiableMqttMessage(MessageType.PUBLISH, 0) {
+		});
 		messagesToResend.get(0).blockingCommand = mock(BlockingCommand.class);
 		messagesToResend.get(1).blockingCommand = mock(BlockingCommand.class);
 		messagesToResend.get(2).blockingCommand = null;
