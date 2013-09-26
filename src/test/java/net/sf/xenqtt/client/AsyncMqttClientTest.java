@@ -25,82 +25,82 @@ public class AsyncMqttClientTest {
 
 	@Test
 	public void testCtor_Executor() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 5);
 	}
 
 	@Test
 	public void testCtor_NoExecutor() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_BlankBrokerUri() throws Exception {
-		new AsyncMqttClient("", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 0);
+		new AsyncMqttClient("", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_BlankBrokerUri() throws Exception {
-		new AsyncMqttClient("", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, 0);
+		new AsyncMqttClient("", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullBrokerUri() throws Exception {
-		new AsyncMqttClient(null, new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 0);
+		new AsyncMqttClient(null, new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_NullBrokerUri() throws Exception {
-		new AsyncMqttClient(null, new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, 0);
+		new AsyncMqttClient(null, new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullAsyncClientListener() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", null, new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", null, new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_NullAsyncClientListener() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", null, new NullReconnectStrategy(), 1, 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", null, new NullReconnectStrategy(), 1, 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullReconnectStrategy() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), null, Executors.newFixedThreadPool(1), 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), null, Executors.newFixedThreadPool(1), 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_NullReconnectStrategy() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), null, 1, 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), null, 1, 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullExecutor() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), null, 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), null, 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_MessageHandlerThreadPoolSizeLessThanOne() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 0, 0, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 0, 0, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_Executor_MessageResendIntervalLessThanZero() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, -1);
+	public void testCtor_Executor_MessageResendIntervalLessThanTwo() throws Exception {
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), 0, 1);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_NoExecutor_MessageResendIntervalLessThanZero() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, -1);
+	public void testCtor_NoExecutor_MessageResendIntervalLessThanTwo() throws Exception {
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, 0, 1);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_ConnectTimeoutLessThanZero() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), -1, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), Executors.newFixedThreadPool(1), -1, 5);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_ConnectTimeoutLessThanZero() throws Exception {
-		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, -1, 0);
+		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), new NullReconnectStrategy(), 1, -1, 5);
 	}
 
 	private static final class TestAsyncClientListener implements AsyncClientListener {

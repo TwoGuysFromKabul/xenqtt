@@ -44,7 +44,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
 	 *            wait forever.
 	 * @param messageResendIntervalSeconds
-	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. The minimum allowable value for this setting is 2
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. 0 will wait forever.
 	 */
@@ -55,7 +55,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
 				XenqttUtil.validateGreaterThan("messageHandlerThreadPoolSize", messageHandlerThreadPoolSize, 0), //
 				XenqttUtil.validateGreaterThanOrEqualTo("connectTimeoutSeconds", connectTimeoutSeconds, 0), //
-				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0), //
+				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 2), //
 				XenqttUtil.validateGreaterThanOrEqualTo("blockingTimeoutSeconds", blockingTimeoutSeconds, 0));
 	}
 
@@ -75,7 +75,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
 	 *            wait forever.
 	 * @param messageResendIntervalSeconds
-	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. The minimum allowable value for this setting is 2
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. 0 will wait forever.
 	 */
@@ -86,7 +86,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
 				XenqttUtil.validateNotNull("executor", executor), //
 				XenqttUtil.validateGreaterThanOrEqualTo("connectTimeoutSeconds", connectTimeoutSeconds, 0), //
-				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0), //
+				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 2), //
 				XenqttUtil.validateGreaterThanOrEqualTo("blockingTimeoutSeconds", blockingTimeoutSeconds, 0));
 	}
 }
