@@ -248,7 +248,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private void doIO() {
 
-		Log.info("Channel manager thread started");
+		Log.debug("Channel manager thread started");
 
 		readyLatch.countDown();
 
@@ -281,7 +281,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			Log.fatal(t, "Channel manager thread caught a fatal exception and is dying");
 		}
 
-		Log.info("Channel manager thread stopping");
+		Log.debug("Channel manager thread stopping");
 
 		closeAll();
 
