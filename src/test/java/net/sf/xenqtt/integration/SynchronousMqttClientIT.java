@@ -556,6 +556,12 @@ public class SynchronousMqttClientIT {
 	}
 
 	@Test
+	public void testConnectMessageTimesOut() throws Exception {
+
+		fail("not implemented");
+	}
+
+	@Test
 	public void testConnectionLost_FirstReconnectSucceeds() throws Exception {
 
 		fail("not implemented");
