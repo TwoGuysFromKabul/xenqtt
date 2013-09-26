@@ -62,6 +62,15 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		return new TestChannel(brokerSocketChannel, brokerHandler, selector, 10000);
 	}
 
+	@Test
+	public void testClose_WithCause() throws Exception {
+
+		RuntimeException e = new RuntimeException();
+		establishConnection();
+		clientChannel.close(e);
+		assertSame(e, clientHandler.lastChannelClosedCause());
+	}
+
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testCancelBlockingCommands() throws Exception {
