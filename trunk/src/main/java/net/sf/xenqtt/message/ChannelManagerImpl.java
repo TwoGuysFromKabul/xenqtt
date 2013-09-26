@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.CancelledKeyException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -278,11 +277,11 @@ public final class ChannelManagerImpl implements ChannelManager {
 				keys.clear();
 			}
 
-		} catch (ClosedSelectorException e) {
-			Log.info("Channel manager thread stopping");
 		} catch (Throwable t) {
 			Log.fatal(t, "Channel manager thread caught a fatal exception and is dying");
 		}
+
+		Log.info("Channel manager thread stopping");
 
 		closeAll();
 
