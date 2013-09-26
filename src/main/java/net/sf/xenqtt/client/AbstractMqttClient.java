@@ -455,8 +455,10 @@ abstract class AbstractMqttClient implements MqttClient {
 				reconnecting = reconnectDelay > 0;
 
 				if (reconnecting) {
-					Log.warn("Scheduling reconnect for channel: %s", channel);
+					Log.warn("Connection to broker lost; scheduling a reconnect attempt for channel: %s", channel);
 					scheduledExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
+				} else {
+					Log.warn("Connection to broker lost; not scheduling a reconnect attempt for channel: %s", channel);
 				}
 			}
 			if (!reconnecting) {
