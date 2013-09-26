@@ -452,7 +452,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		if (channel != null && !shuttingDown) {
 			if (!closeRequested) {
 				long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
-				reconnecting = reconnectDelay >= 0;
+				reconnecting = reconnectDelay > 0;
 
 				if (reconnecting) {
 					Log.warn("Scheduling reconnect for channel: %s", channel);
@@ -504,6 +504,8 @@ abstract class AbstractMqttClient implements MqttClient {
 						}
 					}
 				});
+			} else {
+				closeRequested = true;
 			}
 
 			if (asyncClientListener != null) {

@@ -27,7 +27,7 @@ public interface ReconnectionStrategy extends Cloneable {
 	 * @param cause
 	 *            The exception that cause the connection to close or resulted from the connection closing. May be {@code null}.
 	 * 
-	 * @return Milliseconds the client should wait before trying to connect to the broker again. If < 0 the client will stop trying to connect to the broker.
+	 * @return Milliseconds the client should wait before trying to connect to the broker again. If <= 0 the client will stop trying to connect to the broker.
 	 */
 	long connectionLost(MqttClient client, Throwable cause);
 
