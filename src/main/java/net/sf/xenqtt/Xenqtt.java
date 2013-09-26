@@ -27,7 +27,7 @@ import net.sf.xenqtt.mockbroker.MockBrokerApplication;
  */
 public final class Xenqtt {
 
-	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class };
+	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class, TestClientApplication.class };
 	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] proxy|gateway|mockbroker|help [args.or.flags]"
 			+ "\n\tproxy - Run the MQTT proxy for clustered clients\n\tgateway - Run the MQTT gateway that facilitates HTTP <-> MQTT communication"
 			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\thelp - Display information on xenqtt and how it can be used"

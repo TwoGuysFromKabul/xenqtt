@@ -95,99 +95,99 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 	private final Logger log = Logger.getLogger("xenqtt");
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#trace(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#trace(java.lang.String)
 	 */
 	@Override
-	public void trace(String message, Object... parameters) {
-		log.finer(String.format(message, parameters));
+	public void trace(String message) {
+		log.finer(message);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#trace(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#trace(java.lang.Throwable, java.lang.String)
 	 */
 	@Override
-	public void trace(Throwable t, String message, Object... parameters) {
-		log.log(Level.FINER, String.format(message, parameters), t);
+	public void trace(Throwable t, String message) {
+		log.log(Level.FINER, message, t);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.String)
 	 */
 	@Override
-	public void debug(String message, Object... parameters) {
-		log.fine(String.format(message, parameters));
+	public void debug(String message) {
+		log.fine(message);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#debug(java.lang.Throwable, java.lang.String)
 	 */
 	@Override
-	public void debug(Throwable t, String message, Object... parameters) {
-		log.log(Level.FINE, String.format(message, parameters), t);
+	public void debug(Throwable t, String message) {
+		log.log(Level.FINE, message, t);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.String)
 	 */
 	@Override
-	public void info(String message, Object... parameters) {
-		log.info(String.format(message, parameters));
+	public void info(String message) {
+		log.info(message);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#info(java.lang.Throwable, java.lang.String)
 	 */
 	@Override
-	public void info(Throwable t, String message, Object... parameters) {
-		log.log(Level.INFO, String.format(message, parameters), t);
+	public void info(Throwable t, String message) {
+		log.log(Level.INFO, message, t);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.String)
 	 */
 	@Override
-	public void warn(String message, Object... parameters) {
-		log.warning(String.format(message, parameters));
+	public void warn(String message) {
+		log.warning(message);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#warn(java.lang.Throwable, java.lang.String)
 	 */
 	@Override
-	public void warn(Throwable t, String message, Object... parameters) {
-		log.log(Level.WARNING, String.format(message, parameters), t);
+	public void warn(Throwable t, String message) {
+		log.log(Level.WARNING, message, t);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.String)
 	 */
 	@Override
-	public void error(String message, Object... parameters) {
-		log.severe(String.format(message, parameters));
+	public void error(String message) {
+		log.severe(message);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#error(java.lang.Throwable, java.lang.String)
 	 */
 	@Override
-	public void error(Throwable t, String message, Object... parameters) {
-		log.log(Level.SEVERE, String.format(message, parameters), t);
+	public void error(Throwable t, String message) {
+		log.log(Level.SEVERE, message, t);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.String)
 	 */
 	@Override
-	public void fatal(String message, Object... parameters) {
-		log.severe(String.format(message, parameters));
+	public void fatal(String message) {
+		log.severe(message);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.Throwable, java.lang.String, java.lang.Object[])
+	 * @see net.sf.xenqtt.Log.LoggingDelegate#fatal(java.lang.Throwable, java.lang.String)
 	 */
 	@Override
-	public void fatal(Throwable t, String message, Object... parameters) {
-		log.log(Level.SEVERE, String.format(message, parameters), t);
+	public void fatal(Throwable t, String message) {
+		log.log(Level.SEVERE, message, t);
 	}
 
 	void updateLoggingDestination(String outputFile) {
