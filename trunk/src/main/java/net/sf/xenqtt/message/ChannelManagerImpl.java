@@ -198,7 +198,16 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public void close(MqttChannelRef channel) throws MqttInterruptedException {
 
-		addCommand(new CloseCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+		addCommand(new CloseCommand(channel, null)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.ChannelManager#close(net.sf.xenqtt.message.MqttChannelRef, java.lang.Throwable)
+	 */
+	@Override
+	public void close(MqttChannelRef channel, Throwable cause) {
+
+		addCommand(new CloseCommand(channel, cause)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -406,16 +415,18 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final class CloseCommand extends Command<Void> {
 
 		private final MqttChannel channel;
+		private final Throwable cause;
 
-		public CloseCommand(MqttChannelRef channel) {
+		public CloseCommand(MqttChannelRef channel, Throwable cause) {
 			super(true);
+			this.cause = cause;
 			this.channel = (MqttChannel) channel;
 		}
 
 		@Override
 		public void doExecute() {
 
-			channel.close();
+			channel.close(cause);
 		}
 	}
 

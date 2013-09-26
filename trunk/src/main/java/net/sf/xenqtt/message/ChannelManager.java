@@ -164,6 +164,20 @@ public interface ChannelManager {
 	void close(MqttChannelRef channel) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
+	 * Closes the specified channel and sends cause to the {@link MessageHandler#channelClosed(MqttChannel, Throwable)} callback. This method blocks until the
+	 * channel is closed.
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
+	 */
+	void close(MqttChannelRef channel, Throwable cause) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+
+	/**
 	 * {@link BlockingCommand#cancel() Cancels} all blocking commands for the specified channel. This is not done when the channel is closed because we may want
 	 * to reconnect instead of releasing the commands.
 	 */

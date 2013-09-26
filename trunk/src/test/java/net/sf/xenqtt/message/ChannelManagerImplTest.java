@@ -419,27 +419,6 @@ public class ChannelManagerImplTest {
 	}
 
 	@Test
-	public void testClose_NonBlocking() throws Exception {
-
-		manager = new ChannelManagerImpl(2);
-		manager.init();
-
-		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
-		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
-
-		clientHandler.assertChannelClosedCount(0);
-		brokerHandler.assertChannelClosedCount(0);
-
-		manager.close(clientChannel);
-		clientHandler.assertChannelClosedCount(1);
-		brokerHandler.assertChannelClosedCount(0);
-
-		manager.close(brokerChannel);
-		clientHandler.assertChannelClosedCount(1);
-		brokerHandler.assertChannelClosedCount(1);
-	}
-
-	@Test
 	public void testGetUnsentMessages_Blocking() throws Exception {
 
 		manager = new ChannelManagerImpl(2, 0);
@@ -480,7 +459,30 @@ public class ChannelManagerImplTest {
 	}
 
 	@Test
-	public void testClose_Blocking() throws Exception {
+	public void testClose_NoCause_NonBlocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		clientHandler.assertChannelClosedCount(0);
+		brokerHandler.assertChannelClosedCount(0);
+
+		manager.close(clientChannel);
+		clientHandler.assertChannelClosedCount(1);
+		clientHandler.assertLastChannelClosedCause((Throwable) null);
+		brokerHandler.assertChannelClosedCount(0);
+
+		manager.close(brokerChannel);
+		clientHandler.assertChannelClosedCount(1);
+		brokerHandler.assertChannelClosedCount(1);
+		brokerHandler.assertLastChannelClosedCause((Throwable) null);
+	}
+
+	@Test
+	public void testClose_NoCause_Blocking() throws Exception {
 
 		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
@@ -493,11 +495,65 @@ public class ChannelManagerImplTest {
 
 		manager.close(clientChannel);
 		clientHandler.assertChannelClosedCount(1);
+		clientHandler.assertLastChannelClosedCause((Throwable) null);
 		brokerHandler.assertChannelClosedCount(0);
 
 		manager.close(brokerChannel);
 		clientHandler.assertChannelClosedCount(1);
 		brokerHandler.assertChannelClosedCount(1);
+		brokerHandler.assertLastChannelClosedCause((Throwable) null);
+	}
+
+	@Test
+	public void testClose_WithCause_NonBlocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		clientHandler.assertChannelClosedCount(0);
+		brokerHandler.assertChannelClosedCount(0);
+
+		Exception clientCause = new Exception();
+		Exception brokerCause = new Exception();
+
+		manager.close(clientChannel, clientCause);
+		clientHandler.assertChannelClosedCount(1);
+		clientHandler.assertLastChannelClosedCause(clientCause);
+		brokerHandler.assertChannelClosedCount(0);
+
+		manager.close(brokerChannel, brokerCause);
+		clientHandler.assertChannelClosedCount(1);
+		brokerHandler.assertChannelClosedCount(1);
+		brokerHandler.assertLastChannelClosedCause(brokerCause);
+	}
+
+	@Test
+	public void testClose_WithCause_Blocking() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
+		manager.init();
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		clientHandler.assertChannelClosedCount(0);
+		brokerHandler.assertChannelClosedCount(0);
+
+		Exception clientCause = new Exception();
+		Exception brokerCause = new Exception();
+
+		manager.close(clientChannel, clientCause);
+		clientHandler.assertChannelClosedCount(1);
+		clientHandler.assertLastChannelClosedCause(clientCause);
+		brokerHandler.assertChannelClosedCount(0);
+
+		manager.close(brokerChannel, brokerCause);
+		clientHandler.assertChannelClosedCount(1);
+		brokerHandler.assertChannelClosedCount(1);
+		brokerHandler.assertLastChannelClosedCause(brokerCause);
 	}
 
 	@Test
