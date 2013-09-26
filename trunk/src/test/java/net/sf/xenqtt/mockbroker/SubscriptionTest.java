@@ -57,7 +57,8 @@ public class SubscriptionTest {
 		verifyZeroInteractions(channel);
 
 		subscription.connected(client);
-		verify(channel).send(message, null);
+		PubMessage expected = new PubMessage(QoS.AT_LEAST_ONCE, false, "grand/foo/bar", 1, new byte[] { 97, 98, 99 });
+		verify(channel).send(expected, null);
 		assertEquals(1, events.getEvents().size());
 	}
 
@@ -126,7 +127,8 @@ public class SubscriptionTest {
 		subscription.subscribe("grand/foo/bar", QoS.AT_LEAST_ONCE);
 		subscription.publish(message, clientById);
 
-		verify(channel).send(message, null);
+		PubMessage expected = new PubMessage(QoS.AT_LEAST_ONCE, false, "grand/foo/bar", 1, new byte[] { 97, 98, 99 });
+		verify(channel).send(expected, null);
 		assertEquals(1, getMessageQueueSize());
 	}
 

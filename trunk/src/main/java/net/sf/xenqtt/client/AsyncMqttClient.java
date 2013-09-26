@@ -42,7 +42,7 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
 	 *            wait forever.
 	 * @param messageResendIntervalSeconds
-	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. The minimum allowable value for this setting is 2
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, int messageHandlerThreadPoolSize,
 			int connectTimeoutSeconds, int messageResendIntervalSeconds) {
@@ -51,7 +51,7 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
 				XenqttUtil.validateGreaterThan("messageHandlerThreadPoolSize", messageHandlerThreadPoolSize, 0), //
 				XenqttUtil.validateGreaterThanOrEqualTo("connectTimeoutSeconds", connectTimeoutSeconds, 0), //
-				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0));
+				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 2));
 	}
 
 	/**
@@ -70,7 +70,7 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
 	 *            wait forever.
 	 * @param messageResendIntervalSeconds
-	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. The minimum allowable value for this setting is 2
 	 */
 	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, ReconnectionStrategy reconnectionStrategy, Executor executor,
 			int connectTimeoutSeconds, int messageResendIntervalSeconds) {
@@ -79,6 +79,6 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 				XenqttUtil.validateNotNull("reconnectionStrategy", reconnectionStrategy), //
 				XenqttUtil.validateNotNull("executor", executor), //
 				XenqttUtil.validateGreaterThanOrEqualTo("connectTimeoutSeconds", connectTimeoutSeconds, 0), //
-				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0));
+				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 2));
 	}
 }
