@@ -292,7 +292,9 @@ public final class ChannelManagerImpl implements ChannelManager {
 		Iterator<SelectionKey> iter = keys.iterator();
 		while (iter.hasNext()) {
 			SelectionKey key = iter.next();
-			if (key.isConnectable()) {
+			if (!key.isValid()) {
+				iter.remove();
+			} else if (key.isConnectable()) {
 				MqttChannel channel = (MqttChannel) key.attachment();
 				if (!channel.finishConnect()) {
 					channelClosed(channel);
