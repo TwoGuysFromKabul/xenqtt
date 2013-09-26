@@ -128,7 +128,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void trace(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.TRACE_FLAG, message, parameters);
+		LOGGER.log(LoggingLevels.TRACE_FLAG, String.format(message, parameters));
 	}
 
 	/**
@@ -140,7 +140,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void debug(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.DEBUG_FLAG, message, parameters);
+		LOGGER.log(LoggingLevels.DEBUG_FLAG, String.format(message, parameters));
 	}
 
 	/**
@@ -152,7 +152,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void info(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.INFO_FLAG, message, parameters);
+		LOGGER.log(LoggingLevels.INFO_FLAG, String.format(message, parameters));
 	}
 
 	/**
@@ -164,7 +164,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.WARN_FLAG, message, parameters);
+		LOGGER.log(LoggingLevels.WARN_FLAG, String.format(message, parameters));
 	}
 
 	/**
@@ -178,7 +178,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(Throwable t, String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.WARN_FLAG, t, message, parameters);
+		LOGGER.log(LoggingLevels.WARN_FLAG, t, String.format(message, parameters));
 	}
 
 	/**
@@ -190,7 +190,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.ERROR_FLAG, message, parameters);
+		LOGGER.log(LoggingLevels.ERROR_FLAG, String.format(message, parameters));
 	}
 
 	/**
@@ -204,7 +204,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(Throwable t, String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.ERROR_FLAG, t, message, parameters);
+		LOGGER.log(LoggingLevels.ERROR_FLAG, t, String.format(message, parameters));
 	}
 
 	/**
@@ -216,7 +216,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.FATAL_FLAG, message, parameters);
+		LOGGER.log(LoggingLevels.FATAL_FLAG, String.format(message, parameters));
 	}
 
 	/**
@@ -230,7 +230,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(Throwable t, String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.FATAL_FLAG, t, message, parameters);
+		LOGGER.log(LoggingLevels.FATAL_FLAG, t, String.format(message, parameters));
 	}
 
 	/**
@@ -238,29 +238,29 @@ public final class Log {
 	 */
 	static interface LoggingDelegate {
 
-		void trace(String message, Object... parameters);
+		void trace(String message);
 
-		void trace(Throwable t, String message, Object... parameters);
+		void trace(Throwable t, String message);
 
-		void debug(String message, Object... parameters);
+		void debug(String message);
 
-		void debug(Throwable t, String message, Object... parameters);
+		void debug(Throwable t, String message);
 
-		void info(String message, Object... parameters);
+		void info(String message);
 
-		void info(Throwable t, String message, Object... parameters);
+		void info(Throwable t, String message);
 
-		void warn(String message, Object... parameters);
+		void warn(String message);
 
-		void warn(Throwable t, String message, Object... parameters);
+		void warn(Throwable t, String message);
 
-		void error(String message, Object... parameters);
+		void error(String message);
 
-		void error(Throwable t, String message, Object... parameters);
+		void error(Throwable t, String message);
 
-		void fatal(String message, Object... parameters);
+		void fatal(String message);
 
-		void fatal(Throwable t, String message, Object... parameters);
+		void fatal(Throwable t, String message);
 
 	}
 
@@ -280,17 +280,15 @@ public final class Log {
 
 		private final int levelFlag;
 		private final String message;
-		private final Object[] parameters;
 		private final Throwable t;
 
-		private LogMessage(int levelFlag, String message, Object[] parameters) {
-			this(levelFlag, message, parameters, null);
+		private LogMessage(int levelFlag, String message) {
+			this(levelFlag, message, null);
 		}
 
-		private LogMessage(int levelFlag, String message, Object[] parameters, Throwable t) {
+		private LogMessage(int levelFlag, String message, Throwable t) {
 			this.levelFlag = levelFlag;
 			this.message = message;
-			this.parameters = parameters;
 			this.t = t;
 		}
 
@@ -333,9 +331,9 @@ public final class Log {
 
 	private static interface Logger {
 
-		void log(int levelFlag, String message, Object... parameters);
+		void log(int levelFlag, String message);
 
-		void log(int levelFlag, Throwable t, String message, Object... parameters);
+		void log(int levelFlag, Throwable t, String message);
 
 	}
 
@@ -348,48 +346,48 @@ public final class Log {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String, java.lang.Object[])
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String)
 		 */
 		@Override
-		public void log(int levelFlag, String message, Object... parameters) {
+		public void log(int levelFlag, String message) {
 			if (!levels.isLoggable(levelFlag)) {
 				return;
 			}
 
-			doLog(levelFlag, null, message, parameters);
+			doLog(levelFlag, null, message);
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String, java.lang.Object[])
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String)
 		 */
 		@Override
-		public void log(int levelFlag, Throwable t, String message, Object... parameters) {
+		public void log(int levelFlag, Throwable t, String message) {
 			if (!levels.isLoggable(levelFlag)) {
 				return;
 			}
 
-			doLog(levelFlag, t, message, parameters);
+			doLog(levelFlag, t, message);
 		}
 
-		private void doLog(int levelFlag, Throwable t, String message, Object[] parameters) {
+		private void doLog(int levelFlag, Throwable t, String message) {
 			switch (levelFlag) {
 			case LoggingLevels.TRACE_FLAG:
-				DELEGATE.trace(t, message, parameters);
+				DELEGATE.trace(t, message);
 				break;
 			case LoggingLevels.DEBUG_FLAG:
-				DELEGATE.debug(t, message, parameters);
+				DELEGATE.debug(t, message);
 				break;
 			case LoggingLevels.INFO_FLAG:
-				DELEGATE.info(t, message, parameters);
+				DELEGATE.info(t, message);
 				break;
 			case LoggingLevels.WARN_FLAG:
-				DELEGATE.warn(t, message, parameters);
+				DELEGATE.warn(t, message);
 				break;
 			case LoggingLevels.ERROR_FLAG:
-				DELEGATE.error(t, message, parameters);
+				DELEGATE.error(t, message);
 				break;
 			case LoggingLevels.FATAL_FLAG:
-				DELEGATE.fatal(t, message, parameters);
+				DELEGATE.fatal(t, message);
 				break;
 			}
 		}
@@ -406,19 +404,19 @@ public final class Log {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String, java.lang.Object[])
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String)
 		 */
 		@Override
-		public void log(int levelFlag, String message, Object... parameters) {
-			loggingManager.offerWork(new LogMessage(levelFlag, message, parameters));
+		public void log(int levelFlag, String message) {
+			loggingManager.offerWork(new LogMessage(levelFlag, message));
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String, java.lang.Object[])
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String)
 		 */
 		@Override
-		public void log(int levelFlag, Throwable t, String message, Object... parameters) {
-			loggingManager.offerWork(new LogMessage(levelFlag, message, parameters, t));
+		public void log(int levelFlag, Throwable t, String message) {
+			loggingManager.offerWork(new LogMessage(levelFlag, message, t));
 		}
 
 		private void setLoggingLevels(LoggingLevels levels) {
@@ -475,22 +473,22 @@ public final class Log {
 
 			switch (message.levelFlag) {
 			case LoggingLevels.TRACE_FLAG:
-				DELEGATE.trace(message.t, message.message, message.parameters);
+				DELEGATE.trace(message.t, message.message);
 				break;
 			case LoggingLevels.DEBUG_FLAG:
-				DELEGATE.debug(message.t, message.message, message.parameters);
+				DELEGATE.debug(message.t, message.message);
 				break;
 			case LoggingLevels.INFO_FLAG:
-				DELEGATE.info(message.t, message.message, message.parameters);
+				DELEGATE.info(message.t, message.message);
 				break;
 			case LoggingLevels.WARN_FLAG:
-				DELEGATE.warn(message.t, message.message, message.parameters);
+				DELEGATE.warn(message.t, message.message);
 				break;
 			case LoggingLevels.ERROR_FLAG:
-				DELEGATE.error(message.t, message.message, message.parameters);
+				DELEGATE.error(message.t, message.message);
 				break;
 			case LoggingLevels.FATAL_FLAG:
-				DELEGATE.fatal(message.t, message.message, message.parameters);
+				DELEGATE.fatal(message.t, message.message);
 				break;
 			}
 		}
@@ -504,78 +502,78 @@ public final class Log {
 	private static final class ConsoleLoggingDelegate implements LoggingDelegate {
 
 		@Override
-		public void trace(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void trace(String message) {
+			System.out.println(message);
 		}
 
 		@Override
-		public void trace(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void trace(Throwable t, String message) {
+			System.out.println(message);
 			if (t != null) {
 				t.printStackTrace(System.out);
 			}
 		}
 
 		@Override
-		public void debug(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void debug(String message) {
+			System.out.println(message);
 		}
 
 		@Override
-		public void debug(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void debug(Throwable t, String message) {
+			System.out.println(message);
 			if (t != null) {
 				t.printStackTrace(System.out);
 			}
 		}
 
 		@Override
-		public void info(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void info(String message) {
+			System.out.println(message);
 		}
 
 		@Override
-		public void info(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void info(Throwable t, String message) {
+			System.out.println(message);
 			if (t != null) {
 				t.printStackTrace(System.out);
 			}
 		}
 
 		@Override
-		public void warn(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void warn(String message) {
+			System.out.println(message);
 		}
 
 		@Override
-		public void warn(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void warn(Throwable t, String message) {
+			System.out.println(message);
 			if (t != null) {
 				t.printStackTrace(System.out);
 			}
 		}
 
 		@Override
-		public void error(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void error(String message) {
+			System.out.println(message);
 		}
 
 		@Override
-		public void error(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void error(Throwable t, String message) {
+			System.out.println(message);
 			if (t != null) {
 				t.printStackTrace(System.out);
 			}
 		}
 
 		@Override
-		public void fatal(String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void fatal(String message) {
+			System.out.println(message);
 		}
 
 		@Override
-		public void fatal(Throwable t, String message, Object... parameters) {
-			System.out.println(String.format(message, parameters));
+		public void fatal(Throwable t, String message) {
+			System.out.println(message);
 			if (t != null) {
 				t.printStackTrace(System.out);
 			}

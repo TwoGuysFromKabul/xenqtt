@@ -64,12 +64,12 @@ public class JavaLoggingDelegateTest {
 
 	@Test
 	public void testLogging() throws Exception {
-		delegate.trace("trace message with parameter: %s", "hello");
-		delegate.debug("debug message with parameter: %s", "hello");
-		delegate.info("info message with parameter: %s", "hello");
-		delegate.warn("warn message with parameter: %s", "hello");
-		delegate.error("error message with parameter: %s", "hello");
-		delegate.fatal("fatal message with parameter: %s", "hello");
+		delegate.trace("trace message with parameter: hello");
+		delegate.debug("debug message with parameter: hello");
+		delegate.info("info message with parameter: hello");
+		delegate.warn("warn message with parameter: hello");
+		delegate.error("error message with parameter: hello");
+		delegate.fatal("fatal message with parameter: hello");
 
 		List<String> lines = getLinesFromXenqttLogFile();
 		List<String> nextStandardLogLevel = new ArrayList<String>(Arrays.asList(new String[] { "trace", "debug", "info", "warn", "error", "fatal" }));
