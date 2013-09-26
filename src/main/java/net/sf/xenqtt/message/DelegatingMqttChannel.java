@@ -97,6 +97,15 @@ final class DelegatingMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#close(java.lang.Throwable)
+	 */
+	@Override
+	public void close(Throwable cause) {
+
+		delegate.close(cause);
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#isOpen()
 	 */
 	@Override

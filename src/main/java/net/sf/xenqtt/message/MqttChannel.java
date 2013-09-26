@@ -100,6 +100,11 @@ public interface MqttChannel extends MqttChannelRef {
 	void close();
 
 	/**
+	 * Closes the underlying channels, sockets, etc and sends cause to the {@link MessageHandler#channelClosed(MqttChannel, Throwable)} callback.
+	 */
+	void close(Throwable cause);
+
+	/**
 	 * Tells whether or not this channel is open. This channel is open if the underlying channels, sockets, etc are open
 	 * 
 	 * @return true if, and only if, this channel is open

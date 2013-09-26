@@ -703,7 +703,12 @@ abstract class AbstractMqttClient implements MqttClient {
 
 		@Override
 		public void run() {
-			manager.close(channel);
+
+			try {
+				manager.close(channel);
+			} catch (Throwable t) {
+				Log.error(t, "Failed to close channel after connection timed out");
+			}
 		}
 	}
 

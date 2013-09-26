@@ -255,6 +255,15 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#close(java.lang.Throwable)
+	 */
+	@Override
+	public final void close(Throwable cause) {
+
+		doClose(cause, null);
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#isOpen()
 	 */
 	@Override
@@ -599,7 +608,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private void doClose(Throwable cause, String messageFormat, Object... args) {
 
-		if (cause != null) {
+		if (messageFormat != null) {
 			Log.error(cause, messageFormat, args);
 		}
 
