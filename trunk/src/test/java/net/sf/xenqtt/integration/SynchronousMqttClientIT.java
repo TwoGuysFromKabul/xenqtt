@@ -33,9 +33,12 @@ import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.ReconnectionStrategy;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.client.SynchronousMqttClient;
+import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.mockbroker.Client;
 import net.sf.xenqtt.mockbroker.MockBroker;
+import net.sf.xenqtt.mockbroker.MockBrokerHandler;
 
 import org.junit.After;
 import org.junit.Before;
@@ -51,6 +54,7 @@ public class SynchronousMqttClientIT {
 	String badCredentialsUri = "tcp://q.m2m.io:1883";
 	String validBrokerUri = "tcp://test.mosquitto.org:1883";
 
+	@Mock MockBrokerHandler mockHandler;
 	@Mock MqttClientListener listener;
 	@Mock ReconnectionStrategy reconnectionStrategy;
 	@Captor ArgumentCaptor<PublishMessage> messageCaptor;;
@@ -558,7 +562,29 @@ public class SynchronousMqttClientIT {
 	@Test
 	public void testConnectMessageTimesOut() throws Exception {
 
-		fail("not implemented");
+		mockBroker = new MockBroker(mockHandler, 15, 0, true);
+		mockBroker.init();
+		mockBroker.addCredentials("user1", "password1");
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isA(MqttTimeoutException.class))).thenReturn(-1L);
+
+		when(mockHandler.connect(isA(Client.class), isA(ConnectMessage.class))).thenReturn(true);
+
+		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 1, 5, 10);
+		long start = System.currentTimeMillis();
+
+		try {
+			client.connect("testclient20", true, 90);
+			fail("expected exception");
+		} catch (MqttCommandCancelledException e) {
+			assertEquals(MqttTimeoutException.class, e.getCause().getClass());
+		}
+
+		verify(listener, timeout(1500)).disconnected(eq(client), isA(MqttTimeoutException.class), eq(false));
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		verifyNoMoreInteractions(listener);
 	}
 
 	@Test
