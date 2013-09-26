@@ -18,6 +18,7 @@ package net.sf.xenqtt.message;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -47,6 +48,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private final Lock commandsLock = new ReentrantLock();
 	private Command<?> firstCommand;
+	private boolean doShutdown;
 
 	private final CountDownLatch readyLatch = new CountDownLatch(1);
 	private final Thread ioThread;
@@ -116,11 +118,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	@Override
 	public void shutdown() {
 
-		try {
-			// FIXME [jim] - need a different way to trigger shutdown as this causes issues when callbacks are made to open channels while closing them
-			selector.close();
-		} catch (IOException ignore) {
-		}
+		addCommand(new ShutdownCommand());
 
 		try {
 			ioThread.join();
@@ -243,6 +241,8 @@ public final class ChannelManagerImpl implements ChannelManager {
 			try {
 				channel.close();
 			} catch (Exception ignore) {
+			} finally {
+				channel.cancelBlockingCommands();
 			}
 		}
 	}
@@ -257,7 +257,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 			long maxIdleTime = Long.MAX_VALUE;
 
-			for (;;) {
+			while (!doShutdown) {
 
 				if (maxIdleTime == Long.MAX_VALUE) {
 					selector.select();
@@ -285,6 +285,11 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		closeAll();
+
+		try {
+			selector.close();
+		} catch (Exception ignore) {
+		}
 	}
 
 	private void doConnect(long now, Set<SelectionKey> keys) {
@@ -292,14 +297,16 @@ public final class ChannelManagerImpl implements ChannelManager {
 		Iterator<SelectionKey> iter = keys.iterator();
 		while (iter.hasNext()) {
 			SelectionKey key = iter.next();
-			if (!key.isValid()) {
-				iter.remove();
-			} else if (key.isConnectable()) {
-				MqttChannel channel = (MqttChannel) key.attachment();
-				if (!channel.finishConnect()) {
-					channelClosed(channel);
-					iter.remove();
+			try {
+				if (key.isConnectable()) {
+					MqttChannel channel = (MqttChannel) key.attachment();
+					if (!channel.finishConnect()) {
+						channelClosed(channel);
+						iter.remove();
+					}
 				}
+			} catch (CancelledKeyException e) {
+				iter.remove();
 			}
 		}
 	}
@@ -309,12 +316,16 @@ public final class ChannelManagerImpl implements ChannelManager {
 		Iterator<SelectionKey> iter = keys.iterator();
 		while (iter.hasNext()) {
 			SelectionKey key = iter.next();
-			if (key.isReadable()) {
-				MqttChannel channel = (MqttChannel) key.attachment();
-				if (!channel.read(now)) {
-					channelClosed(channel);
-					iter.remove();
+			try {
+				if (key.isReadable()) {
+					MqttChannel channel = (MqttChannel) key.attachment();
+					if (!channel.read(now)) {
+						channelClosed(channel);
+						iter.remove();
+					}
 				}
+			} catch (CancelledKeyException e) {
+				iter.remove();
 			}
 		}
 	}
@@ -324,12 +335,16 @@ public final class ChannelManagerImpl implements ChannelManager {
 		Iterator<SelectionKey> iter = keys.iterator();
 		while (iter.hasNext()) {
 			SelectionKey key = iter.next();
-			if (key.isWritable()) {
-				MqttChannel channel = (MqttChannel) key.attachment();
-				if (!channel.write(now)) {
-					channelClosed(channel);
-					iter.remove();
+			try {
+				if (key.isWritable()) {
+					MqttChannel channel = (MqttChannel) key.attachment();
+					if (!channel.write(now)) {
+						channelClosed(channel);
+						iter.remove();
+					}
 				}
+			} catch (CancelledKeyException e) {
+				iter.remove();
 			}
 		}
 	}
@@ -538,6 +553,18 @@ public final class ChannelManagerImpl implements ChannelManager {
 				}
 				throw new MqttException("MQTT broker channel creation failed", e);
 			}
+		}
+	}
+
+	private final class ShutdownCommand extends Command<Void> {
+
+		public ShutdownCommand() {
+			super(true);
+		}
+
+		@Override
+		public void doExecute() {
+			doShutdown = true;
 		}
 	}
 }
