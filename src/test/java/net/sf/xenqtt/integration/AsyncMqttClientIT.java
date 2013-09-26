@@ -276,18 +276,126 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testConnectionLost_NotFirstReconnectSucceeds() throws Exception {
 
-		fail("not implemented");
+		Answer<Boolean> answer = new Answer<Boolean>() {
+
+			@Override
+			public Boolean answer(InvocationOnMock invocation) throws Throwable {
+
+				Client client = (Client) invocation.getArguments()[0];
+				client.close();
+				return true;
+			}
+		};
+		// close the broker end of the channel when it receives a pub message
+		doAnswer(answer).doAnswer(answer).doReturn(false).when(mockHandler).publish(isA(Client.class), isA(PubMessage.class));
+
+		// configure reconnection strategy to try to reconnect
+		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L);
+
+		// create the broker
+		mockBroker = new MockBroker(mockHandler, 15, 0, true);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		// connect to the broker and send the pub message which will cause the channel to close
+		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5);
+		client.connect("testclient20", true, 90);
+		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
+		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
+		client.publish(pubMessage);
+
+		// verify connection is lost
+		verify(reconnectionStrategy, timeout(5000)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
+		verify(listener, timeout(5000)).disconnected(client, null, true);
+
+		// verify reconnect in about 1 second
+		long start = System.currentTimeMillis();
+		verify(reconnectionStrategy, timeout(1500).times(2)).connectionEstablished();
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		// verify connection is lost again
+		verify(reconnectionStrategy, timeout(5000).times(2)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
+		verify(listener, timeout(5000).times(2)).disconnected(client, null, true);
+
+		// verify reconnect in about 1 second
+		start = System.currentTimeMillis();
+		verify(reconnectionStrategy, timeout(1500).times(3)).connectionEstablished();
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		// verify the message we sent before closing the channel got published
+		verify(listener, timeout(5000)).published(client, pubMessage);
+
+		// disconnect the client
+		client.disconnect();
+		verify(listener, timeout(5000)).disconnected(client, null, false);
 	}
 
 	@Test
 	public void testConnectionLost_AllReconnectsFail() throws Exception {
 
-		fail("not implemented");
-	}
+		// close the broker end of the channel when it receives a pub message
+		doAnswer(new Answer<Boolean>() {
 
-	@Test
-	public void testSendWhileReconnectionInProgress() throws Exception {
+			@Override
+			public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
-		fail("not implemented");
+				Client client = (Client) invocation.getArguments()[0];
+				client.close();
+				return true;
+			}
+		}).when(mockHandler).publish(isA(Client.class), isA(PubMessage.class));
+
+		// configure reconnection strategy to try to reconnect
+		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L, 1000L, 1000L, 0L);
+
+		// create the broker
+		mockBroker = new MockBroker(mockHandler, 15, 0, true);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		// connect to the broker and send the pub message which will cause the channel to close
+		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5);
+		client.connect("testclient20", true, 90);
+		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
+		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
+		client.publish(pubMessage);
+
+		// verify connection is lost
+		verify(reconnectionStrategy, timeout(5000)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
+		verify(listener, timeout(5000)).disconnected(client, null, true);
+
+		// verify reconnect in about 1 second
+		long start = System.currentTimeMillis();
+		verify(reconnectionStrategy, timeout(1500).times(2)).connectionEstablished();
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		// verify connection is lost again
+		verify(reconnectionStrategy, timeout(5000).times(2)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
+		verify(listener, timeout(5000).times(2)).disconnected(client, null, true);
+
+		// verify reconnect in about 1 second
+		start = System.currentTimeMillis();
+		verify(reconnectionStrategy, timeout(1500).times(3)).connectionEstablished();
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		// verify connection is lost again
+		verify(reconnectionStrategy, timeout(5000).times(3)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
+		verify(listener, timeout(5000).times(3)).disconnected(client, null, true);
+
+		// verify reconnect in about 1 second
+		start = System.currentTimeMillis();
+		verify(reconnectionStrategy, timeout(1500).times(4)).connectionEstablished();
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		// verify connection is lost again
+		verify(reconnectionStrategy, timeout(5000).times(4)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
+		verify(listener, timeout(5000)).disconnected(client, null, false);
+
+		// verify the message we sent before closing the channel never got published
+		verify(listener, timeout(1000).never()).published(client, pubMessage);
+
+		// disconnect the client
+		client.disconnect();
+		verify(listener, timeout(5000)).disconnected(client, null, false);
 	}
 }
