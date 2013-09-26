@@ -44,14 +44,6 @@ import org.mockito.MockitoAnnotations;
 
 public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
-	// FIXME [jim] - trailing slashes in topics should just be removed
-	// FIXME [jim] - make sure a/# subscripts to just "a" as well as all subtopics
-	// FIXME [jim] - duplicate // separators are just treated as one
-	// FIXME [jim] - an empty string is a valid topic
-	// FIXME [jim] - the client should send a pingreq if it hasn't heard from the server in ping timeout. this could happen if the client is just publishing qos
-	// 0 messages.
-	// FIXME [jim] - what is the correct behavior when you subscribe to a topic multiple times??
-
 	String badCredentialsUri = "tcp://q.m2m.io:1883";
 	String validBrokerUri = "tcp://test.mosquitto.org:1883";
 
