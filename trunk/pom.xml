@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.sf.xenqtt</groupId>
 	<artifactId>xenqtt</artifactId>
-	<version>0.5.0</version>
+	<version>0.5.1-SNAPSHOT</version>
 	<name>XenQTT</name>
 
 
@@ -129,9 +129,9 @@
 		</plugins>
 	</build>
 	<scm>
-		<connection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/tags/xenqtt-0.5.0</connection>
-		<developerConnection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/tags/xenqtt-0.5.0</developerConnection>
-		<url>https://svn.code.sf.net/p/xenqtt/code/tags/xenqtt-0.5.0</url>
+		<connection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/trunk</connection>
+		<developerConnection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/trunk</developerConnection>
+		<url>https://svn.code.sf.net/p/xenqtt/code/trunk</url>
 	</scm>
 
 </project>
