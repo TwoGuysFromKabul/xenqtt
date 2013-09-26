@@ -516,18 +516,16 @@ public class ChannelManagerImplTest {
 		clientHandler.assertChannelClosedCount(0);
 		brokerHandler.assertChannelClosedCount(0);
 
-		Exception clientCause = new Exception();
-		Exception brokerCause = new Exception();
+		Exception cause = new Exception();
 
-		manager.close(clientChannel, clientCause);
+		manager.close(clientChannel, cause);
 		clientHandler.assertChannelClosedCount(1);
-		clientHandler.assertLastChannelClosedCause(clientCause);
+		clientHandler.assertLastChannelClosedCause(cause);
 		brokerHandler.assertChannelClosedCount(0);
 
-		manager.close(brokerChannel, brokerCause);
+		manager.close(brokerChannel);
 		clientHandler.assertChannelClosedCount(1);
 		brokerHandler.assertChannelClosedCount(1);
-		brokerHandler.assertLastChannelClosedCause(brokerCause);
 	}
 
 	@Test
@@ -542,18 +540,16 @@ public class ChannelManagerImplTest {
 		clientHandler.assertChannelClosedCount(0);
 		brokerHandler.assertChannelClosedCount(0);
 
-		Exception clientCause = new Exception();
-		Exception brokerCause = new Exception();
+		Exception cause = new Exception();
 
-		manager.close(clientChannel, clientCause);
+		manager.close(clientChannel, cause);
 		clientHandler.assertChannelClosedCount(1);
-		clientHandler.assertLastChannelClosedCause(clientCause);
+		clientHandler.assertLastChannelClosedCause(cause);
 		brokerHandler.assertChannelClosedCount(0);
 
-		manager.close(brokerChannel, brokerCause);
+		manager.close(brokerChannel);
 		clientHandler.assertChannelClosedCount(1);
 		brokerHandler.assertChannelClosedCount(1);
-		brokerHandler.assertLastChannelClosedCause(brokerCause);
 	}
 
 	@Test
