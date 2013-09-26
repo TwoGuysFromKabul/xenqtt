@@ -56,7 +56,7 @@ public final class Client {
 	/**
 	 * @return The message ID to use for the next identifiable message sent to this client by the broker
 	 */
-	int getNextMessageId() {
+	public int getNextMessageId() {
 
 		if (++nextMessageId > 0xffff) {
 			nextMessageId = 1;
