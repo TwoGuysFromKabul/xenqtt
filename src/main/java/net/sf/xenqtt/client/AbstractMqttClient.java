@@ -705,7 +705,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		public void run() {
 
 			try {
-				manager.close(channel);
+				manager.close(channel, new MqttTimeoutException("Timed out waiting for a response from the broker to the connect message"));
 			} catch (Throwable t) {
 				Log.error(t, "Failed to close channel after connection timed out");
 			}

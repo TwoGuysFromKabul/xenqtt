@@ -23,13 +23,17 @@ import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 
 import net.sf.xenqtt.MqttException;
+import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
+import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.ReconnectionStrategy;
 import net.sf.xenqtt.client.Subscription;
+import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.mockbroker.Client;
 import net.sf.xenqtt.mockbroker.MockBroker;
 import net.sf.xenqtt.mockbroker.MockBrokerHandler;
 
@@ -206,13 +210,17 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		mockBroker.addCredentials("user1", "password1");
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 1, 5);
-		client.connect("testclient20", true, 90);
-		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
-		client.disconnect();
-		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isA(MqttTimeoutException.class))).thenReturn(-1L);
 
-		fail("not implemented");
+		when(mockHandler.connect(isA(Client.class), isA(ConnectMessage.class))).thenReturn(true);
+
+		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 1, 5);
+		long start = System.currentTimeMillis();
+		client.connect("testclient20", true, 90);
+		verify(listener, timeout(1500)).disconnected(eq(client), isA(MqttTimeoutException.class), eq(false));
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		verifyNoMoreInteractions(listener);
 	}
 
 	@Test
