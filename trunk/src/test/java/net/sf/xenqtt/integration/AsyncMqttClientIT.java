@@ -32,6 +32,7 @@ import net.sf.xenqtt.client.ReconnectionStrategy;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
+import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
 import net.sf.xenqtt.mockbroker.Client;
 import net.sf.xenqtt.mockbroker.MockBroker;
@@ -45,6 +46,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
@@ -226,7 +229,48 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testConnectionLost_FirstReconnectSucceeds() throws Exception {
 
-		fail("not implemented");
+		// close the broker end of the channel when it receives a pub message
+		doAnswer(new Answer<Boolean>() {
+
+			@Override
+			public Boolean answer(InvocationOnMock invocation) throws Throwable {
+
+				Client client = (Client) invocation.getArguments()[0];
+				client.close();
+				return true;
+			}
+		}).doReturn(false).when(mockHandler).publish(isA(Client.class), isA(PubMessage.class));
+
+		// configure reconnection strategy to try to reconnect
+		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L);
+
+		// create the broker
+		mockBroker = new MockBroker(mockHandler, 15, 0, true);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		// connect to the broker and send the pub message which will cause the channel to close
+		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5);
+		client.connect("testclient20", true, 90);
+		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
+		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
+		client.publish(pubMessage);
+
+		// verify connection is lost
+		verify(reconnectionStrategy, timeout(5000)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
+		verify(listener, timeout(5000)).disconnected(client, null, true);
+
+		// verify reconnect in about 1 second
+		long start = System.currentTimeMillis();
+		verify(reconnectionStrategy, timeout(1500).times(2)).connectionEstablished();
+		assertTrue(System.currentTimeMillis() - start > 500);
+
+		// verify the message we sent before closing the channel got published
+		verify(listener, timeout(5000)).published(client, pubMessage);
+
+		// disconnect the client
+		client.disconnect();
+		verify(listener, timeout(5000)).disconnected(client, null, false);
 	}
 
 	@Test
