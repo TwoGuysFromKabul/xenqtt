@@ -39,7 +39,7 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	@Mock MockBrokerHandler mockHandler;
 	MockBroker mockBroker;
 
-	// FIXME [jim] - need to add mock broker specific tests, if any
+	// FIXME [jim] - need to add more tests
 	@Override
 	@Before
 	public void before() {
