@@ -122,7 +122,7 @@ public class MockBrokerApplicationTest {
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
 		assertArrayEquals(subscriptions, client.subscribe(subscriptions));
 		client.publish(new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "onyx"));
-		assertTrue(latch.await(1, TimeUnit.SECONDS));
+		assertTrue(latch.await(5, TimeUnit.SECONDS));
 		assertEquals(1, messagePayloads.size());
 		assertEquals("onyx", messagePayloads.get(0));
 	}
@@ -158,7 +158,7 @@ public class MockBrokerApplicationTest {
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
 		assertArrayEquals(subscriptions, client.subscribe(subscriptions));
 		client.publish(new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "onyx"));
-		assertTrue(latch.await(1, TimeUnit.SECONDS));
+		assertTrue(latch.await(5, TimeUnit.SECONDS));
 		assertEquals(1, messagePayloads.size());
 		assertEquals("onyx", messagePayloads.get(0));
 	}
