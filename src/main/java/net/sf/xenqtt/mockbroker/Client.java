@@ -65,6 +65,13 @@ public final class Client {
 	}
 
 	/**
+	 * Closes the connection to this client
+	 */
+	public void close() {
+		channel.close();
+	}
+
+	/**
 	 * Called whenever an {@link MqttMessage} is received
 	 */
 	void messageReceived(MqttMessage message) {
