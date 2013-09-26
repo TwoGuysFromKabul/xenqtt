@@ -157,7 +157,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			selectionKey = channel.register(selector, ops, this);
 			this.handler = handler;
 
-			Log.debug("Registered %s with selector %s", this);
+			Log.debug("Registered %s with selector %s", this, selector);
 			return true;
 
 		} catch (Exception e) {
@@ -387,6 +387,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public String toString() {
 
+		if (channel == null) {
+			return "This channel has not been property constructed: " + super.toString();
+		}
 		Socket socket = channel.socket();
 		if (!socket.isBound()) {
 			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A]";
