@@ -15,7 +15,6 @@
  */
 package net.sf.xenqtt.client;
 
-import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +58,6 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 abstract class AbstractMqttClient implements MqttClient {
 
-	// FIXME [jim] - need to test connect timeout
-
 	private final String brokerUri;
 	private final ChannelManager manager;
 
@@ -83,6 +80,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	private volatile ConnectMessage connectMessage;
 	private volatile boolean firstConnectPending = true;
 	private volatile Future<?> connectTimeoutFuture;
+	private volatile boolean closeRequested;
+	private volatile boolean shuttingDown;
 
 	/**
 	 * Constructs a synchronous instance of this class using an {@link Executor} owned by this class.
@@ -233,6 +232,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	@Override
 	public final void disconnect() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
+		closeRequested = true;
 		DisconnectMessage message = new DisconnectMessage();
 		manager.send(channel, message);
 	}
@@ -308,6 +308,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	@Override
 	public final void close() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
+		closeRequested = true;
 		manager.close(channel);
 	}
 
@@ -320,7 +321,8 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	public final void shutdown() throws MqttInterruptedException {
 
-		this.manager.shutdown();
+		shuttingDown = true;
+		manager.shutdown();
 
 		scheduledExecutor.shutdownNow();
 		try {
@@ -447,12 +449,13 @@ abstract class AbstractMqttClient implements MqttClient {
 		boolean reconnecting = false;
 
 		// if channel is null then it didn't even finish construction so we definitely don't want to reconnect
-		if (channel != null) {
-			if (cause != null && !(cause instanceof ConnectException)) {
+		if (channel != null && !shuttingDown) {
+			if (!closeRequested) {
 				long reconnectDelay = reconnectionStrategy.connectionLost(this, cause);
 				reconnecting = reconnectDelay >= 0;
 
 				if (reconnecting) {
+					Log.warn("Scheduling reconnect for channel: %s", channel);
 					scheduledExecutor.schedule(new ClientReconnector(), reconnectDelay, TimeUnit.MILLISECONDS);
 				}
 			}
@@ -480,7 +483,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		 * @see net.sf.xenqtt.message.MessageHandler#connAck(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnAckMessage)
 		 */
 		@Override
-		public void connAck(final MqttChannel channel, final ConnAckMessage message) throws Exception {
+		public void connAck(final MqttChannel chan, final ConnAckMessage message) throws Exception {
 
 			if (connectTimeoutFuture != null) {
 				connectTimeoutFuture.cancel(false);
@@ -495,7 +498,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 						reconnectionStrategy.connectionEstablished();
 						if (newChannel != null) {
-							manager.transfer(channel, newChannel);
+							manager.transfer(AbstractMqttClient.this.channel, newChannel);
 							AbstractMqttClient.this.channel = newChannel;
 							newChannel = null;
 						}
