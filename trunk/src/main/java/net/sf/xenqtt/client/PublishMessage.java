@@ -53,7 +53,7 @@ public class PublishMessage {
 	 *            zero-length payload and the Retain flag set on the same topic.
 	 */
 	public PublishMessage(String topicName, QoS qos, byte[] payload, boolean retain) {
-		XenqttUtil.validateNotEmpty("topicName", topicName);
+		XenqttUtil.validateNotNull("topicName", topicName);
 		XenqttUtil.validateNotNull("qos", qos);
 		XenqttUtil.validateNotNull("payload", payload);
 
