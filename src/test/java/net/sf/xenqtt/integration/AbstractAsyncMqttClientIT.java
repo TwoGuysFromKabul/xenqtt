@@ -44,7 +44,6 @@ import org.mockito.MockitoAnnotations;
  */
 public abstract class AbstractAsyncMqttClientIT {
 
-	// FIXME [jim] - an empty string is a valid topic
 	// FIXME [jim] - the client should send a pingreq if it hasn't heard from the server in ping timeout. this could happen if the client is just publishing qos
 	// 0 messages.
 	// FIXME [jim] - what is the correct behavior when you subscribe to a topic multiple times??

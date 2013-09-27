@@ -39,7 +39,7 @@ public final class Subscription {
 	 *            received from the broker this is the granted qos.
 	 */
 	public Subscription(String topic, QoS qos) {
-		this.topic = XenqttUtil.validateNotEmpty("topic", topic);
+		this.topic = XenqttUtil.validateNotNull("topic", topic);
 		this.qos = XenqttUtil.validateNotNull("qos", qos);
 	}
 

@@ -37,6 +37,7 @@ import org.mockito.MockitoAnnotations;
 
 public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 
+	int counter;
 	@Mock MqttClientListener syncListener;
 	@Mock MockBrokerHandler mockHandler;
 	MockBroker mockBroker;
@@ -170,15 +171,29 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	}
 
 	@Test
+	public void testSubscribePublish_WildCards_EmptyTopic() throws Exception {
+
+		// connect client
+		connect();
+
+		subscribe("", QoS.AT_MOST_ONCE);
+		publish("", true);
+		publish("a", false);
+
+		disconnect();
+	}
+
+	@Test
 	public void testSubscribePublish_WildCards_OnlyPlus() throws Exception {
 
 		// connect client
 		connect();
 
 		subscribe("+", QoS.AT_MOST_ONCE);
-		publish("foo", "foo", true);
-		publish("/foo", "foo", false);
-		publish("bar/foo", "foo", false);
+		publish("", true);
+		publish("foo", true);
+		publish("/foo", false);
+		publish("bar/foo", false);
 
 		disconnect();
 	}
@@ -189,9 +204,10 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("/+", QoS.AT_MOST_ONCE);
-		publish("foo", "foo", false);
-		publish("/foo", "foo", true);
-		publish("bar/foo", "foo", false);
+		publish("", false);
+		publish("foo", false);
+		publish("/foo", true);
+		publish("bar/foo", false);
 
 		disconnect();
 	}
@@ -202,9 +218,10 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("+/+", QoS.AT_MOST_ONCE);
-		publish("foo", "foo", false);
-		publish("/foo", "foo", true);
-		publish("bar/foo", "foo", true);
+		publish("", false);
+		publish("foo", false);
+		publish("/foo", true);
+		publish("bar/foo", true);
 
 		disconnect();
 	}
@@ -215,9 +232,9 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/b/+", QoS.AT_MOST_ONCE);
-		publish("a/b", "foo", false);
-		publish("a/b/abc", "foo", true);
-		publish("a/b/abc/d", "foo", false);
+		publish("a/b", false);
+		publish("a/b/abc", true);
+		publish("a/b/abc/d", false);
 
 		disconnect();
 	}
@@ -228,10 +245,10 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/+/c", QoS.AT_MOST_ONCE);
-		publish("a/b", "foo", false);
-		publish("a/b/c", "foo", true);
-		publish("a/b/d", "foo", false);
-		publish("a/b/c/d", "foo", false);
+		publish("a/b", false);
+		publish("a/b/c", true);
+		publish("a/b/d", false);
+		publish("a/b/c/d", false);
 
 		disconnect();
 	}
@@ -242,10 +259,11 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("#", QoS.AT_MOST_ONCE);
-		publish("a", "foo", true);
-		publish("/a", "foo", true);
-		publish("a/b", "foo", true);
-		publish("/a/b", "foo", true);
+		publish("", true);
+		publish("a", true);
+		publish("/a", true);
+		publish("a/b", true);
+		publish("/a/b", true);
 
 		disconnect();
 	}
@@ -256,10 +274,11 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("/#", QoS.AT_MOST_ONCE);
-		publish("a", "foo", true);
-		publish("/a", "foo", true);
-		publish("a/b", "foo", true);
-		publish("/a/b", "foo", true);
+		publish("", true);
+		publish("a", true);
+		publish("/a", true);
+		publish("a/b", true);
+		publish("/a/b", true);
 
 		disconnect();
 	}
@@ -270,12 +289,12 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/#", QoS.AT_MOST_ONCE);
-		publish("a", "foo", true);
-		publish("/a", "foo", false);
-		publish("b", "foo", false);
-		publish("/b", "foo", false);
-		publish("a/b", "foo", true);
-		publish("/a/b", "foo", false);
+		publish("a", true);
+		publish("/a", false);
+		publish("b", false);
+		publish("/b", false);
+		publish("a/b", true);
+		publish("/a/b", false);
 
 		disconnect();
 	}
@@ -286,12 +305,12 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("/a/#", QoS.AT_MOST_ONCE);
-		publish("a", "foo", false);
-		publish("/a", "foo", true);
-		publish("b", "foo", false);
-		publish("/b", "foo", false);
-		publish("a/b", "foo", false);
-		publish("/a/b", "foo", true);
+		publish("a", false);
+		publish("/a", true);
+		publish("b", false);
+		publish("/b", false);
+		publish("a/b", false);
+		publish("/a/b", true);
 
 		disconnect();
 	}
@@ -302,8 +321,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/a+c/c", QoS.AT_MOST_ONCE);
-		publish("a/abc/c", "foo", false);
-		publish("a/a+c/c", "foo", false);
+		publish("a/abc/c", false);
+		publish("a/a+c/c", false);
 
 		disconnect();
 	}
@@ -314,8 +333,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/a+/c", QoS.AT_MOST_ONCE);
-		publish("a/ab/c", "foo", false);
-		publish("a/a+/c", "foo", false);
+		publish("a/ab/c", false);
+		publish("a/a+/c", false);
 
 		disconnect();
 	}
@@ -326,8 +345,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/+c/c", QoS.AT_MOST_ONCE);
-		publish("a/bc/c", "foo", false);
-		publish("a/+c/c", "foo", false);
+		publish("a/bc/c", false);
+		publish("a/+c/c", false);
 
 		disconnect();
 	}
@@ -338,8 +357,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/a#c/c", QoS.AT_MOST_ONCE);
-		publish("a/abc/c", "foo", false);
-		publish("a/a#c/c", "foo", false);
+		publish("a/abc/c", false);
+		publish("a/a#c/c", false);
 
 		disconnect();
 	}
@@ -350,7 +369,7 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/#/c", QoS.AT_MOST_ONCE);
-		publish("a/abc/c", "foo", false);
+		publish("a/abc/c", false);
 
 		disconnect();
 	}
@@ -361,8 +380,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/b/c", QoS.AT_MOST_ONCE);
-		publish("a/+/c", "foo", false);
-		publish("a/#", "foo", false);
+		publish("a/+/c", false);
+		publish("a/#", false);
 
 		disconnect();
 	}
@@ -373,8 +392,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a/b/", QoS.AT_MOST_ONCE);
-		publish("a/b/", "foo", false);
-		publish("a/b", "foo", false);
+		publish("a/b/", false);
+		publish("a/b", false);
 
 		disconnect();
 	}
@@ -385,8 +404,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		connect();
 
 		subscribe("a//b", QoS.AT_MOST_ONCE);
-		publish("a//b", "foo", false);
-		publish("a/b", "foo", false);
+		publish("a//b", false);
+		publish("a/b", false);
 
 		disconnect();
 	}
@@ -431,7 +450,9 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	 * @param shouldBeReceived
 	 *            If true then the received message is verified. If false the we wait 1 second and verify that the message is never received.
 	 */
-	private void publish(String topic, String payload, boolean shouldBeReceived) throws Exception {
+	private void publish(String topic, boolean shouldBeReceived) throws Exception {
+
+		String payload = "foo-" + counter++;
 
 		reset(listener);
 		client.publish(new PublishMessage(topic, QoS.AT_MOST_ONCE, payload));

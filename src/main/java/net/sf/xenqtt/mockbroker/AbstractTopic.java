@@ -72,6 +72,10 @@ abstract class AbstractTopic {
 	 */
 	final static boolean checkWildcardAndVerifyTopic(String topicName, boolean allowWildcards) throws MqttInvalidTopicNameException {
 
+		if (topicName.isEmpty()) {
+			return false;
+		}
+
 		int lastIndex = topicName.length() - 1;
 
 		if (topicName.contains("//")) {

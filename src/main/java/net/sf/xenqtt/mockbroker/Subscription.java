@@ -106,7 +106,7 @@ final class Subscription {
 	 * @return True if the subscription was added. False if it already existed even if the qos was updated
 	 */
 	public boolean subscribe(String topicName, QoS qos) {
-		XenqttUtil.validateNotEmpty("topicName", topicName);
+		XenqttUtil.validateNotNull("topicName", topicName);
 		XenqttUtil.validateNotNull("qos", qos);
 
 		for (TopicSubscription topicSubscription : topicSubscriptions) {
@@ -133,7 +133,7 @@ final class Subscription {
 	 * @return Number of topics still subscribed
 	 */
 	public int unsubscribe(String topicName) {
-		XenqttUtil.validateNotEmpty("topicName", topicName);
+		XenqttUtil.validateNotNull("topicName", topicName);
 
 		Iterator<TopicSubscription> iter = topicSubscriptions.iterator();
 		int i = 0;
