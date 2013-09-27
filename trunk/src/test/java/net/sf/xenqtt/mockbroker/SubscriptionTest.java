@@ -163,11 +163,6 @@ public class SubscriptionTest {
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testSubscribe_BlankTopicName() {
-		subscription.subscribe("", QoS.AT_MOST_ONCE);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
 	public void testSubscribe_NullTopicName() {
 		subscription.subscribe(null, QoS.AT_MOST_ONCE);
 	}
@@ -204,11 +199,6 @@ public class SubscriptionTest {
 
 		assertEquals(1, subscription.unsubscribe("grand/foo/bar"));
 		assertSubscriptionQoS(QoS.AT_LEAST_ONCE);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void testUnsubscribe_BlankTopicName() {
-		subscription.unsubscribe("");
 	}
 
 	@Test(expected = IllegalArgumentException.class)
