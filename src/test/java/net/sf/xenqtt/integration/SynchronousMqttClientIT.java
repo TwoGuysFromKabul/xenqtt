@@ -360,7 +360,6 @@ public class SynchronousMqttClientIT {
 		assertArrayEquals(grantedSubscriptions, client.subscribe(requestedSubscriptions));
 
 		// test unsubscribing
-		// FIXME [jim] - how to verify this?
 		client.unsubscribe(new String[] { "my/topic1", "my/topic2" });
 
 		// disconnect
@@ -384,7 +383,6 @@ public class SynchronousMqttClientIT {
 		assertEquals(grantedSubscriptions, client.subscribe(requestedSubscriptions));
 
 		// test unsubscribing
-		// FIXME [jim] - how to verify this?
 		client.unsubscribe(Arrays.asList(new String[] { "my/topic3", "my/topic4" }));
 
 		// disconnect
