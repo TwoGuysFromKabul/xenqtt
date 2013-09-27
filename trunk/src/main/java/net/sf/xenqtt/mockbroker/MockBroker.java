@@ -38,7 +38,7 @@ import net.sf.xenqtt.message.MqttMessage;
  * Mock MQTT broker used to test MQTT clients and applications. If debug level logging is enabled all broker events will be logged.
  */
 public final class MockBroker {
-	// FIXME [jim] - if a client connects with a client id already used by another client the older client should be closed
+
 	private final ConcurrentHashMap<String, String> credentials = new ConcurrentHashMap<String, String>();
 
 	private final BrokerEvents events;

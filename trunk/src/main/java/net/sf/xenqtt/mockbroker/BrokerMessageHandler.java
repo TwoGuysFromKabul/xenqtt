@@ -70,7 +70,11 @@ final class BrokerMessageHandler implements MessageHandler {
 		client.clientId = message.getClientId();
 		client.cleanSession = message.isCleanSession();
 
-		clientById.put(client.clientId, client);
+		Client oldClient = clientById.put(client.clientId, client);
+		if (oldClient != null) {
+			oldClient.close();
+		}
+
 		client.messageReceived(message);
 
 		if (brokerHandler.connect(client, message)) {
@@ -262,6 +266,8 @@ final class BrokerMessageHandler implements MessageHandler {
 		client.messageReceived(message);
 
 		brokerHandler.disconnect(client, message);
+
+		client.close();
 	}
 
 	/**
@@ -285,7 +291,11 @@ final class BrokerMessageHandler implements MessageHandler {
 
 		Client client = clientByChannel.remove(channel);
 		events.addEvent(CHANNEL_CLOSED, client);
-		clientById.remove(client.clientId);
+
+		Client otherClient = clientById.get(client.clientId);
+		if (client == otherClient) {
+			clientById.remove(client.clientId);
+		}
 
 		topicManager.clientClosed(client);
 
