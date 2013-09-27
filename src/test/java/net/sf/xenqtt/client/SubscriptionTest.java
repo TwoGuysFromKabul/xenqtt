@@ -25,11 +25,6 @@ public class SubscriptionTest {
 	Subscription subscription = new Subscription("grand/foo/bar", QoS.AT_MOST_ONCE);
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_BlankTopic() {
-		new Subscription("", QoS.AT_MOST_ONCE);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NullTopic() {
 		new Subscription(null, QoS.AT_MOST_ONCE);
 	}

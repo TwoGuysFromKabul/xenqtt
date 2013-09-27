@@ -75,11 +75,6 @@ public class PublishMessageTest {
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCtor_BlankTopic() {
-		new PublishMessage("", QoS.AT_MOST_ONCE, new byte[] { 97, 98, 99 }, true);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NullTopic() {
 		new PublishMessage(null, QoS.AT_MOST_ONCE, new byte[] { 97, 98, 99 }, true);
 	}
