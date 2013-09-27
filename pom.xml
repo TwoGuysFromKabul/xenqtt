@@ -1,11 +1,26 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.sf.xenqtt</groupId>
 	<artifactId>xenqtt</artifactId>
 	<version>0.5.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	<name>XenQTT</name>
-
-
+	<description>A library of MQTT APIs and tools</description>
+	<url>http://xenqtt.sf.net</url>
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+			<comments>A business-friendly OSS license</comments>
+		</license>
+	</licenses>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -95,6 +110,7 @@
 						<id>bundle-javadoc</id>
 						<phase>package</phase>
 						<goals>
+							<goal>jar</goal>
 							<goal>javadoc</goal>
 						</goals>
 					</execution>
@@ -128,10 +144,51 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>release-sign-artifacts</id>
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.1</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 	<scm>
 		<connection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/trunk</connection>
 		<developerConnection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/trunk</developerConnection>
 		<url>https://svn.code.sf.net/p/xenqtt/code/trunk</url>
 	</scm>
+	<developers>
+		<developer>
+			<id>jim</id>
+			<name>Jim</name>
+			<email>impentaj@users.sf.net</email>
+		</developer>
+		<developer>
+			<id>jeremy</id>
+			<name>Jeremy</name>
+			<email>jorgamundus@users.sf.net</email>
+		</developer>
+	</developers>
 
 </project>
