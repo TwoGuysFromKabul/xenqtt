@@ -21,6 +21,7 @@ import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
+import net.sf.xenqtt.client.MqttClientListener;
 import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.message.ConnectReturnCode;
@@ -36,6 +37,7 @@ import org.mockito.MockitoAnnotations;
 
 public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 
+	@Mock MqttClientListener syncListener;
 	@Mock MockBrokerHandler mockHandler;
 	MockBroker mockBroker;
 
@@ -112,7 +114,7 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	}
 
 	@Test
-	public void testSubscribeUnsubscribe_Wildcards() throws Exception {
+	public void testSubscribeUnsubscribe_MultipleSubscriptionsToSameTopic() throws Exception {
 
 		// connect publishing client
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
@@ -165,5 +167,294 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
 		verifyNoMoreInteractions(listener);
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_OnlyPlus() throws Exception {
+
+		// connect client
+		connect();
+
+		subscribe("+", QoS.AT_MOST_ONCE);
+		publish("foo", "foo", true);
+		publish("/foo", "foo", false);
+		publish("bar/foo", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_SlashPlus() throws Exception {
+
+		connect();
+
+		subscribe("/+", QoS.AT_MOST_ONCE);
+		publish("foo", "foo", false);
+		publish("/foo", "foo", true);
+		publish("bar/foo", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_PlusSlashPlus() throws Exception {
+
+		connect();
+
+		subscribe("+/+", QoS.AT_MOST_ONCE);
+		publish("foo", "foo", false);
+		publish("/foo", "foo", true);
+		publish("bar/foo", "foo", true);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_TrailingPlus() throws Exception {
+
+		connect();
+
+		subscribe("a/b/+", QoS.AT_MOST_ONCE);
+		publish("a/b", "foo", false);
+		publish("a/b/abc", "foo", true);
+		publish("a/b/abc/d", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_PlusInTheMiddle() throws Exception {
+
+		connect();
+
+		subscribe("a/+/c", QoS.AT_MOST_ONCE);
+		publish("a/b", "foo", false);
+		publish("a/b/c", "foo", true);
+		publish("a/b/d", "foo", false);
+		publish("a/b/c/d", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_OnlyPound() throws Exception {
+
+		connect();
+
+		subscribe("#", QoS.AT_MOST_ONCE);
+		publish("a", "foo", true);
+		publish("/a", "foo", true);
+		publish("a/b", "foo", true);
+		publish("/a/b", "foo", true);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_SlashPound() throws Exception {
+
+		connect();
+
+		subscribe("/#", QoS.AT_MOST_ONCE);
+		publish("a", "foo", true);
+		publish("/a", "foo", true);
+		publish("a/b", "foo", true);
+		publish("/a/b", "foo", true);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_MoreThanPound_NoLeadingSlash() throws Exception {
+
+		connect();
+
+		subscribe("a/#", QoS.AT_MOST_ONCE);
+		publish("a", "foo", true);
+		publish("/a", "foo", false);
+		publish("b", "foo", false);
+		publish("/b", "foo", false);
+		publish("a/b", "foo", true);
+		publish("/a/b", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_WildCards_MoreThanPound_WithLeadingSlash() throws Exception {
+
+		connect();
+
+		subscribe("/a/#", QoS.AT_MOST_ONCE);
+		publish("a", "foo", false);
+		publish("/a", "foo", true);
+		publish("b", "foo", false);
+		publish("/b", "foo", false);
+		publish("a/b", "foo", false);
+		publish("/a/b", "foo", true);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_PlusInMiddleOfLevelString() throws Exception {
+
+		connect();
+
+		subscribe("a/a+c/c", QoS.AT_MOST_ONCE);
+		publish("a/abc/c", "foo", false);
+		publish("a/a+c/c", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_PlusAtEndOfLevelString() throws Exception {
+
+		connect();
+
+		subscribe("a/a+/c", QoS.AT_MOST_ONCE);
+		publish("a/ab/c", "foo", false);
+		publish("a/a+/c", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_PlusAtStartOfLevelString() throws Exception {
+
+		connect();
+
+		subscribe("a/+c/c", QoS.AT_MOST_ONCE);
+		publish("a/bc/c", "foo", false);
+		publish("a/+c/c", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_PoundAsPartOfLevelString() throws Exception {
+
+		connect();
+
+		subscribe("a/a#c/c", QoS.AT_MOST_ONCE);
+		publish("a/abc/c", "foo", false);
+		publish("a/a#c/c", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_PoundInTheMiddle() throws Exception {
+
+		connect();
+
+		subscribe("a/#/c", QoS.AT_MOST_ONCE);
+		publish("a/abc/c", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_PublishTopicContainsWildcards() throws Exception {
+
+		connect();
+
+		subscribe("a/b/c", QoS.AT_MOST_ONCE);
+		publish("a/+/c", "foo", false);
+		publish("a/#", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_TrailingSlash() throws Exception {
+
+		connect();
+
+		subscribe("a/b/", QoS.AT_MOST_ONCE);
+		publish("a/b/", "foo", false);
+		publish("a/b", "foo", false);
+
+		disconnect();
+	}
+
+	@Test
+	public void testSubscribePublish_IllegalTopic_DoubleSlash() throws Exception {
+
+		connect();
+
+		subscribe("a//b", QoS.AT_MOST_ONCE);
+		publish("a//b", "foo", false);
+		publish("a/b", "foo", false);
+
+		disconnect();
+	}
+
+	/**
+	 * Opens a connection and assigns it to {@link AbstractAsyncMqttClientIT#client}. Resets the listener before waiting.
+	 */
+	private void connect() {
+
+		reset(listener);
+		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
+		client.connect("testclient99", true, 90);
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+	}
+
+	/**
+	 * Subscribes to the specified topic at the specified qos and waits for the ack. Resets the listener before waiting.
+	 */
+	private void subscribe(String topic, QoS qos) {
+		subscribe(new String[] { topic }, new QoS[] { qos });
+	}
+
+	/**
+	 * Subscribes to the specified topics at the specified qoses and waits for the ack. Resets the listener before waiting.
+	 */
+	private void subscribe(String[] topics, QoS[] qoses) {
+
+		assertEquals("topics and qoses must be the same length", topics.length, qoses.length);
+		reset(listener);
+		Subscription[] subscriptions = new Subscription[topics.length];
+		for (int i = 0; i < subscriptions.length; i++) {
+			subscriptions[i] = new Subscription(topics[i], qoses[i]);
+		}
+		client.subscribe(subscriptions);
+		verify(listener, timeout(5000)).subscribed(same(client), same(subscriptions), aryEq(subscriptions), eq(true));
+
+	}
+
+	/**
+	 * Publishes a message at oqs 0 using the client, waits for the listener to receive it. Resets the listener before waiting.
+	 * 
+	 * @param shouldBeReceived
+	 *            If true then the received message is verified. If false the we wait 1 second and verify that the message is never received.
+	 */
+	private void publish(String topic, String payload, boolean shouldBeReceived) throws Exception {
+
+		reset(listener);
+		client.publish(new PublishMessage(topic, QoS.AT_MOST_ONCE, payload));
+
+		if (shouldBeReceived) {
+			verify(listener, timeout(5000)).publishReceived(same(client), messageCaptor.capture());
+			PublishMessage message = messageCaptor.getValue();
+			assertEquals(topic, message.getTopic());
+			assertEquals(QoS.AT_MOST_ONCE, message.getQoS());
+			assertEquals(payload, message.getPayloadString());
+		} else {
+			Thread.sleep(1000);
+			verify(listener, never()).publishReceived(same(client), any(PublishMessage.class));
+		}
+	}
+
+	/**
+	 * Disconnects the client and waits for completion. Resets the listener before waiting.
+	 */
+	private void disconnect() {
+
+		reset(listener);
+		client.disconnect();
+		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 	}
 }

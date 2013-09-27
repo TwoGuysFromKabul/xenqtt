@@ -44,9 +44,6 @@ import org.mockito.MockitoAnnotations;
  */
 public abstract class AbstractAsyncMqttClientIT {
 
-	// FIXME [jim] - trailing slashes in topics should just be removed
-	// FIXME [jim] - make sure a/# subscripts to just "a" as well as all subtopics
-	// FIXME [jim] - duplicate // separators are just treated as one
 	// FIXME [jim] - an empty string is a valid topic
 	// FIXME [jim] - the client should send a pingreq if it hasn't heard from the server in ping timeout. this could happen if the client is just publishing qos
 	// 0 messages.

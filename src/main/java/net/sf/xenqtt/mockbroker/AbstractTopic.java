@@ -31,7 +31,17 @@ abstract class AbstractTopic {
 	AbstractTopic(String topicName, boolean isWildcard) {
 		this.topicName = topicName;
 		this.isWildcard = isWildcard;
-		this.topicLevels = XenqttUtil.quickSplit(topicName, '/');
+
+		if (topicName.isEmpty()) {
+			this.topicLevels = new String[] { "$" };
+		} else if (topicName.charAt(0) == '/' && topicName.charAt(1) != '#') {
+			String[] levels = XenqttUtil.quickSplit(topicName, '/');
+			this.topicLevels = new String[levels.length + 1];
+			this.topicLevels[0] = "$";
+			System.arraycopy(levels, 0, topicLevels, 1, levels.length);
+		} else {
+			this.topicLevels = XenqttUtil.quickSplit(topicName, '/');
+		}
 		this.endsWithPound = topicName.endsWith("#");
 	}
 
@@ -125,6 +135,13 @@ abstract class AbstractTopic {
 			if (!"+".equals(s1) && !"+".equals(s2) && !s1.equals(s2)) {
 				return false;
 			}
+		}
+
+		if (that.topicLevels.length == size + 1 && that.topicLevels[size] == "#") {
+			return true;
+		}
+		if (this.topicLevels.length == size + 1 && this.topicLevels[size] == "#") {
+			return true;
 		}
 
 		// if everything else matched then they are equal only if they have the same length
