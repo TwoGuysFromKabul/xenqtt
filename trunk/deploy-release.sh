@@ -26,5 +26,5 @@ mkdir target/deploy-docs
 DOCDIR=target/deploy-docs/$VERSION
 mkdir $DOCDIR
 cp -a target/site/apidocs/* $DOCDIR
-rsync -avP -e ssh  --delete-excluded --exclude=.svn $DOCDIR $USER,xenqtt@web.sf.net:/home/project-web/xenqtt/htdocs/apidocs
+rsync -avP -e ssh  --exclude=.svn --exclude=.htaccess $DOCDIR $USER,xenqtt@web.sf.net:/home/project-web/xenqtt/htdocs/apidocs
 echo
