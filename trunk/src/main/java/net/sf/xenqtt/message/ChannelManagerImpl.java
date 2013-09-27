@@ -229,7 +229,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 */
 	@Override
 	public void transfer(MqttChannelRef oldChannel, MqttChannelRef newChannel) {
-		// FIXME [jim] - test transfer channel
 		addCommand(new TransferCommand(oldChannel, newChannel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 

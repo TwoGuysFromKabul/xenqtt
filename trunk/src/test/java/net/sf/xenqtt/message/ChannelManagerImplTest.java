@@ -459,6 +459,52 @@ public class ChannelManagerImplTest {
 	}
 
 	@Test
+	public void testTransfer() throws Exception {
+
+		manager = new ChannelManagerImpl(2000);
+		manager.init();
+
+		// create first client and broker and send a message
+		CountDownLatch trigger = new CountDownLatch(1);
+		brokerHandler.onMessage(MessageType.UNSUBSCRIBE, trigger);
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		UnsubscribeMessage message = new UnsubscribeMessage(1, new String[] { "foo" });
+		assertNull(manager.send(clientChannel, message));
+		assertTrue(trigger.await(10, TimeUnit.SECONDS));
+		brokerHandler.assertMessages(message);
+
+		// create the second client and broker
+		MockMessageHandler brokerHandler2 = new MockMessageHandler();
+		trigger = new CountDownLatch(1);
+		brokerHandler2.onMessage(MessageType.UNSUBSCRIBE, trigger);
+		MockMessageHandler clientHandler2 = new MockMessageHandler();
+		MqttChannelRef clientChannel2 = manager.newClientChannel("localhost", server.getPort(), clientHandler2);
+		manager.newBrokerChannel(server.nextClient(1000), brokerHandler2);
+
+		// verify the message gets resent on the new channel
+		manager.transfer(clientChannel, clientChannel2);
+		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
+		brokerHandler2.assertMessages(message);
+
+		// new messages sent from the old channel should go through the new channel
+		trigger = new CountDownLatch(1);
+		brokerHandler2.onMessage(MessageType.UNSUBSCRIBE, trigger);
+		assertNull(manager.send(clientChannel, message));
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
+		brokerHandler2.assertMessages(message, message);
+
+		// new messages sent from the new channel should go through the new channel
+		trigger = new CountDownLatch(1);
+		brokerHandler2.onMessage(MessageType.UNSUBSCRIBE, trigger);
+		assertNull(manager.send(clientChannel2, message));
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
+		brokerHandler2.assertMessages(message, message, message);
+	}
+
+	@Test
 	public void testClose_NoCause_NonBlocking() throws Exception {
 
 		manager = new ChannelManagerImpl(2);
