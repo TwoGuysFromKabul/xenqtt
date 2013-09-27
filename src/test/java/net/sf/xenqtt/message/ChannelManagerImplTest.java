@@ -16,6 +16,7 @@
 package net.sf.xenqtt.message;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import java.net.ConnectException;
@@ -34,6 +35,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class ChannelManagerImplTest {
 
@@ -398,9 +401,8 @@ public class ChannelManagerImplTest {
 		brokerHandler.assertMessages(new PubAckMessage(1));
 	}
 
-	// FIXME [jim] - test blocking sends that actually return messages. better, test non blocking and blocking sends of all message types
 	@Test
-	public void testSend_Blocking() throws Exception {
+	public void testSend_Blocking_NonAckableMessage() throws Exception {
 
 		manager = new ChannelManagerImpl(2, 0);
 		manager.init();
@@ -416,6 +418,33 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
 		brokerHandler.assertMessages(new PubAckMessage(1));
+	}
+
+	@Test
+	public void testSend_Blocking_AckableMessage() throws Exception {
+
+		manager = new ChannelManagerImpl(2, 0);
+		manager.init();
+
+		brokerHandler = mock(MockMessageHandler.class);
+		doAnswer(new Answer<Void>() {
+
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+
+				MqttChannel channel = (MqttChannel) invocation.getArguments()[0];
+				SubscribeMessage msg = (SubscribeMessage) invocation.getArguments()[1];
+				channel.send(new SubAckMessage(msg.getMessageId(), msg.getRequestedQoSes()), null);
+				return null;
+			}
+		}).when(brokerHandler).subscribe(isA(MqttChannel.class), isA(SubscribeMessage.class));
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		SubAckMessage message = manager.send(clientChannel, new SubscribeMessage(1, new String[] { "foo" }, new QoS[] { QoS.AT_LEAST_ONCE }));
+		assertEquals(1, message.getMessageId());
+		assertArrayEquals(new QoS[] { QoS.AT_LEAST_ONCE }, message.getGrantedQoses());
 	}
 
 	@Test
