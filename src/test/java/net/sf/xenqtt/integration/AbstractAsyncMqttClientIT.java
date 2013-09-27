@@ -44,9 +44,6 @@ import org.mockito.MockitoAnnotations;
  */
 public abstract class AbstractAsyncMqttClientIT {
 
-	// FIXME [jim] - the client should send a pingreq if it hasn't heard from the server in ping timeout. this could happen if the client is just publishing qos
-	// 0 messages.
-
 	String badCredentialsUri = "tcp://q.m2m.io:1883";
 	String validBrokerUri = "tcp://test.mosquitto.org:1883";
 
