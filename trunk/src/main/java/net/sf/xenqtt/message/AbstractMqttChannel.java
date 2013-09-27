@@ -615,7 +615,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			Log.error(cause, messageFormat, args);
 		}
 
-		// FIXME [jim] - test setting failure
 		if (cause != null) {
 			setFailureOnBlockingCommands(cause);
 		}
