@@ -170,6 +170,28 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	}
 
 	@Test
+	public void testNewClientConnectsWithExistingClientsId() throws Exception {
+
+		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
+		client.connect("testclient99", true, 90);
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+
+		AsyncClientListener listener2 = mock(AsyncClientListener.class);
+		client2 = new AsyncMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5);
+		client2.connect("testclient99", true, 90);
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+
+		verify(listener, timeout(5000)).disconnected(same(client), isNull(Throwable.class), eq(false));
+
+		Subscription[] requestedSubscriptions = new Subscription[] { new Subscription("my/topic1", QoS.AT_LEAST_ONCE) };
+		client2.subscribe(requestedSubscriptions);
+		verify(listener2, timeout(5000)).subscribed(same(client2), same(requestedSubscriptions), aryEq(requestedSubscriptions), eq(true));
+
+		client2.disconnect();
+		verify(listener2, timeout(5000)).disconnected(same(client2), isNull(Throwable.class), eq(false));
+	}
+
+	@Test
 	public void testSubscribePublish_WildCards_EmptyTopic() throws Exception {
 
 		// connect client
