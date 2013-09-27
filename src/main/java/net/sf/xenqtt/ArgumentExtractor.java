@@ -133,6 +133,11 @@ final class ArgumentExtractor {
 		HELP("help"),
 
 		/**
+		 * A {@link Mode mode} that displays the license file for using Xenqtt and exits.
+		 */
+		LICENSE("license"),
+
+		/**
 		 * A {@link Mode mode} that runs the MQTT proxy.
 		 */
 		PROXY("proxy"),

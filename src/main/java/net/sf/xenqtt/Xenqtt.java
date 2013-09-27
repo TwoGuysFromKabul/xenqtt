@@ -131,6 +131,11 @@ public final class Xenqtt {
 			System.exit(0);
 		}
 
+		if (mode == Mode.LICENSE) {
+			displayLicense();
+			System.exit(0);
+		}
+
 		if (application == null) {
 			Log.info("The following mode is not presently supported: %s", mode.getMode());
 			System.exit(0);
@@ -150,23 +155,9 @@ public final class Xenqtt {
 	}
 
 	private static void displayHelpInformation() {
-		InputStream in = Xenqtt.class.getResourceAsStream("/help-documentation.txt");
-		if (in == null) {
+		String helpDocumentation = loadResourceFile("/help-documentation.txt");
+		if (helpDocumentation == null) {
 			System.err.println("Unable to load the help documentation. This is a bug!");
-			return;
-		}
-
-		StringBuilder helpDocumentation = new StringBuilder();
-		byte[] buffer = new byte[8192];
-		int bytesRead = -1;
-		try {
-			while ((bytesRead = in.read(buffer)) != -1) {
-				helpDocumentation.append(new String(buffer, 0, bytesRead));
-			}
-			in.close();
-		} catch (Exception ex) {
-			System.err.println("Unable to load the help documentation. This is a bug!");
-			ex.printStackTrace();
 			return;
 		}
 
@@ -211,6 +202,41 @@ public final class Xenqtt {
 		wrappedHelpDocumentation.append(currentLine.toString());
 
 		return wrappedHelpDocumentation.toString();
+	}
+
+	private static void displayLicense() {
+		String license = loadResourceFile("/LICENSE.txt");
+		if (license == null) {
+			System.err.println("Unable to load the license file. This is a bug!");
+			return;
+		}
+
+		System.out.println(license);
+	}
+
+	private static String loadResourceFile(String resourceName) {
+		resourceName = resourceName.charAt(0) == '/' ? resourceName : String.format("/%s", resourceName);
+		InputStream in = Xenqtt.class.getResourceAsStream(resourceName);
+		if (in == null) {
+			System.err.println("Unable to load the requested resource. This is a bug!");
+			return null;
+		}
+
+		StringBuilder resource = new StringBuilder();
+		byte[] buffer = new byte[8192];
+		int bytesRead = -1;
+		try {
+			while ((bytesRead = in.read(buffer)) != -1) {
+				resource.append(new String(buffer, 0, bytesRead));
+			}
+			in.close();
+		} catch (Exception ex) {
+			System.err.println("Unable to load the help documentation. This is a bug!");
+			ex.printStackTrace();
+			return null;
+		}
+
+		return resource.toString();
 	}
 
 }

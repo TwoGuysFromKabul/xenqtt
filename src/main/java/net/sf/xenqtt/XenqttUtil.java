@@ -332,4 +332,29 @@ public final class XenqttUtil {
 		throw new IllegalArgumentException(String.format(message, parameters));
 	}
 
+	/**
+	 * Determine if a particular {@link String string} is blank. A blank string is one that is either {@code null}, the empty string, or contains only
+	 * whitespace characters.
+	 * 
+	 * @param str
+	 *            The string to check
+	 * 
+	 * @return {@code true} if {@code str} is blank, {@code false} if it is not
+	 */
+	public static boolean isBlank(String str) {
+		return str == null || str.trim().equals("");
+	}
+
+	/**
+	 * Determine if a particular {@link String string} is {@code null}.
+	 * 
+	 * @param str
+	 *            The string to check
+	 * 
+	 * @return {@code true} if {@code str} is {@code null}, {@code false} if it is not
+	 */
+	public static boolean isNull(String str) {
+		return str == null;
+	}
+
 }
