@@ -45,6 +45,53 @@ public final class MqttClientFactory {
 	private final String brokerUri;
 
 	/**
+	 * Constructs an object to create synchronous or asynchronous {@link MqttClient clients} using an {@link Executor} owned by this class with the following
+	 * config:
+	 * <ul>
+	 * <li>reconnectionStrategy: {@link ProgressiveReconnectionStrategy} where the initial reconnection attempt happens after 50 millis then increases by a
+	 * factor of 5 up to 30 seconds where it continues to retry indefinitely.</li>
+	 * <li>connectTimeoutSeconds: 30</li>
+	 * <li>messageResendIntervalSeconds: 30</li>
+	 * </ul>
+	 * 
+	 * @param brokerUri
+	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
+	 * @param messageHandlerThreadPoolSize
+	 *            The number of threads used to handle incoming messages and invoke the {@link MqttClientListener listener's} methods
+	 * @param synchronous
+	 *            True to create synchronous clients, false to create asynchronous clients. If true then the synchronous clients' blockingTimeoutSeconds will be
+	 *            0 (wait forever).
+	 */
+	public MqttClientFactory(String brokerUri, int messageHandlerThreadPoolSize, boolean synchronous) {
+		this(brokerUri, new ProgressiveReconnectionStrategy(50, 5, Integer.MAX_VALUE, 30000), Executors.newFixedThreadPool(messageHandlerThreadPoolSize), 30,
+				30, synchronous ? 0 : -1);
+	}
+
+	/**
+	 * Constructs an object to create synchronous {@link MqttClient clients} using a user provided {@link Executor} with the following config:
+	 * <ul>
+	 * <li>reconnectionStrategy: {@link ProgressiveReconnectionStrategy} where the initial reconnection attempt happens after 50 millis then increases by a
+	 * factor of 5 up to 30 seconds where it continues to retry indefinitely.</li>
+	 * <li>connectTimeoutSeconds: 30</li>
+	 * <li>messageResendIntervalSeconds: 30</li>
+	 * <li>blockingTimeoutSeconds: 0 (waits forever)</li>
+	 * </ul>
+	 * 
+	 * 
+	 * @param brokerUri
+	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
+	 * @param executor
+	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
+	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
+	 * @param synchronous
+	 *            True to create synchronous clients, false to create asynchronous clients. If true then the synchronous clients' blockingTimeoutSeconds will be
+	 *            0 (wait forever).
+	 */
+	public MqttClientFactory(String brokerUri, Executor executor, boolean synchronous) {
+		this(brokerUri, new ProgressiveReconnectionStrategy(50, 5, Integer.MAX_VALUE, 30000), executor, 30, 30, synchronous ? 0 : -1);
+	}
+
+	/**
 	 * Constructs an object to create synchronous {@link MqttClient clients} using an {@link Executor} owned by this class.
 	 * 
 	 * @param brokerUri
@@ -138,9 +185,6 @@ public final class MqttClientFactory {
 	 *            wait forever.
 	 * @param messageResendIntervalSeconds
 	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. 0 to disable message resends
-	 * @param blockingTimeoutSeconds
-	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. -1 will create a non-blocking API, 0 will
-	 *            create a blocking API with no timeout, > 0 will create a blocking API with the specified timeout.
 	 */
 	public MqttClientFactory(String brokerUri, ReconnectionStrategy reconnectionStrategy, Executor executor, int connectTimeoutSeconds,
 			int messageResendIntervalSeconds) {
