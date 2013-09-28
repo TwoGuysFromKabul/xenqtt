@@ -27,6 +27,12 @@ import net.sf.xenqtt.message.QoS;
 public interface AsyncClientListener extends MqttClientListener {
 
 	/**
+	 * Use this {@link AsyncClientListener listener} when you want to ignore all client events including received messages. Any received messages will be
+	 * {@link PublishMessage#ack() ack'd}.
+	 */
+	AsyncClientListener NULL_LISTENER = new NullClientListener();
+
+	/**
 	 * Called after the client has received a connect acknowledgment from the broker.
 	 * 
 	 * @param client

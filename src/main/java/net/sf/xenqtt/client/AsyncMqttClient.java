@@ -33,7 +33,7 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param listener
-	 *            Handles events from this client
+	 *            Handles events from this client. Use {@link AsyncClientListener#NULL_LISTENER} if you don't want to receive messages or be notified of events.
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
@@ -60,7 +60,7 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param listener
-	 *            Handles events from this client
+	 *            Handles events from this client. Use {@link AsyncClientListener#NULL_LISTENER} if you don't want to receive messages or be notified of events.
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param executor

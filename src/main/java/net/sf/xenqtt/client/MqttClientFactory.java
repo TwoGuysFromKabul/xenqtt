@@ -176,7 +176,8 @@ public final class MqttClientFactory {
 	 * Creates a synchronous {@link MqttClient client}. You may only use this method if the factory was constructed to create synchronous clients.
 	 * 
 	 * @param mqttClientListener
-	 *            Handles events from this client's channel
+	 *            Handles events from this client's channel. Use {@link MqttClientListener#NULL_LISTENER} if you don't want to receive messages or be notified
+	 *            of events.
 	 * 
 	 * @return A new synchronous {@link MqttClient client}
 	 * 
@@ -198,7 +199,8 @@ public final class MqttClientFactory {
 	 * Creates an asynchronous {@link MqttClient client}. You may only use this method if the factory was constructed to create asynchronous clients.
 	 * 
 	 * @param asyncClientListener
-	 *            Handles events from this client's channel
+	 *            Handles events from this client's channel. Use {@link AsyncClientListener#NULL_LISTENER} if you don't want to receive messages or be notified
+	 *            of events.
 	 * 
 	 * @return A new asynchronous {@link MqttClient client}
 	 * 

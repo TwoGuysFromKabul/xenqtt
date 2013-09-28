@@ -29,13 +29,15 @@ import net.sf.xenqtt.message.MqttMessage;
  */
 public final class SynchronousMqttClient extends AbstractMqttClient {
 
+	// FIXME [jim] - these require users to know too much about the appropriate timeouts, etc
 	/**
 	 * Constructs an instance of this class using an {@link Executor} owned by this class.
 	 * 
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param listener
-	 *            Handles {@link PublishMessage publish messages} received by this client
+	 *            Handles {@link PublishMessage publish messages} received by this client. Use {@link MqttClientListener#NULL_LISTENER} if you don't want to
+	 *            receive messages or be notified of events.
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param messageHandlerThreadPoolSize
@@ -44,7 +46,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 *            Seconds to wait for an {@link ConnAckMessage ack} to a {@link ConnectMessage connect message} before timing out and closing the channel. 0 to
 	 *            wait forever.
 	 * @param messageResendIntervalSeconds
-	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. The minimum allowable value for this setting is 2
+	 *            Seconds between attempts to resend a message that is {@link MqttMessage#isAckable()}. The minimum allowable value for this setting is 2.
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. 0 will wait forever.
 	 */
@@ -65,7 +67,8 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param listener
-	 *            Handles {@link PublishMessage publish messages} received by this client
+	 *            Handles {@link PublishMessage publish messages} received by this client. Use {@link MqttClientListener#NULL_LISTENER} if you don't want to
+	 *            receive messages or be notified of events.
 	 * @param reconnectionStrategy
 	 *            The algorithm used to reconnect to the broker if the connection is lost
 	 * @param executor
