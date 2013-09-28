@@ -24,6 +24,12 @@ import net.sf.xenqtt.message.QoS;
 public interface MqttClientListener {
 
 	/**
+	 * Use this {@link MqttClientListener listener} when you want to ignore all client events including received messages. Any received messages will be
+	 * {@link PublishMessage#ack() ack'd}.
+	 */
+	public static MqttClientListener NULL_LISTENER = new NullClientListener();
+
+	/**
 	 * Called when a published message is received from the broker. You should always call {@link PublishMessage#ack() ack()} when you are done processing the
 	 * message. This is not required if the {@link PublishMessage#getQoS() QoS} is {@link QoS#AT_MOST_ONCE} but it is a good practice to always call it.
 	 * 
