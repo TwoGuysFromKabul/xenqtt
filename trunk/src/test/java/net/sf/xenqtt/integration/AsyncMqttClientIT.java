@@ -28,7 +28,6 @@ import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.PublishMessage;
-import net.sf.xenqtt.client.ReconnectionStrategy;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
@@ -39,47 +38,22 @@ import net.sf.xenqtt.mockbroker.MockBroker;
 import net.sf.xenqtt.mockbroker.MockBrokerHandler;
 
 import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
-	String badCredentialsUri = "tcp://q.m2m.io:1883";
-	String validBrokerUri = "tcp://test.mosquitto.org:1883";
-
 	@Mock MockBrokerHandler mockHandler;
-	@Mock AsyncClientListener listener;
-	@Mock ReconnectionStrategy reconnectionStrategy;
-	@Captor ArgumentCaptor<Subscription[]> subscriptionCaptor;;
-	@Captor ArgumentCaptor<PublishMessage> messageCaptor;;
 
 	MockBroker mockBroker;
-	AsyncMqttClient client;
-	AsyncMqttClient client2;
-
-	@Override
-	@Before
-	public void before() {
-		MockitoAnnotations.initMocks(this);
-	}
 
 	@Override
 	@After
 	public void after() {
 
-		if (client != null) {
-			client.shutdown();
-		}
-		if (client2 != null) {
-			client2.shutdown();
-		}
+		super.after();
 		if (mockBroker != null) {
 			mockBroker.shutdown(5000);
 		}
@@ -89,13 +63,15 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	public void testConstructor_InvalidScheme() throws Exception {
 
 		try {
-			client = new AsyncMqttClient("ftp://foo:1883", listener, reconnectionStrategy, 5, 0, 5);
+			client = new AsyncMqttClient("ftp://foo:1883", listener, 5, config);
 			fail("expected exception");
 		} catch (MqttException e) {
 			assertEquals("Invalid broker URI (scheme must be 'tcp'): ftp://foo:1883", e.getMessage());
 		}
 
-		verifyZeroInteractions(listener, reconnectionStrategy);
+		verify(reconnectionStrategy).clone();
+		verifyNoMoreInteractions(reconnectionStrategy);
+		verifyZeroInteractions(listener);
 	}
 
 	@Test
@@ -103,7 +79,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
 		Throwable thrown = null;
 		try {
-			client = new AsyncMqttClient("tcp://foo:1883", listener, reconnectionStrategy, 5, 0, 5);
+			client = new AsyncMqttClient("tcp://foo:1883", listener, 5, config);
 			fail("expected exception");
 		} catch (MqttException e) {
 			thrown = e.getCause();
@@ -111,22 +87,22 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		}
 
 		verify(listener, timeout(5000)).disconnected(any(AsyncMqttClient.class), same(thrown), eq(false));
+		verify(reconnectionStrategy).clone();
 
-		verifyNoMoreInteractions(listener);
-		verifyZeroInteractions(reconnectionStrategy);
+		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
 
 	// This test can take over a minute to run so ignore it by default
-	@Ignore
+	// @Ignore
 	@Test
 	public void testConstructor_InvalidPort() throws Exception {
 
-		client = new AsyncMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 0, 5);
+		client = new AsyncMqttClient("tcp://test.mosquitto.org:1234", listener, 5, config);
 
 		verify(listener, timeout(100000)).disconnected(eq(client), any(ConnectException.class), eq(false));
+		verify(reconnectionStrategy).clone();
 
-		verifyNoMoreInteractions(listener);
-		verifyZeroInteractions(reconnectionStrategy);
+		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
 
 	@Test
@@ -137,8 +113,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		mockBroker.addCredentials("user1", "password1");
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient2", true, 90, "user1", "password1");
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient2", true, "user1", "password1");
 
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 
@@ -156,15 +132,15 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		client2 = new AsyncMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5);
-		client2.connect("testclient3", true, 90);
+		client2 = new AsyncMqttClient(validBrokerUri, listener2, 5, config);
+		client2.connect("testclient3", true);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/will/topic1", QoS.AT_LEAST_ONCE) });
 		verify(listener2, timeout(5000)).subscribed(same(client2), any(Subscription[].class), any(Subscription[].class), eq(true));
 
 		// connect and close a client to generate the will message
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient4", true, 90, "user1", "password1", "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient4", true, "user1", "password1", "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -188,8 +164,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testClose() throws Exception {
 
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient19", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient19", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -198,8 +174,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testDisconnect() throws Exception {
 
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient20", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -217,9 +193,10 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
 		when(mockHandler.connect(isA(Client.class), isA(ConnectMessage.class))).thenReturn(true);
 
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 1, 5);
+		config.setConnectTimeoutSeconds(1);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
 		long start = System.currentTimeMillis();
-		client.connect("testclient20", true, 90);
+		client.connect("testclient20", true);
 		verify(listener, timeout(1500)).disconnected(eq(client), isA(MqttTimeoutException.class), eq(false));
 		assertTrue(System.currentTimeMillis() - start > 500);
 
@@ -250,8 +227,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
 		// connect to the broker and send the pub message which will cause the channel to close
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5);
-		client.connect("testclient20", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
 		client.publish(pubMessage);
@@ -298,8 +275,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
 		// connect to the broker and send the pub message which will cause the channel to close
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5);
-		client.connect("testclient20", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
 		client.publish(pubMessage);
@@ -354,8 +331,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
 		// connect to the broker and send the pub message which will cause the channel to close
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5);
-		client.connect("testclient20", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
 		client.publish(pubMessage);

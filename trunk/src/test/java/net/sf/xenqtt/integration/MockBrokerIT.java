@@ -67,8 +67,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 		mockBroker.addCredentials("user1", "password1");
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient2", true, 90, "user1", "password1");
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient2", true, "user1", "password1");
 
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 
@@ -84,15 +84,15 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		client2 = new AsyncMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5);
-		client2.connect("testclient3", true, 90);
+		client2 = new AsyncMqttClient(validBrokerUri, listener2, 5, config);
+		client2.connect("testclient3", true);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 		client2.subscribe(new Subscription[] { new Subscription("my/will/topic1", QoS.AT_LEAST_ONCE) });
 		verify(listener2, timeout(5000)).subscribed(same(client2), any(Subscription[].class), any(Subscription[].class), eq(true));
 
 		// connect and close a client to generate the will message
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient4", true, 90, "user1", "password1", "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient4", true, "user1", "password1", "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -118,13 +118,13 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 
 		// connect publishing client
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		client2 = new AsyncMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5);
-		client2.connect("testclient21", true, 90);
+		client2 = new AsyncMqttClient(validBrokerUri, listener2, 5, config);
+		client2.connect("testclient21", true);
 		verify(listener2, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
 
 		// connect client
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient22", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient22", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 
 		// test subscribing standard
@@ -172,13 +172,13 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testNewClientConnectsWithExistingClientsId() throws Exception {
 
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient99", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient99", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 
 		AsyncClientListener listener2 = mock(AsyncClientListener.class);
-		client2 = new AsyncMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5);
-		client2.connect("testclient99", true, 90);
+		client2 = new AsyncMqttClient(validBrokerUri, listener2, 5, config);
+		client2.connect("testclient99", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 
 		verify(listener, timeout(5000)).disconnected(same(client), isNull(Throwable.class), eq(false));
@@ -437,8 +437,8 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	private void connect() {
 
 		reset(listener);
-		client = new AsyncMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5);
-		client.connect("testclient99", true, 90);
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient99", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
 	}
 

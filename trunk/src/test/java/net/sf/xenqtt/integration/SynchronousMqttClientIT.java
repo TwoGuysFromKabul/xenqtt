@@ -28,6 +28,7 @@ import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.client.MqttClient;
+import net.sf.xenqtt.client.MqttClientConfig;
 import net.sf.xenqtt.client.MqttClientListener;
 import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.ReconnectionStrategy;
@@ -43,7 +44,6 @@ import net.sf.xenqtt.mockbroker.MockBrokerHandler;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -53,6 +53,8 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public class SynchronousMqttClientIT {
+
+	MqttClientConfig config = new MqttClientConfig().setConnectTimeoutSeconds(0).setMessageResendIntervalSeconds(5).setBlockingTimeoutSeconds(10);
 
 	String badCredentialsUri = "tcp://q.m2m.io:1883";
 	String validBrokerUri = "tcp://test.mosquitto.org:1883";
@@ -69,6 +71,8 @@ public class SynchronousMqttClientIT {
 	@Before
 	public void before() {
 		MockitoAnnotations.initMocks(this);
+		config.setReconnectionStrategy(reconnectionStrategy);
+		when(reconnectionStrategy.clone()).thenReturn(reconnectionStrategy);
 	}
 
 	@After
@@ -89,13 +93,15 @@ public class SynchronousMqttClientIT {
 	public void testConstructor_InvalidScheme() throws Exception {
 
 		try {
-			client = new SynchronousMqttClient("ftp://foo:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
+			client = new SynchronousMqttClient("ftp://foo:1883", listener, 5, config);
 			fail("expected exception");
 		} catch (MqttException e) {
 			assertEquals("Invalid broker URI (scheme must be 'tcp'): ftp://foo:1883", e.getMessage());
 		}
 
-		verifyZeroInteractions(listener, reconnectionStrategy);
+		verify(reconnectionStrategy).clone();
+		verifyNoMoreInteractions(reconnectionStrategy);
+		verifyZeroInteractions(listener);
 	}
 
 	@Test
@@ -103,7 +109,7 @@ public class SynchronousMqttClientIT {
 
 		Throwable thrown = null;
 		try {
-			client = new SynchronousMqttClient("tcp://foo:1883", listener, reconnectionStrategy, 5, 0, 5, 10);
+			client = new SynchronousMqttClient("tcp://foo:1883", listener, 5, config);
 			fail("expected exception");
 		} catch (MqttException e) {
 			thrown = e.getCause();
@@ -111,48 +117,53 @@ public class SynchronousMqttClientIT {
 		}
 
 		verify(listener, timeout(5000)).disconnected(any(SynchronousMqttClient.class), same(thrown), eq(false));
+		verify(reconnectionStrategy).clone();
 
-		verifyNoMoreInteractions(listener);
-		verifyZeroInteractions(reconnectionStrategy);
+		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
 
 	// This test can take over a minute to run so ignore it by default
-	@Ignore
+	// @Ignore
 	@Test
 	public void testConstructor_InvalidPort() throws Exception {
 
 		try {
-			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 0, 5, 1000);
+			config.setBlockingTimeoutSeconds(0);
+			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, 5, config);
 			fail("expected exception");
 		} catch (MqttCommandCancelledException e) {
-			verifyZeroInteractions(listener, reconnectionStrategy);
 
-			verify(listener, timeout(1000)).disconnected(any(MqttClient.class), any(ConnectException.class), eq(false));
-			verifyNoMoreInteractions(listener);
-			verifyZeroInteractions(reconnectionStrategy);
+			assertTrue(e.getCause().getCause() instanceof ConnectException);
+			verify(listener, timeout(1000)).disconnected(any(MqttClient.class), same(e.getCause().getCause()), eq(false));
+			verify(reconnectionStrategy).clone();
+			verifyNoMoreInteractions(listener, reconnectionStrategy);
 		}
 	}
 
 	@Test
 	public void testConstructorTimesOut() throws Exception {
 
+		config.setBlockingTimeoutSeconds(1);
 		try {
-			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, reconnectionStrategy, 5, 0, 5, 1);
+			client = new SynchronousMqttClient("tcp://test.mosquitto.org:1234", listener, 5, config);
 			fail("expected exception");
 		} catch (MqttTimeoutException e) {
-			verifyZeroInteractions(listener, reconnectionStrategy);
+			verify(reconnectionStrategy).clone();
+			verifyNoMoreInteractions(reconnectionStrategy);
+			verifyZeroInteractions(listener);
 		}
 	}
 
 	@Test
 	public void testConnectDisconnect_NoCredentialsNoWill() throws Exception {
 
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient1", true, 90));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient1", true));
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		verify(reconnectionStrategy).clone();
 
 		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
@@ -160,13 +171,13 @@ public class SynchronousMqttClientIT {
 	@Test
 	public void testConnect_Credentials_BadCredentials() throws Exception {
 
-		client = new SynchronousMqttClient(badCredentialsUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.BAD_CREDENTIALS, client.connect("testclient2", true, 90, "not_a_user", "not_a_password"));
+		client = new SynchronousMqttClient(badCredentialsUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.BAD_CREDENTIALS, client.connect("testclient2", true, "not_a_user", "not_a_password"));
 
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		verify(reconnectionStrategy).clone();
 
-		verifyNoMoreInteractions(listener);
-		verifyZeroInteractions(reconnectionStrategy);
+		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
 
 	@Test
@@ -177,8 +188,8 @@ public class SynchronousMqttClientIT {
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient2", true, 90, "user1", "password1"));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient2", true, "user1", "password1"));
 
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -189,13 +200,13 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient3", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient3", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic1", QoS.AT_LEAST_ONCE) }));
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient4", true, 90, "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient4", true, "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false));
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
@@ -219,15 +230,15 @@ public class SynchronousMqttClientIT {
 	public void testConnect_Will_NoRetain_NotSubscribed() throws Exception {
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient5", true, 90, "my/will/topic2", "it died dude", QoS.AT_LEAST_ONCE, false));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient5", true, "my/will/topic2", "it died dude", QoS.AT_LEAST_ONCE, false));
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient6", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient6", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic2", QoS.AT_LEAST_ONCE) }));
 		// verify no will message
 		Thread.sleep(1000);
@@ -242,16 +253,16 @@ public class SynchronousMqttClientIT {
 	public void testConnect_Will_Retain_NotSubscribed() throws Exception {
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient7", true, 90, "my/will/topic3", "it died dude", QoS.AT_LEAST_ONCE, true));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient7", true, "my/will/topic3", "it died dude", QoS.AT_LEAST_ONCE, true));
 
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient8", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient8", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic3", QoS.AT_LEAST_ONCE) }));
 
 		// verify the will message
@@ -278,15 +289,15 @@ public class SynchronousMqttClientIT {
 	public void testConnect_Will_Retain_Subscribed() throws Exception {
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient10", true, 90, "my/will/topic4", "it died dude", QoS.AT_LEAST_ONCE, true));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient10", true, "my/will/topic4", "it died dude", QoS.AT_LEAST_ONCE, true));
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient9", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient9", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/will/topic4", QoS.AT_LEAST_ONCE) }));
 
 		// verify the will message
@@ -319,14 +330,14 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the will message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient3", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient3", true));
 		client2.subscribe(new Subscription[] { new Subscription("my/will/topic1", QoS.AT_LEAST_ONCE) });
 
 		// connect and close a client to generate the will message
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
 		assertEquals(ConnectReturnCode.ACCEPTED,
-				client.connect("testclient4", true, 90, "user1", "password1", "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false));
+				client.connect("testclient4", true, "user1", "password1", "my/will/topic1", "it died dude", QoS.AT_LEAST_ONCE, false));
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
@@ -350,8 +361,8 @@ public class SynchronousMqttClientIT {
 	public void testSubscribeUnsubscribe_Array() throws Exception {
 
 		// connect client
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient11", true, 90));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient11", true));
 
 		// test subscribing
 		Subscription[] requestedSubscriptions = new Subscription[] { new Subscription("my/topic1", QoS.AT_LEAST_ONCE),
@@ -373,8 +384,8 @@ public class SynchronousMqttClientIT {
 	public void testSubscribeUnsubscribe_List() throws Exception {
 
 		// connect client
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient12", true, 90));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient12", true));
 
 		// test subscribing
 		List<Subscription> requestedSubscriptions = Arrays.asList(new Subscription[] { new Subscription("my/topic3", QoS.AT_LEAST_ONCE),
@@ -397,13 +408,13 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient13", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient13", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic5", QoS.AT_LEAST_ONCE) }));
 
 		// connect a client and generate the messages
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient14", true, 90));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient14", true));
 		for (int i = 0; i < 10; i++) {
 			client.publish(new PublishMessage("my/topic5", QoS.AT_LEAST_ONCE, "my message " + i));
 		}
@@ -432,16 +443,16 @@ public class SynchronousMqttClientIT {
 	public void testPublish_Qos1_Retain() throws Exception {
 
 		// connect a client and generate the message
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient16", true, 90));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient16", true));
 		client.publish(new PublishMessage("my/topic6", QoS.AT_LEAST_ONCE, "my message", true));
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
 		// connect and subscribe a client to get the messages
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient15", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient15", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic6", QoS.AT_LEAST_ONCE) }));
 
 		// verify the messages
@@ -470,13 +481,13 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the messages
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient15", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient15", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic7", QoS.AT_LEAST_ONCE) }));
 
 		// connect a client and generate the messages
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient16", true, 90));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient16", true));
 		for (int i = 0; i < 10; i++) {
 			client.publish(new PublishMessage("my/topic7", QoS.AT_MOST_ONCE, "my message " + i));
 		}
@@ -508,13 +519,13 @@ public class SynchronousMqttClientIT {
 
 		// connect and subscribe a client to get the message
 		MqttClientListener listener2 = mock(MqttClientListener.class);
-		client2 = new SynchronousMqttClient(validBrokerUri, listener2, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient18", true, 90));
+		client2 = new SynchronousMqttClient(validBrokerUri, listener2, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client2.connect("testclient18", true));
 		assertNotNull(client2.subscribe(new Subscription[] { new Subscription("my/topic7", QoS.AT_LEAST_ONCE) }));
 
 		// connect a client and generate the message
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient17", true, 90));
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		assertEquals(ConnectReturnCode.ACCEPTED, client.connect("testclient17", true));
 		client.publish(new PublishMessage("my/topic7", QoS.AT_LEAST_ONCE, "my message"));
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
@@ -545,8 +556,8 @@ public class SynchronousMqttClientIT {
 	@Test
 	public void testClose() throws Exception {
 
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		client.connect("testclient19", true, 90);
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient19", true);
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 	}
@@ -554,8 +565,8 @@ public class SynchronousMqttClientIT {
 	@Test
 	public void testDisconnect() throws Exception {
 
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 0, 5, 10);
-		client.connect("testclient20", true, 90);
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 	}
@@ -572,11 +583,12 @@ public class SynchronousMqttClientIT {
 
 		when(mockHandler.connect(isA(Client.class), isA(ConnectMessage.class))).thenReturn(true);
 
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 1, 5, 10);
+		config.setConnectTimeoutSeconds(1);
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
 		long start = System.currentTimeMillis();
 
 		try {
-			client.connect("testclient20", true, 90);
+			client.connect("testclient20", true);
 			fail("expected exception");
 		} catch (MqttCommandCancelledException e) {
 			assertEquals(MqttTimeoutException.class, e.getCause().getClass());
@@ -611,9 +623,10 @@ public class SynchronousMqttClientIT {
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
+		config.setConnectTimeoutSeconds(5);
 		// connect to the broker and send the pub message which will cause the channel to close
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5, 10);
-		client.connect("testclient20", true, 90);
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
 		long start = System.currentTimeMillis();
@@ -658,9 +671,10 @@ public class SynchronousMqttClientIT {
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
+		config.setConnectTimeoutSeconds(5);
 		// connect to the broker and send the pub message which will cause the channel to close
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5, 10);
-		client.connect("testclient20", true, 90);
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
 		client.publish(pubMessage);
@@ -698,9 +712,10 @@ public class SynchronousMqttClientIT {
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
+		config.setConnectTimeoutSeconds(5);
 		// connect to the broker and send the pub message which will cause the channel to close
-		client = new SynchronousMqttClient(validBrokerUri, listener, reconnectionStrategy, 5, 5, 5, 10);
-		client.connect("testclient20", true, 90);
+		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient20", true);
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
 		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
 		try {

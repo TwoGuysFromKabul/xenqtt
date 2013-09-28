@@ -181,6 +181,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 		} catch (Exception e) {
 			doClose(e, "Failed to connect %s", this);
+			// this would typically be done by the client but since we are blocking until the connect is complete then the client doesn't have an instance yet
+			cancelBlockingCommands();
 		}
 
 		return false;

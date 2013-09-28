@@ -27,8 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.xenqtt.ApplicationArguments;
-import net.sf.xenqtt.MqttTimeoutException;
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.client.MqttClient;
+import net.sf.xenqtt.client.MqttClientConfig;
 import net.sf.xenqtt.client.MqttClientListener;
 import net.sf.xenqtt.client.NullReconnectStrategy;
 import net.sf.xenqtt.client.PublishMessage;
@@ -40,6 +41,9 @@ import net.sf.xenqtt.message.QoS;
 import org.junit.Test;
 
 public class MockBrokerApplicationTest {
+
+	MqttClientConfig config = new MqttClientConfig().setReconnectionStrategy(new NullReconnectStrategy()).setConnectTimeoutSeconds(0)
+			.setMessageResendIntervalSeconds(10).setBlockingTimeoutSeconds(0);
 
 	MockBrokerApplication application = new MockBrokerApplication();
 
@@ -62,8 +66,8 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, new NullReconnectStrategy(), 1, 1, 5, 1);
-		assertSame(ConnectReturnCode.NOT_AUTHORIZED, client.connect("clientId", true, 15));
+		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		assertSame(ConnectReturnCode.NOT_AUTHORIZED, client.connect("clientId", true));
 	}
 
 	@Test
@@ -86,8 +90,8 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, new NullReconnectStrategy(), 1, 1, 5, 1);
-		assertSame(ConnectReturnCode.BAD_CREDENTIALS, client.connect("clientId", true, 15, "user1", "pass2"));
+		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		assertSame(ConnectReturnCode.BAD_CREDENTIALS, client.connect("clientId", true, "user1", "pass2"));
 	}
 
 	@Test
@@ -116,8 +120,8 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, new NullReconnectStrategy(), 1, 0, 5, 0);
-		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, 15));
+		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true));
 
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
 		assertArrayEquals(subscriptions, client.subscribe(subscriptions));
@@ -152,8 +156,8 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, new NullReconnectStrategy(), 1, 0, 5, 0);
-		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, 15, "user1", "pass1"));
+		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, "user1", "pass1"));
 
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
 		assertArrayEquals(subscriptions, client.subscribe(subscriptions));
@@ -196,8 +200,8 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, new NullReconnectStrategy(), 1, 0, 10, 0);
-		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, 15, "user1", "pass1"));
+		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, "user1", "pass1"));
 
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
 		assertArrayEquals(subscriptions, client.subscribe(subscriptions));
@@ -210,7 +214,7 @@ public class MockBrokerApplicationTest {
 		assertTrue(String.valueOf(variance), variance > 1500 && variance < 2500);
 	}
 
-	@Test(expected = MqttTimeoutException.class)
+	@Test(expected = MqttCommandCancelledException.class)
 	public void testStop() throws Exception {
 		List<String> flags = new ArrayList<String>();
 		flags.add("-a");
@@ -233,7 +237,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, new NullReconnectStrategy(), 1, 0, 5, 1);
+		new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 	}
 
 	private int getPort() {

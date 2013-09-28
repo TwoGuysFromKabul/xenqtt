@@ -83,19 +83,6 @@ public interface MqttClient {
 	 *            Typically, a client will operate in one mode or the other and not change. The choice will depend on the application. A clean session client
 	 *            will not receive stale information and it must re-subscribe each time it connects. A non-clean session client will not miss any QoS 1 or QoS 2
 	 *            messages that were published whilst it was disconnected. QoS 0 messages are never stored, since they are delivered on a best efforts basis.
-	 * @param keepAliveSeconds
-	 *            The Keep Alive timer, measured in seconds, defines the maximum time interval between messages received from a client. It enables the broker to
-	 *            detect that the network connection to a client has dropped, without having to wait for the long TCP/IP timeout. In the absence of a
-	 *            data-related message during the time period, this client sends a PINGREQ message, which the broker acknowledges with a PINGRESP message.
-	 *            <p>
-	 *            If the broker does not receive a message from the client within one and a half times the Keep Alive time period (the client is allowed "grace"
-	 *            of half a time period), it disconnects the client. This action does not impact any of the client's subscriptions.
-	 *            <p>
-	 *            If this client does not receive a PINGRESP message within a Keep Alive time period after sending a PINGREQ, it closes the TCP/IP socket
-	 *            connection.
-	 *            <p>
-	 *            The Keep Alive timer is a 16-bit value that represents the number of seconds for the time period. The actual value is application-specific,
-	 *            but a typical value is a few minutes. The maximum value is approximately 18 hours. A value of zero (0) means the client is not disconnected.
 	 * @param userName
 	 *            The user name identifies the name of the user who is connecting, which can be used for authentication. It is recommended that user names are
 	 *            kept to 12 characters or fewer, but it is not required.
@@ -135,8 +122,8 @@ public interface MqttClient {
 	 * @throws MqttInterruptedException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 */
-	ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password, String willTopic,
-			String willMessage, QoS willQos, boolean willRetain) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	ConnectReturnCode connect(String clientId, boolean cleanSession, String userName, String password, String willTopic, String willMessage, QoS willQos,
+			boolean willRetain) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
 	 * Connects this client to the broker with no credentials and no Will Message. Delegates to
@@ -144,8 +131,7 @@ public interface MqttClient {
 	 * 
 	 * @see net.sf.xenqtt.client.MqttClient#connect(String, boolean, int, String, String, String, String, QoS, boolean)
 	 */
-	ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds) throws MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException;
+	ConnectReturnCode connect(String clientId, boolean cleanSession) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
 
 	/**
 	 * Connects this client to the broker with credentials but no Will Message. Delegates to
@@ -153,8 +139,8 @@ public interface MqttClient {
 	 * 
 	 * @see net.sf.xenqtt.client.MqttClient#connect(String, boolean, int, String, String, String, String, QoS, boolean)
 	 */
-	ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String userName, String password)
-			throws MqttCommandCancelledException, MqttTimeoutException, InterruptedException;
+	ConnectReturnCode connect(String clientId, boolean cleanSession, String userName, String password) throws MqttCommandCancelledException,
+			MqttTimeoutException, InterruptedException;
 
 	/**
 	 * Connects this client to the broker with a Will Message but no credentials. Delegates to
@@ -162,7 +148,7 @@ public interface MqttClient {
 	 * 
 	 * @see net.sf.xenqtt.client.MqttClient#connect(String, boolean, int, String, String, String, String, QoS, boolean)
 	 */
-	ConnectReturnCode connect(String clientId, boolean cleanSession, int keepAliveSeconds, String willTopic, String willMessage, QoS willQos, boolean willRetain)
+	ConnectReturnCode connect(String clientId, boolean cleanSession, String willTopic, String willMessage, QoS willQos, boolean willRetain)
 			throws MqttTimeoutException, MqttInterruptedException;
 
 	/**
