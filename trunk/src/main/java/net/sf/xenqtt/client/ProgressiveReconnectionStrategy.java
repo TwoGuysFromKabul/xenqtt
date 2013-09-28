@@ -35,11 +35,8 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 	private final long baseReconnectMillis;
 	private final int progressiveFactor;
 	private final int maxNumberOfReconnects;
+	private final long maxReconnectMillis;
 	private final AtomicInteger currentRetry;
-
-	ProgressiveReconnectionStrategy(long baseReconnectMillis, int maxNumberOfRetries) {
-		this(baseReconnectMillis, 2, maxNumberOfRetries);
-	}
 
 	/**
 	 * Create a new instance of this class.
@@ -51,12 +48,15 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 	 *            reconnects will occur as such: <code>100, 200, 400, 800, 1600, ...</code>
 	 * @param maxNumberOfReconnects
 	 *            The maximum number of reconnect attempts to make
+	 * @param maxReconnectMillis
+	 *            maximum number of millis to wait. Once the progression has reached this value all future retries will be at this interval.
 	 */
-	public ProgressiveReconnectionStrategy(long baseReconnectMillis, int progressiveFactor, int maxNumberOfReconnects) {
+	public ProgressiveReconnectionStrategy(long baseReconnectMillis, int progressiveFactor, int maxNumberOfReconnects, long maxReconnectMillis) {
 		this.baseReconnectMillis = XenqttUtil.validateGreaterThan("baseReconnectMillis", baseReconnectMillis, 0L);
 		this.progressiveFactor = XenqttUtil.validateGreaterThan("progressiveFactor", progressiveFactor, 0);
 		this.maxNumberOfReconnects = XenqttUtil.validateGreaterThanOrEqualTo("maxNumberOfReconnects", maxNumberOfReconnects, 0);
-		currentRetry = new AtomicInteger();
+		this.maxReconnectMillis = XenqttUtil.validateGreaterThanOrEqualTo("maxReconnectMillis", maxReconnectMillis, baseReconnectMillis);
+		this.currentRetry = new AtomicInteger();
 	}
 
 	/**
@@ -74,7 +74,7 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 			reconnectMillis *= progressiveFactor;
 		}
 
-		return reconnectMillis;
+		return reconnectMillis < maxReconnectMillis ? reconnectMillis : maxReconnectMillis;
 	}
 
 	/**
@@ -91,6 +91,6 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 	 */
 	@Override
 	public ReconnectionStrategy clone() {
-		return new ProgressiveReconnectionStrategy(baseReconnectMillis, progressiveFactor, maxNumberOfReconnects);
+		return new ProgressiveReconnectionStrategy(baseReconnectMillis, progressiveFactor, maxNumberOfReconnects, maxReconnectMillis);
 	}
 }
