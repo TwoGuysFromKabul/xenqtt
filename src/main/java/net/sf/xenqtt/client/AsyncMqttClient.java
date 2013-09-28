@@ -28,6 +28,32 @@ import net.sf.xenqtt.message.MqttMessage;
 public final class AsyncMqttClient extends AbstractMqttClient {
 
 	/**
+	 * Constructs an instance of this class using an {@link Executor} owned by this class with the following config:
+	 * <ul>
+	 * <li>reconnectionStrategy: {@link ProgressiveReconnectionStrategy} where the initial reconnection attempt happens after 50 millis then increases by a
+	 * factor of 5 up to 30 seconds where it continues to retry indefinitely.</li>
+	 * <li>connectTimeoutSeconds: 30</li>
+	 * <li>messageResendIntervalSeconds: 30</li>
+	 * </ul>
+	 * 
+	 * @param brokerUri
+	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
+	 * @param listener
+	 *            Handles events from this client. Use {@link AsyncClientListener#NULL_LISTENER} if you don't want to receive messages or be notified of events.
+	 * @param messageHandlerThreadPoolSize
+	 *            The number of threads used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods
+	 */
+	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, int messageHandlerThreadPoolSize) {
+		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
+				XenqttUtil.validateNotNull("listener", listener), //
+				new ProgressiveReconnectionStrategy(50, 5, Integer.MAX_VALUE, 30000), // reconnectionStrategy
+				XenqttUtil.validateGreaterThan("messageHandlerThreadPoolSize", messageHandlerThreadPoolSize, 0), //
+				30, // connectTimeoutSeconds
+				30 // messageResendIntervalSeconds
+		);
+	}
+
+	/**
 	 * Constructs an instance of this class using an {@link Executor} owned by this class.
 	 * 
 	 * @param brokerUri
@@ -52,6 +78,33 @@ public final class AsyncMqttClient extends AbstractMqttClient {
 				XenqttUtil.validateGreaterThan("messageHandlerThreadPoolSize", messageHandlerThreadPoolSize, 0), //
 				XenqttUtil.validateGreaterThanOrEqualTo("connectTimeoutSeconds", connectTimeoutSeconds, 0), //
 				XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 2));
+	}
+
+	/**
+	 * Constructs an instance of this class using a user provided {@link Executor} with the following config:
+	 * <ul>
+	 * <li>reconnectionStrategy: {@link ProgressiveReconnectionStrategy} where the initial reconnection attempt happens after 50 millis then increases by a
+	 * factor of 5 up to 30 seconds where it continues to retry indefinitely.</li>
+	 * <li>connectTimeoutSeconds: 30</li>
+	 * <li>messageResendIntervalSeconds: 30</li>
+	 * </ul>
+	 * 
+	 * @param brokerUri
+	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
+	 * @param listener
+	 *            Handles events from this client. Use {@link AsyncClientListener#NULL_LISTENER} if you don't want to receive messages or be notified of events.
+	 * @param executor
+	 *            The executor used to handle incoming messages and invoke the {@link AsyncClientListener listener's} methods. This class will NOT shut down the
+	 *            executor.
+	 */
+	public AsyncMqttClient(String brokerUri, AsyncClientListener listener, Executor executor) {
+		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
+				XenqttUtil.validateNotNull("listener", listener), //
+				new ProgressiveReconnectionStrategy(50, 5, Integer.MAX_VALUE, 30000), // reconnectionStrategy
+				XenqttUtil.validateNotNull("executor", executor), //
+				30, // connectTimeoutSeconds
+				30 // messageResendIntervalSeconds
+		);
 	}
 
 	/**
