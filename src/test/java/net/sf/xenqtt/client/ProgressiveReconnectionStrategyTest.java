@@ -21,21 +21,26 @@ import org.junit.Test;
 
 public class ProgressiveReconnectionStrategyTest {
 
-	ProgressiveReconnectionStrategy strategy = new ProgressiveReconnectionStrategy(1000, 7, 5);
+	ProgressiveReconnectionStrategy strategy = new ProgressiveReconnectionStrategy(1000, 7, 5, 340000);
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_BaseMillisZero() {
-		new ProgressiveReconnectionStrategy(0, 7, 5);
+		new ProgressiveReconnectionStrategy(0, 7, 5, 20);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_ProgressiveIntervalZero() {
-		new ProgressiveReconnectionStrategy(1000, 0, 5);
+		new ProgressiveReconnectionStrategy(1000, 0, 5, 20);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_RetriesLessThanZero() {
-		new ProgressiveReconnectionStrategy(1000, 7, -1);
+		new ProgressiveReconnectionStrategy(1000, 7, -1, 20);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_MaxMillisLessThanBaseMillis() {
+		new ProgressiveReconnectionStrategy(1000, 7, -1, 999);
 	}
 
 	@Test
@@ -43,8 +48,8 @@ public class ProgressiveReconnectionStrategyTest {
 		assertEquals(1000, strategy.connectionLost(null, null));
 		assertEquals(7000, strategy.connectionLost(null, null));
 		assertEquals(49000, strategy.connectionLost(null, null));
-		assertEquals(343000, strategy.connectionLost(null, null));
-		assertEquals(2401000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 	}
@@ -54,8 +59,8 @@ public class ProgressiveReconnectionStrategyTest {
 		assertEquals(1000, strategy.connectionLost(null, null));
 		assertEquals(7000, strategy.connectionLost(null, null));
 		assertEquals(49000, strategy.connectionLost(null, null));
-		assertEquals(343000, strategy.connectionLost(null, null));
-		assertEquals(2401000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 
@@ -63,8 +68,8 @@ public class ProgressiveReconnectionStrategyTest {
 		assertEquals(1000, strategy.connectionLost(null, null));
 		assertEquals(7000, strategy.connectionLost(null, null));
 		assertEquals(49000, strategy.connectionLost(null, null));
-		assertEquals(343000, strategy.connectionLost(null, null));
-		assertEquals(2401000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 	}
@@ -75,8 +80,8 @@ public class ProgressiveReconnectionStrategyTest {
 		assertEquals(1000, strategy.connectionLost(null, null));
 		assertEquals(7000, strategy.connectionLost(null, null));
 		assertEquals(49000, strategy.connectionLost(null, null));
-		assertEquals(343000, strategy.connectionLost(null, null));
-		assertEquals(2401000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
+		assertEquals(340000, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 		assertEquals(-1, strategy.connectionLost(null, null));
 
@@ -86,8 +91,8 @@ public class ProgressiveReconnectionStrategyTest {
 		assertEquals(1000, clone.connectionLost(null, null));
 		assertEquals(7000, clone.connectionLost(null, null));
 		assertEquals(49000, clone.connectionLost(null, null));
-		assertEquals(343000, clone.connectionLost(null, null));
-		assertEquals(2401000, clone.connectionLost(null, null));
+		assertEquals(340000, clone.connectionLost(null, null));
+		assertEquals(340000, clone.connectionLost(null, null));
 		assertEquals(-1, clone.connectionLost(null, null));
 		assertEquals(-1, clone.connectionLost(null, null));
 	}
