@@ -10,7 +10,17 @@ public class MqttClientConfigTest {
 
 	@Test
 	public void testDefaults() {
-		fail("Not yet implemented");
+
+		assertEquals(0, config.getBlockingTimeoutSeconds());
+		assertEquals(30000, config.getConnectTimeoutMillis());
+		assertEquals(30, config.getConnectTimeoutSeconds());
+		assertEquals(300, config.getKeepAliveSeconds());
+		assertEquals(30, config.getMessageResendIntervalSeconds());
+		assertEquals(50, ((ProgressiveReconnectionStrategy) config.getReconnectionStrategy()).getBaseReconnectMillis());
+		assertEquals(0, ((ProgressiveReconnectionStrategy) config.getReconnectionStrategy()).getCurrentRetry());
+		assertEquals(Integer.MAX_VALUE, ((ProgressiveReconnectionStrategy) config.getReconnectionStrategy()).getMaxNumberOfReconnects());
+		assertEquals(30000, ((ProgressiveReconnectionStrategy) config.getReconnectionStrategy()).getMaxReconnectMillis());
+		assertEquals(5, ((ProgressiveReconnectionStrategy) config.getReconnectionStrategy()).getProgressiveFactor());
 	}
 
 	@Test(expected = IllegalArgumentException.class)
