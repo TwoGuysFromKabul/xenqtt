@@ -176,7 +176,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	@Override
 	public final ConnectReturnCode connect(String clientId, boolean cleanSession, String userName, String password) throws MqttCommandCancelledException,
-			MqttTimeoutException, InterruptedException {
+			MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, config.getKeepAliveSeconds(), userName, password);
 		return doConnect(channel, message);
