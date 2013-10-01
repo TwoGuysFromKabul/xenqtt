@@ -93,4 +93,41 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 	public ReconnectionStrategy clone() {
 		return new ProgressiveReconnectionStrategy(baseReconnectMillis, progressiveFactor, maxNumberOfReconnects, maxReconnectMillis);
 	}
+
+	/**
+	 * @return The base reconnect millis to start at. The first retry is attempted at this interval
+	 */
+	public long getBaseReconnectMillis() {
+		return baseReconnectMillis;
+	}
+
+	/**
+	 * @return The progressive factor. This defines how to increase the amount of time between reconnects. For example, if the base is 100 and this is 2 the
+	 *         reconnects will occur as such: <code>100, 200, 400, 800, 1600, ...</code>
+	 */
+	public int getProgressiveFactor() {
+		return progressiveFactor;
+	}
+
+	/**
+	 * @return The maximum number of reconnect attempts to make
+	 */
+	public int getMaxNumberOfReconnects() {
+		return maxNumberOfReconnects;
+	}
+
+	/**
+	 * @return The maximum number of millis to wait. Once the progression has reached this value all future retries will be at this interval
+	 */
+	public long getMaxReconnectMillis() {
+		return maxReconnectMillis;
+	}
+
+	/**
+	 * @return The current retry count. 0 if no retries have been scheduled.
+	 */
+	public int getCurrentRetry() {
+		return currentRetry.get();
+	}
+
 }
