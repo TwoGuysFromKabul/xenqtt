@@ -26,10 +26,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.MqttException;
@@ -45,8 +45,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final Set<MqttChannel> openChannels = new HashSet<MqttChannel>();
 	private final long messageResendIntervalMillis;
 
-	private final Lock commandsLock = new ReentrantLock();
-	private Command<?> firstCommand;
+	private final BlockingQueue<Command<?>> commands = new LinkedBlockingQueue<Command<?>>();
 	private boolean doShutdown;
 
 	private final CountDownLatch readyLatch = new CountDownLatch(1);
@@ -371,30 +370,22 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private void executeCommands(long now) {
 
-		commandsLock.lock();
-		try {
-			while (firstCommand != null) {
-				firstCommand.execute();
-				if (firstCommand.unblockImmediately) {
-					firstCommand.complete();
-				}
-				firstCommand = firstCommand.next;
+		int size = commands.size();
+		for (int i = 0; i < size; i++) {
+			Command<?> command = commands.poll();
+			if (command == null) {
+				break;
 			}
-		} finally {
-			commandsLock.unlock();
+			command.execute();
+			if (command.unblockImmediately) {
+				command.complete();
+			}
 		}
 	}
 
 	private <T, C extends Command<T>> C addCommand(C command) {
 
-		commandsLock.lock();
-		try {
-			command.next = firstCommand;
-			firstCommand = command;
-		} finally {
-			commandsLock.unlock();
-		}
-
+		commands.add(command);
 		selector.wakeup();
 
 		return command;
@@ -402,7 +393,6 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private abstract class Command<T> extends AbstractBlockingCommand<T> {
 
-		private Command<?> next;
 		private final boolean unblockImmediately;
 
 		public Command(boolean unblockImmediately) {
