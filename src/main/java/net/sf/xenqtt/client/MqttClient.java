@@ -140,7 +140,7 @@ public interface MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#connect(String, boolean, int, String, String, String, String, QoS, boolean)
 	 */
 	ConnectReturnCode connect(String clientId, boolean cleanSession, String userName, String password) throws MqttCommandCancelledException,
-			MqttTimeoutException, InterruptedException;
+			MqttTimeoutException, MqttInterruptedException;
 
 	/**
 	 * Connects this client to the broker with a Will Message but no credentials. Delegates to
