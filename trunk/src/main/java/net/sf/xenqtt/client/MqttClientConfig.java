@@ -12,7 +12,7 @@ import net.sf.xenqtt.message.MqttMessage;
  * fine for most cases.
  */
 public final class MqttClientConfig implements Cloneable {
-	// FIXME [jim] - test this class
+
 	private ReconnectionStrategy reconnectionStrategy = new ProgressiveReconnectionStrategy(50, 5, Integer.MAX_VALUE, 30000);
 	private int connectTimeoutSeconds = 30;
 	private int messageResendIntervalSeconds = 30;
