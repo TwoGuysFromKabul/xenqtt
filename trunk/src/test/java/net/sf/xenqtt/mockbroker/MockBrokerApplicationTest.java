@@ -74,7 +74,7 @@ public class MockBrokerApplicationTest {
 	public void testStart_NotAuthorized_BadCredentials() throws Exception {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
-		args.put("-u", "user1;pass1");
+		args.put("-u", "user1:pass1");
 		ApplicationArguments arguments = new ApplicationArguments(new ArrayList<String>(), args);
 		application.start(arguments);
 
@@ -135,7 +135,7 @@ public class MockBrokerApplicationTest {
 	public void testStart_CredentialAuthorization() throws Exception {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
-		args.put("-u", "user1;pass1");
+		args.put("-u", "user1:pass1");
 		ApplicationArguments arguments = new ApplicationArguments(new ArrayList<String>(), args);
 		application.start(arguments);
 
@@ -172,7 +172,7 @@ public class MockBrokerApplicationTest {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		args.put("-t", "2");
-		args.put("-u", "user1;pass1");
+		args.put("-u", "user1:pass1");
 		ApplicationArguments arguments = new ApplicationArguments(new ArrayList<String>(), args);
 		application.start(arguments);
 
