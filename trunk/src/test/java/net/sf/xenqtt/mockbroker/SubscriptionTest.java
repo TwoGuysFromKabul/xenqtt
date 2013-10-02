@@ -73,7 +73,7 @@ public class SubscriptionTest {
 		subscription.subscribe("grand/foo/bar", QoS.AT_LEAST_ONCE);
 		subscription.publish(message, clientById);
 
-		assertTrue(subscription.pubAcked(7));
+		assertTrue(subscription.pubAcked(0));
 	}
 
 	@Test
