@@ -30,7 +30,7 @@ import org.junit.Test;
 public class ClientTest {
 
 	MqttChannel channel = mock(MqttChannel.class);
-	BrokerEvents events = new BrokerEvents();
+	BrokerEventsImpl events = new BrokerEventsImpl();
 	Client client = new Client(channel, events);
 
 	@Before
