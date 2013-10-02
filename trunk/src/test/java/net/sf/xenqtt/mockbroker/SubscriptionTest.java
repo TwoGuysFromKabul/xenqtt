@@ -39,7 +39,7 @@ public class SubscriptionTest {
 	Map<String, Client> clientById = new HashMap<String, Client>();
 
 	MqttChannel channel = mock(MqttChannel.class);
-	BrokerEvents events = new BrokerEvents();
+	BrokerEventsImpl events = new BrokerEventsImpl();
 	Client client = new Client(channel, events);
 
 	@Test

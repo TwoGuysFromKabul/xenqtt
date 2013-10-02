@@ -51,6 +51,7 @@ public class LogTest {
 
 	@Before
 	public void setup() throws Exception {
+		baos.clearAndReset();
 		asyncTestable = isAsyncTestable();
 		if (asyncTestable) {
 			standardOut = System.out;
@@ -58,7 +59,7 @@ public class LogTest {
 		}
 	}
 
-	private boolean isAsyncTestable() throws Exception {
+	private static boolean isAsyncTestable() throws Exception {
 		Field field = Log.class.getDeclaredField("DELEGATE");
 		field.setAccessible(true);
 		LoggingDelegate delegate = (LoggingDelegate) field.get(null);
@@ -69,7 +70,9 @@ public class LogTest {
 
 	@After
 	public void teardown() {
-		System.setOut(standardOut);
+		if (asyncTestable) {
+			System.setOut(standardOut);
+		}
 	}
 
 	@Test
@@ -249,6 +252,13 @@ public class LogTest {
 						latch.countDown();
 					}
 				}
+			}
+		}
+
+		private void clearAndReset() {
+			synchronized (this) {
+				buf = new byte[32];
+				count = 0;
 			}
 		}
 
