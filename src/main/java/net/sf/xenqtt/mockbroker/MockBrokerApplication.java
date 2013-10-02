@@ -24,7 +24,7 @@ import net.sf.xenqtt.XenqttUtil;
  */
 public class MockBrokerApplication implements XenqttApplication {
 
-	private static String USAGE_TEXT = "[-t timeout] [-p port] [-a] [-u user1;pass1,...usern;passn]" //
+	private static String USAGE_TEXT = "[-t timeout] [-p port] [-a] [-u user1:pass1,...usern:passn]" //
 			+ "\n\tt timeout : Seconds to wait for an ack to a message with QoS > 0. Defaults to 15." //
 			+ "\n\tp port : Port to listen on. Defaults to 1883." //
 			+ "\n\ta : Allow anonymous access. Allows clients to connect with no credentials." //
@@ -33,9 +33,6 @@ public class MockBrokerApplication implements XenqttApplication {
 
 	private MockBroker broker;
 
-	/**
-	 * @see net.sf.xenqtt.XenqttApplication#start(net.sf.xenqtt.ApplicationArguments)
-	 */
 	@Override
 	public void start(ApplicationArguments arguments) {
 
@@ -47,7 +44,7 @@ public class MockBrokerApplication implements XenqttApplication {
 
 		String credentials = arguments.getArgAsString("u", "");
 		for (String creds : XenqttUtil.quickSplit(credentials, ',')) {
-			String[] userpass = XenqttUtil.quickSplit(creds, ';');
+			String[] userpass = XenqttUtil.quickSplit(creds, ':');
 			if (userpass.length != 2) {
 				throw new IllegalArgumentException("Credentials could not be parsed: " + credentials);
 			}
