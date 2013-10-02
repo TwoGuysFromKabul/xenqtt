@@ -35,7 +35,7 @@ public class PublishMessage {
 
 	private final ChannelManager manager;
 	private final MqttChannelRef channel;
-	final PubMessage pubMessage;
+	private final PubMessage pubMessage;
 
 	/**
 	 * Creates a binary message.
@@ -97,7 +97,16 @@ public class PublishMessage {
 	PublishMessage(ChannelManager manager, MqttChannelRef channel, PubMessage pubMessage) {
 		this.manager = manager;
 		this.channel = channel;
-		this.pubMessage = pubMessage.asReadOnlyMessage();
+		this.pubMessage = new PubMessage(pubMessage);
+	}
+
+	/**
+	 * Package visible as this is only for internal use
+	 * 
+	 * @return A new {@link PubMessage} that is a copy of the internal one.
+	 */
+	PubMessage getPubMessage() {
+		return new PubMessage(pubMessage);
 	}
 
 	/**

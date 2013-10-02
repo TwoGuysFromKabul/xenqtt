@@ -262,11 +262,12 @@ abstract class AbstractMqttClient implements MqttClient {
 	@Override
 	public final void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
 
-		if (message.pubMessage.getQoSLevel() > 0) {
+		PubMessage pubMessage = message.getPubMessage();
+		if (pubMessage.getQoSLevel() > 0) {
 			int messageId = nextMessageId(message);
-			message.pubMessage.setMessageId(messageId);
+			pubMessage.setMessageId(messageId);
 		}
-		manager.send(channel, message.pubMessage);
+		manager.send(channel, pubMessage);
 	}
 
 	/**

@@ -29,6 +29,14 @@ public final class PubMessage extends IdentifiableMqttMessage {
 	private int payloadIndex = -1;
 
 	/**
+	 * Creates a new instance that shares the same buffer with "from" but with independent position and limit. This is needed as some methods like
+	 * {@link #getTopicName()}, {@link #getPayload()}, {@link #toString()}, etc modify the buffer's position which can cause issues across threads.
+	 */
+	public PubMessage(PubMessage from) {
+		super(from.buffer.duplicate(), from.getRemainingLength());
+	}
+
+	/**
 	 * Used to construct a received message.
 	 */
 	public PubMessage(ByteBuffer buffer, int remainingLength) {
@@ -40,13 +48,6 @@ public final class PubMessage extends IdentifiableMqttMessage {
 	 */
 	public PubMessage(QoS qos, boolean retain, String topicName, int messageId, byte[] payload) {
 		this(qos, retain, stringToUtf8(topicName), messageId, payload);
-	}
-
-	/**
-	 * @return A read only copy of this message. Should be used when passing this message to other threads.
-	 */
-	public PubMessage asReadOnlyMessage() {
-		return new PubMessage(this);
 	}
 
 	/**
@@ -90,10 +91,6 @@ public final class PubMessage extends IdentifiableMqttMessage {
 		buffer.position(pos);
 
 		return payload;
-	}
-
-	private PubMessage(PubMessage copyFrom) {
-		super(copyFrom.buffer.asReadOnlyBuffer(), copyFrom.getRemainingLength());
 	}
 
 	private int getPayloadIndex() {
