@@ -83,6 +83,7 @@ final class Subscription {
 	 */
 	void publish(PubMessage message, Map<String, Client> clientById) {
 
+		message = new PubMessage(message.getQoS(), message.isRetain(), message.getTopicName(), 0, message.getPayload());
 		if (message.getQoSLevel() > 0 && subscribedQos.value() > 0) {
 			messageQueue.add(message);
 		}
@@ -168,9 +169,12 @@ final class Subscription {
 
 	private void send(Client client, PubMessage message) {
 
-		QoS qos = subscribedQos.value() < message.getQoSLevel() ? subscribedQos : message.getQoS();
-		int messageId = qos.value() > 0 ? client.getNextMessageId() : message.getMessageId();
-		message = new PubMessage(qos, message.isRetain(), message.getTopicName(), messageId, message.getPayload());
+		if (subscribedQos.value() < message.getQoSLevel()) {
+			message = new PubMessage(subscribedQos, message.isRetain(), message.getTopicName(), 0, message.getPayload());
+		}
+		if (message.getQoSLevel() > 0) {
+			message.setMessageId(client.getNextMessageId());
+		}
 
 		client.send(message);
 	}
