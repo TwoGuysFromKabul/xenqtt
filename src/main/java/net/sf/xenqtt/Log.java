@@ -408,6 +408,10 @@ public final class Log {
 		 */
 		@Override
 		public void log(int levelFlag, String message) {
+			if (!loggingManager.isLoggable(levelFlag)) {
+				return;
+			}
+
 			loggingManager.offerWork(new LogMessage(levelFlag, message));
 		}
 
@@ -416,6 +420,10 @@ public final class Log {
 		 */
 		@Override
 		public void log(int levelFlag, Throwable t, String message) {
+			if (!loggingManager.isLoggable(levelFlag)) {
+				return;
+			}
+
 			loggingManager.offerWork(new LogMessage(levelFlag, message, t));
 		}
 
@@ -467,10 +475,6 @@ public final class Log {
 		}
 
 		private void logMessage(LogMessage message) throws Exception {
-			if (!levels.isLoggable(message.levelFlag)) {
-				return;
-			}
-
 			switch (message.levelFlag) {
 			case LoggingLevels.TRACE_FLAG:
 				DELEGATE.trace(message.t, message.message);
@@ -495,6 +499,10 @@ public final class Log {
 
 		private void offerWork(LogWork workToOffer) {
 			work.offer(workToOffer);
+		}
+
+		private boolean isLoggable(int levelFlag) {
+			return levels.isLoggable(levelFlag);
 		}
 
 	}
