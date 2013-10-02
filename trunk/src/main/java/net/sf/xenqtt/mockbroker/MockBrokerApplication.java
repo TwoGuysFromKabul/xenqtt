@@ -24,9 +24,10 @@ import net.sf.xenqtt.XenqttUtil;
  */
 public class MockBrokerApplication implements XenqttApplication {
 
-	private static String USAGE_TEXT = "[-t timeout] [-p port] [-a] [-u user1:pass1,...usern:passn]" //
+	private static String USAGE_TEXT = "[-t timeout] [-p port] [-c] [-a] [-u user1:pass1,...usern:passn]" //
 			+ "\n\tt timeout : Seconds to wait for an ack to a message with QoS > 0. Defaults to 15." //
 			+ "\n\tp port : Port to listen on. Defaults to 1883." //
+			+ "\n\tc : Capture broker events. If omitted none will be saved and made available." //
 			+ "\n\ta : Allow anonymous access. Allows clients to connect with no credentials." //
 			+ "\n\tu user:pass... : Credentials (usernames and passwords) a client can use to connet." //
 	;
@@ -39,8 +40,9 @@ public class MockBrokerApplication implements XenqttApplication {
 		int timeout = arguments.getArgAsInt("t", 15);
 		int port = arguments.getArgAsInt("p", 1883);
 		boolean allowAnonymousAccess = arguments.isFlagSpecified("a");
+		boolean captureBrokerEvents = arguments.isFlagSpecified("c");
 
-		broker = new MockBroker(null, timeout, port, allowAnonymousAccess);
+		broker = new MockBroker(null, timeout, port, allowAnonymousAccess, captureBrokerEvents);
 
 		String credentials = arguments.getArgAsString("u", "");
 		for (String creds : XenqttUtil.quickSplit(credentials, ',')) {

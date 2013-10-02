@@ -149,8 +149,10 @@ public final class Xenqtt {
 			ex.printStackTrace();
 			Class<?> exceptionClass = ex.getClass();
 			if (exceptionClass == IllegalArgumentException.class || exceptionClass == IllegalStateException.class) {
-				System.out.printf("USAGE: %s\n", application.getUsageText());
+				System.out.printf("\nUSAGE: %s\n", application.getUsageText());
 			}
+
+			System.exit(0);
 		}
 	}
 

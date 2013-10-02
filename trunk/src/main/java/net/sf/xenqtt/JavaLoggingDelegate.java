@@ -17,7 +17,6 @@ package net.sf.xenqtt;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -50,7 +49,7 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 			properties.setProperty("java.util.logging.FileHandler.limit", "5368709120");
 			properties.setProperty("java.util.logging.FileHandler.count", "20");
 			properties.setProperty("java.util.logging.FileHandler.formatter", "net.sf.xenqtt.XenqttLogFormatter");
-			String jarDirectory = getDirectoryHostingRunningXenqttJar();
+			String jarDirectory = XenqttUtil.getDirectoryHostingRunningXenqttJar();
 			outputFile = outputFile != null ? outputFile : "xenqtt.log";
 			if (jarDirectory != null) {
 				properties.setProperty("java.util.logging.FileHandler.pattern", String.format("%s/%s", jarDirectory, outputFile));
@@ -66,30 +65,6 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 			System.err.println("Unable to load the logging configuration for JUL.");
 			ex.printStackTrace();
 		}
-	}
-
-	private static String getDirectoryHostingRunningXenqttJar() {
-		URL url = JavaLoggingDelegate.class.getResource("/" + JavaLoggingDelegate.class.getName().replace('.', '/') + ".class");
-		if (url == null) {
-			return null;
-		}
-
-		String path = url.getPath();
-		int startIndex = path.indexOf(":");
-		if (startIndex >= 0) {
-			path = path.substring(startIndex + 1);
-		}
-
-		int bangIndex = path.indexOf("jar!");
-		if (bangIndex >= 0) {
-			String jarFile = path.substring(0, bangIndex + 3);
-			int pos = jarFile.lastIndexOf('/');
-			if (pos > -1) {
-				return jarFile.substring(0, pos);
-			}
-		}
-
-		return null;
 	}
 
 	private final Logger log = Logger.getLogger("xenqtt");

@@ -15,89 +15,56 @@
  */
 package net.sf.xenqtt.mockbroker;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
-import net.sf.xenqtt.Log;
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
- * Keeps track of {@link BrokerEvent}s
+ * Specifies a type that captures and reports on events within the {@link MockBroker mock broker}.
  */
-final class BrokerEvents {
-
-	private final List<BrokerEvent> events = Collections.synchronizedList(new LinkedList<BrokerEvent>());
-	private final String shortStringFormat;
-	private final String longStringFormat;
-
-	BrokerEvents() {
-		int maxLen = 0;
-		for (BrokerEventType type : BrokerEventType.values()) {
-			int len = type.toString().length();
-			if (len > maxLen) {
-				maxLen = len;
-			}
-		}
-		shortStringFormat = String.format("%%-%ds %%-22s %%-23s", maxLen);
-		longStringFormat = String.format("%%-%ds %%-22s %%-23s %%s", maxLen);
-	}
+interface BrokerEvents {
 
 	/**
-	 * @return All broker events. This list is a copy.
+	 * @return All broker events. The returned {@link List list} should be a copy
 	 */
-	public List<BrokerEvent> getEvents() {
-		synchronized (events) {
-			return new ArrayList<BrokerEvent>(events);
-		}
-	}
+	List<BrokerEvent> getEvents();
 
 	/**
-	 * @return All broker events for the specified client ID. This list is a copy.
+	 * @return All broker events for the specified client ID. The returned {@link List list} is a copy
 	 */
-	public List<BrokerEvent> getEvents(String clientId) {
-		List<BrokerEvent> list = new ArrayList<BrokerEvent>();
-		synchronized (events) {
-			for (BrokerEvent event : events) {
-				if (clientId == null) {
-					if (event.getClientId() == null) {
-						list.add(event);
-					}
-				} else if (clientId.equals(event.getClientId())) {
-					list.add(event);
-				}
-			}
-		}
-		return list;
-	}
+	List<BrokerEvent> getEvents(String clientId);
 
 	/**
-	 * Removes all broker events
+	 * Removes all broker events.
 	 */
-	public void clearEvents() {
-		events.clear();
-	}
+	void clearEvents();
 
 	/**
 	 * Removes the specified broker events.
 	 */
-	public void removeEvents(Collection<BrokerEvent> eventsToRemove) {
-		events.removeAll(eventsToRemove);
-	}
+	void removeEvents(Collection<BrokerEvent> eventsToRemove);
 
-	void addEvent(BrokerEventType eventType, Client client) {
-		addEvent(eventType, client, null);
-	}
+	/**
+	 * Add an event.
+	 * 
+	 * @param eventType
+	 *            The {@link BrokerEventType event type} to add
+	 * @param client
+	 *            The {@link Client client} to associate the event with
+	 */
+	void addEvent(BrokerEventType eventType, Client client);
 
-	void addEvent(BrokerEventType eventType, Client client, MqttMessage message) {
-		events.add(new BrokerEvent(eventType, client, message));
-		String clientId = client == null || client.clientId == null ? "" : client.clientId;
-		if (message == null) {
-			Log.info(shortStringFormat, eventType, client.remoteAddress(), clientId);
-		} else {
-			Log.info(longStringFormat, eventType, client.remoteAddress(), clientId, message);
-		}
-	}
+	/**
+	 * Add an event.
+	 * 
+	 * @param eventType
+	 *            The {@link BrokerEventType event type} to add
+	 * @param client
+	 *            The {@link Client client} to associate the event with
+	 * @param message
+	 *            The {@link MqttMessage message} that is the focus of the event being added
+	 */
+	void addEvent(BrokerEventType eventType, Client client, MqttMessage message);
+
 }

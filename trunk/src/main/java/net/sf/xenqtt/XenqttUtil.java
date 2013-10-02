@@ -15,6 +15,7 @@
  */
 package net.sf.xenqtt;
 
+import java.net.URL;
 import java.util.Collection;
 
 /**
@@ -355,6 +356,33 @@ public final class XenqttUtil {
 	 */
 	public static boolean isNull(String str) {
 		return str == null;
+	}
+
+	/**
+	 * @return The path to the directory currently running the xenqtt JAR file.
+	 */
+	public static String getDirectoryHostingRunningXenqttJar() {
+		URL url = JavaLoggingDelegate.class.getResource("/" + JavaLoggingDelegate.class.getName().replace('.', '/') + ".class");
+		if (url == null) {
+			return null;
+		}
+
+		String path = url.getPath();
+		int startIndex = path.indexOf(":");
+		if (startIndex >= 0) {
+			path = path.substring(startIndex + 1);
+		}
+
+		int bangIndex = path.indexOf("jar!");
+		if (bangIndex >= 0) {
+			String jarFile = path.substring(0, bangIndex + 3);
+			int pos = jarFile.lastIndexOf('/');
+			if (pos > -1) {
+				return jarFile.substring(0, pos);
+			}
+		}
+
+		return null;
 	}
 
 }

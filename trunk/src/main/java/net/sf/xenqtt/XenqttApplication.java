@@ -24,7 +24,8 @@ public interface XenqttApplication {
 	 * Start the application. This method is called by the main thread that is used in launching Xenqtt.
 	 * 
 	 * @param arguments
-	 *            The {@link ApplicationArguments arguments} that were supplied. This includes both normal arguments (e.g. {@code -p port}) and flags (e.g. {@code -a})
+	 *            The {@link ApplicationArguments arguments} that were supplied. This includes both normal arguments (e.g. {@code -p port}) and flags (e.g.
+	 *            {@code -a})
 	 */
 	void start(ApplicationArguments arguments);
 
