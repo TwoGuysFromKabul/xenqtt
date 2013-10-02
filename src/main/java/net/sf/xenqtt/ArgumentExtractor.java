@@ -150,7 +150,12 @@ final class ArgumentExtractor {
 		/**
 		 * A {@link Mode mode} that runs the mock broker used in testing.
 		 */
-		MOCK_BROKER("mockbroker");
+		MOCK_BROKER("mockbroker"),
+
+		/**
+		 * A {@link Mode mode} that runs the test client for load testing Xenqtt.
+		 */
+		TEST_CLIENT("testclient");
 
 		private final String mode;
 

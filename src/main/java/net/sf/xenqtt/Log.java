@@ -331,9 +331,9 @@ public final class Log {
 
 	private static interface Logger {
 
-		void log(int levelFlag, String message);
+		void log(int levelFlag, String message, Object... parameters);
 
-		void log(int levelFlag, Throwable t, String message);
+		void log(int levelFlag, Throwable t, String message, Object... parameters);
 
 	}
 
@@ -346,30 +346,31 @@ public final class Log {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String)
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String, java.lang.Object[])
 		 */
 		@Override
-		public void log(int levelFlag, String message) {
+		public void log(int levelFlag, String message, Object... parameters) {
 			if (!levels.isLoggable(levelFlag)) {
 				return;
 			}
 
-			doLog(levelFlag, null, message);
+			doLog(levelFlag, null, message, parameters);
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String)
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String, java.lang.Object[])
 		 */
 		@Override
-		public void log(int levelFlag, Throwable t, String message) {
+		public void log(int levelFlag, Throwable t, String message, Object... parameters) {
 			if (!levels.isLoggable(levelFlag)) {
 				return;
 			}
 
-			doLog(levelFlag, t, message);
+			doLog(levelFlag, t, message, parameters);
 		}
 
-		private void doLog(int levelFlag, Throwable t, String message) {
+		private void doLog(int levelFlag, Throwable t, String msg, Object... parameters) {
+			String message = String.format(msg, parameters);
 			switch (levelFlag) {
 			case LoggingLevels.TRACE_FLAG:
 				DELEGATE.trace(t, message);
@@ -404,27 +405,27 @@ public final class Log {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String)
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.String, java.lang.Object[])
 		 */
 		@Override
-		public void log(int levelFlag, String message) {
+		public void log(int levelFlag, String message, Object... parameters) {
 			if (!loggingManager.isLoggable(levelFlag)) {
 				return;
 			}
 
-			loggingManager.offerWork(new LogMessage(levelFlag, message));
+			loggingManager.offerWork(new LogMessage(levelFlag, String.format(message, parameters)));
 		}
 
 		/**
-		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String)
+		 * @see net.sf.xenqtt.Log.Logger#log(int, java.lang.Throwable, java.lang.String, java.lang.Object[])
 		 */
 		@Override
-		public void log(int levelFlag, Throwable t, String message) {
+		public void log(int levelFlag, Throwable t, String message, Object... parameters) {
 			if (!loggingManager.isLoggable(levelFlag)) {
 				return;
 			}
 
-			loggingManager.offerWork(new LogMessage(levelFlag, message, t));
+			loggingManager.offerWork(new LogMessage(levelFlag, String.format(message, parameters), t));
 		}
 
 		private void setLoggingLevels(LoggingLevels levels) {

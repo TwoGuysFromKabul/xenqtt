@@ -53,10 +53,10 @@ public final class MockBroker {
 	private volatile int port;
 
 	/**
-	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, and allows anonymous access
+	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, allows anonymous access, and captures broker events
 	 */
 	public MockBroker() {
-		this(null, 15, 1883, true);
+		this(null, 15, 1883, true, true);
 	}
 
 	/**
@@ -69,11 +69,13 @@ public final class MockBroker {
 	 *            calling {@link #init()}.
 	 * @param allowAnonymousAccess
 	 *            If true then {@link ConnectMessage} with no username/password will be accepted. Otherwise only valid credentials will be accepted.
+	 * @param captureBrokerEvents
+	 *            If {@code true} then capture all events within the broker; otherwise, do not capture any events
 	 */
-	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess) {
+	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean captureBrokerEvents) {
 		XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0);
 
-		this.events = new BrokerEvents();
+		this.events = captureBrokerEvents ? new BrokerEventsImpl() : new NullBrokerEvents();
 		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess);
 		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds);
 		this.port = XenqttUtil.validateInRange("port", port, 0, 65535);
