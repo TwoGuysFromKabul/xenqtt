@@ -97,7 +97,7 @@ public class PublishMessage {
 	PublishMessage(ChannelManager manager, MqttChannelRef channel, PubMessage pubMessage) {
 		this.manager = manager;
 		this.channel = channel;
-		this.pubMessage = pubMessage;
+		this.pubMessage = pubMessage.asReadOnlyMessage();
 	}
 
 	/**

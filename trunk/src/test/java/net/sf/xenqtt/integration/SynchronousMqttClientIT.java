@@ -44,6 +44,7 @@ import net.sf.xenqtt.mockbroker.MockBrokerHandler;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -123,7 +124,7 @@ public class SynchronousMqttClientIT {
 	}
 
 	// This test can take over a minute to run so ignore it by default
-	// @Ignore
+	@Ignore
 	@Test
 	public void testConstructor_InvalidPort() throws Exception {
 
