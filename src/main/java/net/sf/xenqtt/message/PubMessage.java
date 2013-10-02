@@ -43,6 +43,13 @@ public final class PubMessage extends IdentifiableMqttMessage {
 	}
 
 	/**
+	 * @return A read only copy of this message. Should be used when passing this message to other threads.
+	 */
+	public PubMessage asReadOnlyMessage() {
+		return new PubMessage(this);
+	}
+
+	/**
 	 * This must not contain Topic wildcard characters.
 	 * <p>
 	 * When received by a client that subscribed using wildcard characters, this string will be the absolute topic specified by the originating publisher and
@@ -83,6 +90,10 @@ public final class PubMessage extends IdentifiableMqttMessage {
 		buffer.position(pos);
 
 		return payload;
+	}
+
+	private PubMessage(PubMessage copyFrom) {
+		super(copyFrom.buffer.asReadOnlyBuffer(), copyFrom.getRemainingLength());
 	}
 
 	private int getPayloadIndex() {
