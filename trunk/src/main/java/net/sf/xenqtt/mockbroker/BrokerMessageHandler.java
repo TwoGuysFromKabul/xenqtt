@@ -98,9 +98,11 @@ final class BrokerMessageHandler implements MessageHandler {
 			returnCode = ConnectReturnCode.UNACCEPTABLE_PROTOCOL_VERSION;
 		}
 
-		topicManager.connected(client, message);
-
 		client.send(new ConnAckMessage(returnCode));
+		if (returnCode == ConnectReturnCode.ACCEPTED) {
+			topicManager.connected(client, message);
+		}
+
 	}
 
 	/**
