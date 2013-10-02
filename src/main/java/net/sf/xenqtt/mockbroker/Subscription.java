@@ -31,7 +31,7 @@ import net.sf.xenqtt.message.QoS;
  * A {@link Client client's} subscription to a set of {@link StandardTopic topics}
  */
 final class Subscription {
-
+	// a comment
 	private final List<TopicSubscription> topicSubscriptions = new LinkedList<TopicSubscription>();
 
 	private final Queue<PubMessage> messageQueue = new LinkedList<PubMessage>();
@@ -83,8 +83,9 @@ final class Subscription {
 	 */
 	void publish(PubMessage message, Map<String, Client> clientById) {
 
-		message = new PubMessage(message.getQoS(), message.isRetain(), message.getTopicName(), 0, message.getPayload());
-		if (message.getQoSLevel() > 0 && subscribedQos.value() > 0) {
+		QoS qos = subscribedQos.value() < message.getQoSLevel() ? subscribedQos : message.getQoS();
+		message = new PubMessage(qos, message.isRetain(), message.getTopicName(), 0, message.getPayload());
+		if (message.getQoSLevel() > 0) {
 			messageQueue.add(message);
 		}
 
@@ -106,7 +107,7 @@ final class Subscription {
 	 * 
 	 * @return True if the subscription was added. False if it already existed even if the qos was updated
 	 */
-	public boolean subscribe(String topicName, QoS qos) {
+	boolean subscribe(String topicName, QoS qos) {
 		XenqttUtil.validateNotNull("topicName", topicName);
 		XenqttUtil.validateNotNull("qos", qos);
 
@@ -133,7 +134,7 @@ final class Subscription {
 	 * 
 	 * @return Number of topics still subscribed
 	 */
-	public int unsubscribe(String topicName) {
+	int unsubscribe(String topicName) {
 		XenqttUtil.validateNotNull("topicName", topicName);
 
 		Iterator<TopicSubscription> iter = topicSubscriptions.iterator();
