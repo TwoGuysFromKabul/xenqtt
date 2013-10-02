@@ -31,7 +31,7 @@ import net.sf.xenqtt.message.QoS;
  * A {@link Client client's} subscription to a set of {@link StandardTopic topics}
  */
 final class Subscription {
-	// a comment 7
+
 	private final List<TopicSubscription> topicSubscriptions = new LinkedList<TopicSubscription>();
 
 	private final Queue<PubMessage> messageQueue = new LinkedList<PubMessage>();
