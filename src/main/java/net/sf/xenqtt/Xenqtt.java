@@ -33,7 +33,7 @@ public final class Xenqtt {
 			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\thelp - Display information on xenqtt and how it can be used"
 			+ "\n\n\t-v: Increase logging verbosity. v = info, vv = debug";
 
-	static volatile LoggingLevels loggingLevels;
+	static volatile LoggingLevels loggingLevels = new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
 	static volatile String outputFile;
 
 	static {
