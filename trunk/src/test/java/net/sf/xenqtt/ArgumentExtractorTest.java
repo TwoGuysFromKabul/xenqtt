@@ -82,6 +82,24 @@ public class ArgumentExtractorTest {
 		assertTrue(arguments.applicationArguments.wereAllFlagsInterrogated());
 	}
 
+	@Test
+	public void testExtractArguments_HelpMode_NoSpecifiedMode() {
+		Arguments arguments = ArgumentExtractor.extractArguments("help");
+
+		assertTrue(arguments.globalOptions.isEmpty());
+		assertSame(Mode.HELP, arguments.mode);
+		assertTrue(arguments.applicationArguments.isEmpty());
+	}
+
+	@Test
+	public void testExtractArguments_HelpMode_SpecifiedMode() {
+		Arguments arguments = ArgumentExtractor.extractArguments("help", "mockbroker");
+
+		assertTrue(arguments.globalOptions.isEmpty());
+		assertSame(Mode.HELP, arguments.mode);
+		assertEquals("mockbroker", arguments.applicationArguments.getArgAsString("-m"));
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void testExtractArguments_ModeAndModeArguments_MultipleValuesToOneParameter() {
 		ArgumentExtractor.extractArguments("proxy", "-p", "1883", "8883");

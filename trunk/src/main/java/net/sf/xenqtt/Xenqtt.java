@@ -28,9 +28,7 @@ import net.sf.xenqtt.mockbroker.MockBrokerApplication;
 public final class Xenqtt {
 
 	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class, TestClientApplication.class };
-	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] proxy|gateway|mockbroker|help [args.or.flags]"
-			// + "\n\tproxy - Run the MQTT proxy for clustered clients" //
-			// + "\n\tgateway - Run the MQTT gateway that facilitates HTTP <-> MQTT communication"
+	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] mockbroker|help [args.or.flags]"
 			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\thelp - Display information on xenqtt and how it can be used"
 			+ "\n\n\t-v: Increase logging verbosity. v = info, vv = debug";
 
@@ -112,7 +110,7 @@ public final class Xenqtt {
 
 	private static void runApplication(Mode mode, ApplicationArguments applicationArguments) {
 		if (mode == Mode.HELP) {
-			displayHelpInformation();
+			displayHelpInformation(applicationArguments);
 			System.exit(0);
 		}
 
@@ -141,7 +139,16 @@ public final class Xenqtt {
 		}
 	}
 
-	private static void displayHelpInformation() {
+	private static void displayHelpInformation(ApplicationArguments arguments) {
+		String desiredHelpMode = arguments.getArgAsString("-m", null);
+		if (desiredHelpMode == null) {
+			displayGeneralHelpInformation();
+		} else {
+			displayApplicationSpecificHelpInformation(desiredHelpMode);
+		}
+	}
+
+	private static void displayGeneralHelpInformation() {
 		String helpDocumentation = loadResourceFile("/help-documentation.txt");
 		if (helpDocumentation == null) {
 			System.err.println("Unable to load the help documentation. This is a bug!");
@@ -149,6 +156,24 @@ public final class Xenqtt {
 		}
 
 		System.out.println(wrap(helpDocumentation.toString()));
+	}
+
+	private static void displayApplicationSpecificHelpInformation(String desiredHelpMode) {
+		String toMatch = String.format("%sApplication", desiredHelpMode);
+		try {
+			for (Class<?> application : APPLICATIONS) {
+				if (application.getSimpleName().equalsIgnoreCase(toMatch)) {
+					XenqttApplication applicationInstance = (XenqttApplication) application.newInstance();
+					System.out.printf("\nHelp for: %s\n", desiredHelpMode);
+					System.out.println(applicationInstance.getUsageText());
+					return;
+				}
+			}
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to load help information for the application %s", desiredHelpMode);
+		}
+
+		Log.warn("Unrecognized application: %s", desiredHelpMode);
 	}
 
 	private static String wrap(String helpDocumentation) {

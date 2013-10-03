@@ -1,9 +1,30 @@
+---------------------------------------------------------------------------------------------------
+Copyright 2013 James McClure
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+---------------------------------------------------------------------------------------------------
+
+USAGE: java -jar xenqtt.jar [-v[v]] mockbroker|help [args.or.flags]
+	mockbroker - Run a mock MQTT broker. Useful in testing and debugging
+	help - Display information on xenqtt and how it can be used
+	
+	-v: Increase logging verbosity. v = info, vv = debug
+
 Xenqtt - Facilitates advanced communication strategies for MQTT-based communication systems. Xenqtt
 provides the following:
 
-	An MQTT proxy for clustered clients
-	An MQTT gateway allowing for HTTP <-> MQTT communication
 	An MQTT client that operates in either synchronous or asynchronous mode
+	A mock broker that permits client interaction and broker-specific customizations
 
 The following sections provide more information on each of these features.
 
@@ -13,27 +34,13 @@ The xenqtt client comes bundled with the JAR file. Include the JAR file in your 
 make use of the client. For more information on how to use the client please see the Xenqtt
 project page for Javadoc, an overview, details, and example code.
 
-Xenqtt Gateway:
+Xenqtt Mock Broker:
 
-The xenqtt gateway transforms HTTP messages into MQTT and MQTT messages to HTTP. The gateway is
-useful for clients that already use HTTP and will not or cannot be converted to support MQTT. When
-launched in gateway mode Xenqtt will allow HTTP-based clients to publish messages to a broker as
-well as subscribe for, and receive, messages from a broker. The client using the gateway need not
-know or understand anything about MQTT as the protocol itself is obfuscated from them.
-
-Xenqtt Proxy:
-
-The proxy supports the concept of clustered clients in an MQTT architecture. The proxy groups
-connecting clients by client ID. Each client ID is treated as a single client for all intents and
-purposes to the broker. All publish messages go through as-normal; however, messages pushed to the
-"client" from topics subscribed to are routed to just a single client. The proxy keeps track of who
-is connected and routes traffic to clients appropriately. In this way the proxy acts as a load
-balancer. Load is intelligently distributed to connected clients.
-
-The proxy manages certain MQTT housekeeping procedures as well. Client PINGREQ messages are bit
-bucketed as the proxy handles the keepalive process. All CONNECT messages, after the first one,
-from the same client ID are also not forwarded through to the broker. All DISCONNECT messages are
-similarly eaten except the last one from the final client, which is allowed through to the broker.
+The mock broker is an MQTT broker that facilitates communication between disparate clients. The
+mock broker supports the MQTT protocol out-of-the-box (save for QoS 2 which is not presently
+supported). In addition to full protocol support the mock broker also provides hooks for users
+to customize the behavior of various operations. These include publishing, subscribing, and so
+forth.
 
 Logging
 
