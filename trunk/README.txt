@@ -1,3 +1,8 @@
+0.8.1
+	Fixed all known bugs in Client and Mock Broker.
+	Added features to Client and Mock Broker.
+	Performed various load tests successfully.
+	
 0.8.0
 	Fixed all known bugs in Client and Mock Broker.
 	Added more functional/integration test cases.
