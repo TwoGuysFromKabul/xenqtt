@@ -97,16 +97,16 @@ public class PublishMessage {
 	PublishMessage(ChannelManager manager, MqttChannelRef channel, PubMessage pubMessage) {
 		this.manager = manager;
 		this.channel = channel;
-		this.pubMessage = new PubMessage(pubMessage);
+		this.pubMessage = pubMessage;
 	}
 
 	/**
 	 * Package visible as this is only for internal use
 	 * 
-	 * @return A new {@link PubMessage} that is a copy of the internal one.
+	 * @return A {@link PubMessage} from this object
 	 */
 	PubMessage getPubMessage() {
-		return new PubMessage(pubMessage);
+		return pubMessage;
 	}
 
 	/**
