@@ -1,4 +1,5 @@
 0.8.1
+    Simplified Client configuration.
 	Fixed all known bugs in Client and Mock Broker.
 	Added features to Client and Mock Broker.
 	Performed various load tests successfully.
