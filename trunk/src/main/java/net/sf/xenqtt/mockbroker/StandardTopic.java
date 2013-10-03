@@ -150,7 +150,7 @@ final class StandardTopic extends AbstractTopic {
 	private void doSubscribe(Subscription subscription, AbstractTopic topicToSubscribeTo, QoS qos, Client client) {
 
 		if (subscription.subscribe(topicToSubscribeTo.topicName, qos) && retainedMessage != null) {
-			PubMessage msg = new PubMessage(qos, true, topicName, client.getNextMessageId(), retainedMessage.getPayload());
+			PubMessage msg = new PubMessage(qos, true, topicName, 0, retainedMessage.getPayload());
 			client.send(msg);
 		}
 	}

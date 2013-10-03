@@ -40,7 +40,7 @@ public class SubscriptionTest {
 
 	MqttChannel channel = mock(MqttChannel.class);
 	BrokerEventsImpl events = new BrokerEventsImpl();
-	Client client = new Client(channel, events);
+	Client client = new Client(channel, events, 10);
 
 	@Test
 	public void testConnected_NoPendingMessage() {

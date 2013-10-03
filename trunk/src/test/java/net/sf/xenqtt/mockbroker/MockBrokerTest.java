@@ -19,21 +19,26 @@ import org.junit.Test;
 
 public class MockBrokerTest {
 
-	MockBroker broker = new MockBroker(null, 15, 0, true, true);
+	MockBroker broker = new MockBroker(null, 15, 0, true, true, 50);
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_InvalidMessageResendIntervalSeconds() {
-		new MockBroker(null, -1, 1234, true, true);
+		new MockBroker(null, -1, 1234, true, true, 50);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_InvalidPort_BelowRange() {
-		new MockBroker(null, 1, -1, true, true);
+		new MockBroker(null, 1, -1, true, true, 50);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_InvalidPort_AboveRange() {
-		new MockBroker(null, 1, 65536, true, true);
+		new MockBroker(null, 1, 65536, true, true, 50);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testCtor_InvalidMaxInFLightMessages() {
+		new MockBroker(null, 1, 65536, true, true, 0);
 	}
 
 	@Test(expected = IllegalArgumentException.class)

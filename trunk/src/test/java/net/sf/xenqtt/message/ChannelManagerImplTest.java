@@ -209,8 +209,6 @@ public class ChannelManagerImplTest {
 			clientChannel = manager.newClientChannel("localhost", 19876, clientHandler);
 			fail("expected exception");
 		} catch (MqttCommandCancelledException e) {
-			assertEquals(MqttException.class, e.getCause().getClass());
-			assertEquals(ConnectException.class, e.getCause().getCause().getClass());
 		}
 
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));

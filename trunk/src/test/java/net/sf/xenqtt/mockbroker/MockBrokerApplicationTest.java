@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.xenqtt.ApplicationArguments;
@@ -212,6 +213,44 @@ public class MockBrokerApplicationTest {
 		assertEquals(1, messagePayloads.size());
 		assertEquals("onyx", messagePayloads.get(0));
 		assertTrue(String.valueOf(variance), variance > 1500 && variance < 2500);
+	}
+
+	@Test
+	public void testStart_NonDefaultMaxInFlightMessages() throws Exception {
+		ArrayList<String> flags = new ArrayList<String>();
+		flags.add("-a");
+		Map<String, String> args = new HashMap<String, String>();
+		args.put("-p", "0");
+		args.put("-t", "2");
+		args.put("-m", "2");
+		ApplicationArguments arguments = new ApplicationArguments(flags, args);
+		application.start(arguments);
+
+		int port = getPort();
+		final AtomicInteger messageCount = new AtomicInteger();
+		MqttClientListener listener = new MqttClientListener() {
+
+			@Override
+			public void publishReceived(MqttClient client, PublishMessage message) {
+				messageCount.incrementAndGet();
+			}
+
+			@Override
+			public void disconnected(MqttClient client, Throwable cause, boolean reconnecting) {
+			}
+
+		};
+		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true));
+
+		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
+		assertArrayEquals(subscriptions, client.subscribe(subscriptions));
+		client.publish(new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "onyx"));
+		client.publish(new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "onyx"));
+		client.publish(new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "onyx"));
+
+		Thread.sleep(500);
+		assertEquals(2, messageCount.get());
 	}
 
 	@Test(expected = MqttCommandCancelledException.class)

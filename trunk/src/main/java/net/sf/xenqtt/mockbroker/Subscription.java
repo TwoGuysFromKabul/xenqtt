@@ -173,9 +173,6 @@ final class Subscription {
 		if (subscribedQos.value() < message.getQoSLevel()) {
 			message = new PubMessage(subscribedQos, message.isRetain(), message.getTopicName(), 0, message.getPayload());
 		}
-		if (message.getQoSLevel() > 0) {
-			message.setMessageId(client.getNextMessageId());
-		}
 
 		client.send(message);
 	}
