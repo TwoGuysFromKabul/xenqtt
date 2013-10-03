@@ -33,6 +33,9 @@ public final class Xenqtt {
 			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\thelp - Display information on xenqtt and how it can be used"
 			+ "\n\n\t-v: Increase logging verbosity. v = info, vv = debug";
 
+	static volatile LoggingLevels loggingLevels;
+	static volatile String outputFile;
+
 	static {
 		System.setProperty("xenqtt.logging.async", "true");
 	}
@@ -44,40 +47,22 @@ public final class Xenqtt {
 	 * The entry point into Xenqtt.
 	 * 
 	 * @param args
-	 *            The arguments specified by the user at the command-line. The valid arguments include the following:
+	 *            <p>
+	 *            The arguments specified by the user at the command-line. You can supply global logging flags ({@code -v}, {@code -vv}, or {@code -v -v}) and a
+	 *            mode to run Xenqtt in. The supported modes, at present, are:
+	 *            </p>
 	 * 
-	 *            <table cellspacing="0" cellpadding="0" border="0" style="margin-top: 1em; border: 1px solid rgb(0, 0, 0);">
-	 *            <tr>
-	 *            <td style="border-right: 1px solid rgb(0, 0, 0); font-weight: bold; padding: 0.2em;">Argument</td>
-	 *            <td style="border-right: 1px solid rgb(0, 0, 0); font-weight: bold; padding: 0.2em;">Description</td>
-	 *            <td style="font-weight: bold; padding: 0.2em;">Valid Values</td>
-	 *            </tr>
-	 *            <tr>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); border-right: 1px solid rgb(0, 0, 0); padding: 0.2em;">{mode}</td>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); border-right: 1px solid rgb(0, 0, 0); padding: 0.2em;">Defines the mode in which Xenqtt should
-	 *            run</td>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); padding: 0.2em;">
 	 *            <ul>
-	 *            <li>proxy</li>
-	 *            <li>gateway</li>
-	 *            <li>mockbroker</li>
-	 *            <li>help</li>
+	 *            <li>{@code proxy}</li>
+	 *            <li>{@code gateway}</li>
+	 *            <li>{@code mockbroker}</li>
+	 *            <li>{@code testclient}</li>
+	 *            <li>{@code help}</li>
 	 *            </ul>
-	 *            </td>
-	 *            </tr>
-	 *            <tr>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); border-right: 1px solid rgb(0, 0, 0); padding: 0.2em;">-v</td>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); border-right: 1px solid rgb(0, 0, 0); padding: 0.2em;">Switch that specifies verbose logging at
-	 *            the INFO level</td>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); padding: 0.2em;">N/A</td>
-	 *            </tr>
-	 *            <tr>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); border-right: 1px solid rgb(0, 0, 0); padding: 0.2em;">-vv</td>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); border-right: 1px solid rgb(0, 0, 0); padding: 0.2em;">Switch that specifies verbose logging at
-	 *            the DEBUG level</td>
-	 *            <td style="border-top: 1px solid rgb(0, 0, 0); padding: 0.2em;">N/A</td>
-	 *            </tr>
-	 *            </table>
+	 * 
+	 *            <p>
+	 *            To get mode-specific help information use the {@code help} mode and then specify the mode name (e.g. {@code help proxy})
+	 *            </p>
 	 */
 	public static void main(String... args) throws InterruptedException {
 		Arguments arguments = ArgumentExtractor.extractArguments(args);
@@ -87,9 +72,8 @@ public final class Xenqtt {
 			return;
 		}
 
-		Log.setLoggingLevels(arguments.determineLoggingLevels());
-		String outputFile = String.format("xenqtt-%s.log", arguments.mode.getMode().toLowerCase());
-		Log.setLoggingDestination(outputFile);
+		loggingLevels = arguments.determineLoggingLevels();
+		outputFile = String.format("xenqtt-%s.log", arguments.mode.getMode().toLowerCase());
 		application = loadXenqttApplication(arguments.mode);
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {

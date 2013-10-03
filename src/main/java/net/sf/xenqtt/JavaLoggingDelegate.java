@@ -22,8 +22,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import net.sf.xenqtt.Log.LoggingDelegate;
-
 /**
  * A {@link LoggingDelegate} that logs messages and related data to a log file called {@code xenqtt.log} that is created and rolled in the directory where the
  * {@code xenqtt.jar} file is being executed. The logging is done via the Java Util Logging API.
@@ -32,7 +30,7 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 
 	static {
 		if (!isJavaUtilLoggingEnabled()) {
-			initializeLogging(null);
+			initializeLogging();
 		}
 	}
 
@@ -40,7 +38,7 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 		return System.getProperty("java.util.logging.config.file") != null || System.getProperty("java.util.logging.config.class") != null;
 	}
 
-	private static void initializeLogging(String outputFile) {
+	private static void initializeLogging() {
 		LogManager logManager = LogManager.getLogManager();
 		try {
 			Properties properties = new Properties();
@@ -50,7 +48,7 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 			properties.setProperty("java.util.logging.FileHandler.count", "20");
 			properties.setProperty("java.util.logging.FileHandler.formatter", "net.sf.xenqtt.XenqttLogFormatter");
 			String jarDirectory = XenqttUtil.getDirectoryHostingRunningXenqttJar();
-			outputFile = outputFile != null ? outputFile : "xenqtt.log";
+			String outputFile = Xenqtt.outputFile != null ? Xenqtt.outputFile : "xenqtt.log";
 			if (jarDirectory != null) {
 				properties.setProperty("java.util.logging.FileHandler.pattern", String.format("%s/%s", jarDirectory, outputFile));
 			} else {
@@ -163,12 +161,6 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 	@Override
 	public void fatal(Throwable t, String message) {
 		log.log(Level.SEVERE, message, t);
-	}
-
-	void updateLoggingDestination(String outputFile) {
-		if (outputFile != null) {
-			initializeLogging(outputFile);
-		}
 	}
 
 }

@@ -15,8 +15,6 @@
  */
 package net.sf.xenqtt;
 
-import net.sf.xenqtt.Log.LoggingDelegate;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
