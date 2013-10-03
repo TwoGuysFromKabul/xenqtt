@@ -16,6 +16,7 @@
 package net.sf.xenqtt;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,14 +72,23 @@ final class ArgumentExtractor {
 			return null;
 		}
 
-		ApplicationArguments applicationArguments = getApplicationArguments(modeArguments);
+		boolean helpMode = Mode.lookup(mode) == Mode.HELP;
+		ApplicationArguments applicationArguments = getApplicationArguments(modeArguments, helpMode);
 
 		return new Arguments(globalOptions, mode, applicationArguments);
 	}
 
-	private static ApplicationArguments getApplicationArguments(List<String> modeArguments) {
+	private static ApplicationArguments getApplicationArguments(List<String> modeArguments, boolean helpMode) {
 		if (modeArguments.isEmpty()) {
 			return new ApplicationArguments();
+		}
+
+		if (helpMode) {
+			String desiredHelp = modeArguments.get(0);
+			Map<String, String> args = new HashMap<String, String>();
+			args.put("-m", desiredHelp);
+
+			return new ApplicationArguments(Collections.<String> emptyList(), args);
 		}
 
 		List<String> flags = new ArrayList<String>();
