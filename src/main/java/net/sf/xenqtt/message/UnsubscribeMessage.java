@@ -70,21 +70,24 @@ public final class UnsubscribeMessage extends IdentifiableMqttMessage {
 
 	private void loadTopics() {
 
-		buffer.position(fixedHeaderEndOffset + 2);
+		int index = fixedHeaderEndOffset + 2;
 
 		int count = 0;
-		while (buffer.hasRemaining()) {
-			int size = (buffer.getShort() & 0xffff);
-			buffer.position(buffer.position() + size);
+		while (index < buffer.limit()) {
+			int size = (buffer.getShort(index) & 0xffff) + 2;
+			index += size;
 			count++;
 		}
 
 		topics = new String[count];
 
 		int i = 0;
-		buffer.position(fixedHeaderEndOffset + 2);
-		while (buffer.hasRemaining()) {
-			topics[i] = getString();
+		index = fixedHeaderEndOffset + 2;
+		while (index < buffer.limit()) {
+			int len = buffer.getShort(index) & 0xffff;
+			index += 2;
+			topics[i] = new String(getBytes(index, len), UTF8);
+			index += len;
 			i++;
 		}
 	}

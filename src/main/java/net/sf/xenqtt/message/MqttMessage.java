@@ -15,6 +15,7 @@
  */
 package net.sf.xenqtt.message;
 
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -27,7 +28,7 @@ public class MqttMessage {
 	private static final byte[] HEX_CHAR_TABLE = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8',
 			(byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
 
-	private static final Charset UTF8 = Charset.forName("UTF-8");
+	static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private final int remainingLength;
 
@@ -123,7 +124,7 @@ public class MqttMessage {
 	 */
 	public static String byteBufferToHex(ByteBuffer buffer) {
 
-		return bytesToHex(getBytes(buffer));
+		return bytesToHex(getBytes(0, buffer));
 	}
 
 	/**
@@ -310,15 +311,12 @@ public class MqttMessage {
 	}
 
 	/**
-	 * @return A string at the specified index. This will change the buffer's current position.
+	 * @return A string at the specified index.
 	 */
 	final String getString(int index) {
 
-		int pos = buffer.position();
-		buffer.position(index);
-		String value = getString();
-		buffer.position(pos);
-		return value;
+		int len = buffer.getShort(index) & 0xffff;
+		return new String(getBytes(index + 2, len), UTF8);
 	}
 
 	/**
@@ -333,15 +331,6 @@ public class MqttMessage {
 	}
 
 	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-
-		return Arrays.hashCode(getBytes());
-	}
-
-	/**
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -353,7 +342,7 @@ public class MqttMessage {
 
 		MqttMessage that = (MqttMessage) obj;
 
-		return Arrays.equals(getBytes(), that.getBytes());
+		return Arrays.equals(getBytes(0), that.getBytes(0));
 	}
 
 	/**
@@ -365,19 +354,42 @@ public class MqttMessage {
 		return getClass().getSimpleName() + ": [" + byteBufferToHex(buffer) + "]";
 	}
 
-	private byte[] getBytes() {
-		return getBytes(buffer);
+	/**
+	 * @return bytes from the specified index to the end of the buffer
+	 */
+	final byte[] getBytes(int index) {
+		return getBytes(index, buffer);
 	}
 
-	private static byte[] getBytes(ByteBuffer buffer) {
+	/**
+	 * @return Up to len bytes from the specified index.
+	 */
+	final byte[] getBytes(int index, int len) {
+		return getBytes(index, len, buffer);
+	}
 
-		int pos = buffer.position();
-		buffer.rewind();
+	private static byte[] getBytes(int index, ByteBuffer buffer) {
+		return getBytes(index, buffer.limit() - index, buffer);
+	}
 
-		byte[] buf = new byte[buffer.limit()];
-		buffer.get(buf);
+	private static byte[] getBytes(int index, int len, ByteBuffer buffer) {
 
-		buffer.position(pos);
+		if (index < 0 || index > buffer.limit()) {
+			throw new IndexOutOfBoundsException();
+		}
+
+		if (len < 0) {
+			throw new IllegalArgumentException("len must be >= 0");
+		}
+
+		if (len > buffer.limit() - index) {
+			throw new BufferUnderflowException();
+		}
+
+		byte[] buf = new byte[len];
+		if (len > 0) {
+			System.arraycopy(buffer.array(), index, buf, 0, len);
+		}
 
 		return buf;
 	}
