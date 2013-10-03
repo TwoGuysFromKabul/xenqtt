@@ -52,10 +52,13 @@ final class BrokerMessageHandler implements MessageHandler {
 	private final BrokerEvents events;
 	private final ConcurrentHashMap<String, String> credentials;
 	private final boolean allowAnonymousAccess;
+	private final int maxInFlightMessages;
 
-	BrokerMessageHandler(MockBrokerHandler brokerHandler, BrokerEvents events, ConcurrentHashMap<String, String> credentials, boolean allowAnonymousAccess) {
+	BrokerMessageHandler(MockBrokerHandler brokerHandler, BrokerEvents events, ConcurrentHashMap<String, String> credentials, boolean allowAnonymousAccess,
+			int maxInFlightMessages) {
 		this.credentials = credentials;
 		this.allowAnonymousAccess = allowAnonymousAccess;
+		this.maxInFlightMessages = maxInFlightMessages;
 		this.brokerHandler = brokerHandler == null ? new MockBrokerHandler() : brokerHandler;
 		this.events = events;
 	}
@@ -278,7 +281,7 @@ final class BrokerMessageHandler implements MessageHandler {
 	@Override
 	public void channelOpened(MqttChannel channel) {
 
-		Client client = new Client(channel, events);
+		Client client = new Client(channel, events, maxInFlightMessages);
 		clientByChannel.put(channel, client);
 		events.addEvent(CHANNEL_OPENED, client);
 

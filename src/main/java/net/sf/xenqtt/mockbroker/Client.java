@@ -15,15 +15,26 @@
  */
 package net.sf.xenqtt.mockbroker;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
+
 import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttMessage;
+import net.sf.xenqtt.message.PubAckMessage;
+import net.sf.xenqtt.message.PubMessage;
 
 /**
  * Info on a client connected to the mock broker
  */
 public final class Client {
+
+	private final int maxInFlightMessages;
+	private final Queue<PubMessage> pendingMessages = new LinkedList<PubMessage>();
+	private final Set<Integer> inFlightMessages = new HashSet<Integer>();
 
 	String clientId;
 	boolean cleanSession;
@@ -31,9 +42,10 @@ public final class Client {
 	private final MqttChannel channel;
 	private final BrokerEvents events;
 
-	Client(MqttChannel channel, BrokerEvents events) {
+	Client(MqttChannel channel, BrokerEvents events, int maxInFlightMessages) {
 		this.channel = channel;
 		this.events = events;
+		this.maxInFlightMessages = maxInFlightMessages;
 	}
 
 	/**
@@ -44,10 +56,60 @@ public final class Client {
 	}
 
 	/**
-	 * Sends the message to this client
+	 * Closes the connection to this client
 	 */
-	public void send(MqttMessage message) {
+	public void close() {
+		channel.close();
+	}
+
+	/**
+	 * Sends the message to this client
+	 * 
+	 * @return true if the message was sent, false if the maximum number of in-flight messages has already been reached and this message was queued to be sent
+	 *         later.
+	 */
+	public boolean send(MqttMessage message) {
+
 		XenqttUtil.validateNotNull("message", message);
+
+		if (inFlightMessages.size() >= maxInFlightMessages && message.getQoSLevel() > 0 && message instanceof PubMessage) {
+			PubMessage pubMessage = (PubMessage) message;
+			pendingMessages.add(pubMessage);
+			return false;
+		}
+
+		doSend(message);
+		return true;
+	}
+
+	/**
+	 * Called whenever an {@link MqttMessage} is received
+	 */
+	void messageReceived(MqttMessage message) {
+		events.addEvent(BrokerEventType.MESSAGE_RECEIVED, this, message);
+
+		if (!(message instanceof PubAckMessage)) {
+			return;
+		}
+
+		int messageId = ((PubAckMessage) message).getMessageId();
+		inFlightMessages.remove(messageId);
+		while (inFlightMessages.size() < maxInFlightMessages) {
+			PubMessage nextMessage = pendingMessages.poll();
+			if (nextMessage == null) {
+				break;
+			}
+			doSend(nextMessage);
+		}
+	}
+
+	private void doSend(MqttMessage message) {
+
+		if (message.getQoSLevel() > 0 && message instanceof PubMessage) {
+			PubMessage pubMessage = (PubMessage) message;
+			pubMessage.setMessageId(getNextMessageId());
+			inFlightMessages.add(pubMessage.getMessageId());
+		}
 
 		channel.send(message, null);
 		events.addEvent(BrokerEventType.MESSAGE_SENT, this, message);
@@ -56,26 +118,12 @@ public final class Client {
 	/**
 	 * @return The message ID to use for the next identifiable message sent to this client by the broker
 	 */
-	public int getNextMessageId() {
+	private int getNextMessageId() {
 
 		if (++nextMessageId > 0xffff) {
 			nextMessageId = 1;
 		}
 		return nextMessageId;
-	}
-
-	/**
-	 * Closes the connection to this client
-	 */
-	public void close() {
-		channel.close();
-	}
-
-	/**
-	 * Called whenever an {@link MqttMessage} is received
-	 */
-	void messageReceived(MqttMessage message) {
-		events.addEvent(BrokerEventType.MESSAGE_RECEIVED, this, message);
 	}
 
 	/**

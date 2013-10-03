@@ -53,10 +53,18 @@ public final class MockBroker {
 	private volatile int port;
 
 	/**
-	 * Creates a broker with no {@link MockBrokerHandler}, 15 second message resend interval, port 1883, allows anonymous access, and captures broker events
+	 * Creates a broker with the following config:
+	 * <ul>
+	 * <li>no {@link MockBrokerHandler}</li>
+	 * <li>15 second message resend interval</li>
+	 * <li>port 1883</li>
+	 * <li>allows anonymous access</li>
+	 * <li>captures broker events</li>
+	 * <li>allows 50 in-flight messages</li>
+	 * </ul>
 	 */
 	public MockBroker() {
-		this(null, 15, 1883, true, true);
+		this(null, 15, 1883, true, true, 50);
 	}
 
 	/**
@@ -71,12 +79,17 @@ public final class MockBroker {
 	 *            If true then {@link ConnectMessage} with no username/password will be accepted. Otherwise only valid credentials will be accepted.
 	 * @param captureBrokerEvents
 	 *            If {@code true} then capture all events within the broker; otherwise, do not capture any events
+	 * @param maxInFlightMessages
+	 *            Maximum number of concurrent publish messages the broker will have in-flight to the client. This is an approximation. The actual maximum
+	 *            number of in-flight messages may vary slightly.
 	 */
-	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean captureBrokerEvents) {
+	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean captureBrokerEvents,
+			int maxInFlightMessages) {
 		XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0);
+		XenqttUtil.validateGreaterThan("maxInFlightMessages", maxInFlightMessages, 0);
 
 		this.events = captureBrokerEvents ? new BrokerEventsImpl() : new NullBrokerEvents();
-		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess);
+		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess, maxInFlightMessages);
 		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds);
 		this.port = XenqttUtil.validateInRange("port", port, 0, 65535);
 
