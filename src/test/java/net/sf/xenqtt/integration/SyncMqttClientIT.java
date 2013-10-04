@@ -743,7 +743,7 @@ public class SyncMqttClientIT {
 		verify(reconnectionStrategy, times(4)).connectionEstablished();
 		verify(reconnectionStrategy, times(4)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
 		verify(listener, times(3)).disconnected(client, null, true);
-		verify(listener).disconnected(client, null, false);
+		verify(listener, timeout(5000)).disconnected(client, null, false);
 		assertTrue(client.isClosed());
 	}
 }
