@@ -1,3 +1,7 @@
+0.8.2
+	Updated the client API to make it simpler to use and make type names more consistent.
+	Fixed various bugs
+
 0.8.1
     Simplified Client configuration.
 	Fixed all known bugs in Client and Mock Broker.
