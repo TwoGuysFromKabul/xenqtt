@@ -64,7 +64,7 @@ public final class Xenqtt {
 	 *            </p>
 	 */
 	public static void main(String... args) throws InterruptedException {
-		Arguments arguments = ArgumentExtractor.extractArguments(args);
+		Arguments arguments = ArgumentExtractor.extractArguments(shutdownLatch, args);
 		if (arguments == null) {
 			System.out.println(USAGE);
 
@@ -108,7 +108,7 @@ public final class Xenqtt {
 		return null;
 	}
 
-	private static void runApplication(Mode mode, ApplicationArguments applicationArguments) {
+	private static void runApplication(Mode mode, AppContext applicationArguments) {
 		if (mode == Mode.HELP) {
 			displayHelpInformation(applicationArguments);
 			System.exit(0);
@@ -139,7 +139,7 @@ public final class Xenqtt {
 		}
 	}
 
-	private static void displayHelpInformation(ApplicationArguments arguments) {
+	private static void displayHelpInformation(AppContext arguments) {
 		String desiredHelpMode = arguments.getArgAsString("-m", null);
 		if (desiredHelpMode == null) {
 			displayGeneralHelpInformation();

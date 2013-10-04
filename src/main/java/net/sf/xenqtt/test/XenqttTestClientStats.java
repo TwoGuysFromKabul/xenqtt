@@ -17,7 +17,10 @@ package net.sf.xenqtt.test;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -25,7 +28,7 @@ import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.test.XenqttTestClient.ClientType;
 
 /**
- * TODO [jeremy] - Document this type.
+ * Aggregates and computes statistical information related to an execution of the Xenqtt {@link XenqttTestClient test client}.
  */
 final class XenqttTestClientStats {
 
@@ -39,6 +42,7 @@ final class XenqttTestClientStats {
 	// Fields synchronized by publishLock.
 	private long messagesPublished;
 	private double publishDuration;
+	private List<Integer> publishedMessageIds;
 
 	private final Lock subscribeLock = new ReentrantLock();
 
@@ -46,11 +50,28 @@ final class XenqttTestClientStats {
 	private long messagesReceived;
 	private long duplicateMessagesReceived;
 	private double messageLatency;
+	private List<Integer> receivedMessageIds;
 
 	private final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
 	XenqttTestClientStats(ClientType clientType) {
 		this.clientType = clientType;
+
+		Lock lock = publishLock;
+		lock.lock();
+		try {
+			publishedMessageIds = new ArrayList<Integer>();
+		} finally {
+			lock.unlock();
+		}
+
+		lock = subscribeLock;
+		lock.lock();
+		try {
+			receivedMessageIds = new ArrayList<Integer>();
+		} finally {
+			lock.unlock();
+		}
 	}
 
 	void testStarted() {
@@ -68,6 +89,7 @@ final class XenqttTestClientStats {
 			long then = getOriginalPublishTime(message);
 			messagesPublished++;
 			publishDuration += (System.currentTimeMillis() - then);
+			publishedMessageIds.add(getMessageId(message.getPayload()));
 		} finally {
 			lock.unlock();
 		}
@@ -86,6 +108,7 @@ final class XenqttTestClientStats {
 			long originalPublishTime = getOriginalPublishTime(message);
 			long latency = System.currentTimeMillis() - originalPublishTime;
 			messageLatency += latency;
+			receivedMessageIds.add(getMessageId(message.getPayload()));
 		} finally {
 			lock.unlock();
 		}
@@ -94,18 +117,32 @@ final class XenqttTestClientStats {
 	private long getOriginalPublishTime(PublishMessage message) {
 		byte[] payload = message.getPayload();
 		long originalPublishTime = 0L;
-		if (payload.length == 8) {
-			originalPublishTime |= (((long) payload[7] & 0xff) << 56);
-			originalPublishTime |= (((long) payload[6] & 0xff) << 48);
-			originalPublishTime |= (((long) payload[5] & 0xff) << 40);
-			originalPublishTime |= (((long) payload[4] & 0xff) << 32);
-			originalPublishTime |= (((long) payload[3] & 0xff) << 24);
-			originalPublishTime |= (((long) payload[2] & 0xff) << 16);
-			originalPublishTime |= (((long) payload[1] & 0xff) << 8);
-			originalPublishTime |= ((long) payload[0] & 0xff);
+		if (payload.length >= 8) {
+			originalPublishTime |= (((long) payload[0] & 0xff) << 56);
+			originalPublishTime |= (((long) payload[1] & 0xff) << 48);
+			originalPublishTime |= (((long) payload[2] & 0xff) << 40);
+			originalPublishTime |= (((long) payload[3] & 0xff) << 32);
+			originalPublishTime |= (((long) payload[4] & 0xff) << 24);
+			originalPublishTime |= (((long) payload[5] & 0xff) << 16);
+			originalPublishTime |= (((long) payload[6] & 0xff) << 8);
+			originalPublishTime |= ((long) payload[7] & 0xff);
 		}
 
 		return originalPublishTime;
+	}
+
+	private Integer getMessageId(byte[] payload) {
+		if (payload.length < 12) {
+			return Integer.valueOf(-1);
+		}
+
+		int messageId = 0;
+		messageId |= (payload[8] & 0xff) << 24;
+		messageId |= (payload[9] & 0xff) << 16;
+		messageId |= (payload[10] & 0xff) << 8;
+		messageId |= payload[11] & 0xff;
+
+		return Integer.valueOf(messageId);
 	}
 
 	String getClientType() {
@@ -196,6 +233,63 @@ final class XenqttTestClientStats {
 		} finally {
 			lock.unlock();
 		}
+	}
+
+	List<Gap> getPublishMessageGaps() {
+		Lock lock = publishLock;
+		lock.lock();
+		try {
+			return findGaps(publishedMessageIds);
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	List<Gap> getReceivedMessageGaps() {
+		Lock lock = subscribeLock;
+		lock.lock();
+		try {
+			return findGaps(receivedMessageIds);
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	private List<Gap> findGaps(List<Integer> ids) {
+		Collections.sort(ids);
+		List<Gap> gaps = new ArrayList<Gap>();
+		int previous = -1;
+		for (Integer id : ids) {
+			int value = id.intValue();
+			if (previous != -1 && previous + 1 != value) {
+				gaps.add(new Gap(previous + 1, value - 1));
+			}
+
+			previous = value;
+		}
+
+		return gaps;
+	}
+
+	static final class Gap {
+
+		final int start;
+		final int end;
+
+		Gap(int start, int end) {
+			this.start = start;
+			this.end = end;
+		}
+
+		@Override
+		public String toString() {
+			if (start == end) {
+				return String.valueOf(start);
+			}
+
+			return String.format("%d - %d", start, end);
+		}
+
 	}
 
 }

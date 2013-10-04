@@ -17,6 +17,7 @@ package net.sf.xenqtt.test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.client.AsyncMqttClient;
@@ -31,6 +32,8 @@ final class PublishWorker implements Runnable {
 	private final String name;
 	private final boolean async;
 	private final String publishTopic;
+	private final int messageSize;
+	private final AtomicInteger messageIds;
 	private final QoS qos;
 	private final CountDownLatch latch;
 	private final Publisher publisher;
@@ -45,6 +48,10 @@ final class PublishWorker implements Runnable {
 	 *            Whether or not the {@link AsyncMqttClient asynchronous} or the {@link SynchronousMqttClient synchronous} MQTT client is being used
 	 * @param publishTopic
 	 *            The topic to publish to
+	 * @param messageSize
+	 *            The size of the message that will follow the message ID and timestamp in all messages published by this test client
+	 * @param messageIds
+	 *            Produces IDs for each message sent by this and every other {@link PublishWorker worker}
 	 * @param qos
 	 *            The QoS level at which data is being published
 	 * @param latch
@@ -56,11 +63,13 @@ final class PublishWorker implements Runnable {
 	 * @param inFlight
 	 *            The maximum number of in-flight messages allowed across all publish workers
 	 */
-	PublishWorker(String name, boolean async, String publishTopic, QoS qos, CountDownLatch latch, XenqttTestClientStats stats, Publisher publisher,
-			Semaphore inFlight) {
+	PublishWorker(String name, boolean async, String publishTopic, int messageSize, AtomicInteger messageIds, QoS qos, CountDownLatch latch,
+			XenqttTestClientStats stats, Publisher publisher, Semaphore inFlight) {
 		this.name = name;
 		this.async = async;
 		this.publishTopic = publishTopic;
+		this.messageSize = messageSize;
+		this.messageIds = messageIds;
 		this.qos = qos;
 		this.latch = latch;
 		this.publisher = publisher;
@@ -97,16 +106,28 @@ final class PublishWorker implements Runnable {
 	}
 
 	private byte[] createPayload() {
+		int size = 12 + messageSize;
+		byte[] payload = new byte[size];
+
 		long now = System.currentTimeMillis();
-		byte[] payload = new byte[8];
-		payload[0] = (byte) (now & 0x00000000000000ffL);
-		payload[1] = (byte) ((now & 0x000000000000ff00L) >> 8);
-		payload[2] = (byte) ((now & 0x0000000000ff0000L) >> 16);
-		payload[3] = (byte) ((now & 0x00000000ff000000L) >> 24);
-		payload[4] = (byte) ((now & 0x000000ff00000000L) >> 32);
-		payload[5] = (byte) ((now & 0x0000ff0000000000L) >> 40);
-		payload[6] = (byte) ((now & 0x00ff000000000000L) >> 48);
-		payload[7] = (byte) ((now & 0xff00000000000000L) >> 56);
+		payload[0] = (byte) ((now & 0xff00000000000000L) >> 56);
+		payload[1] = (byte) ((now & 0x00ff000000000000L) >> 48);
+		payload[2] = (byte) ((now & 0x0000ff0000000000L) >> 40);
+		payload[3] = (byte) ((now & 0x000000ff00000000L) >> 32);
+		payload[4] = (byte) ((now & 0x00000000ff000000L) >> 24);
+		payload[5] = (byte) ((now & 0x0000000000ff0000L) >> 16);
+		payload[6] = (byte) ((now & 0x000000000000ff00L) >> 8);
+		payload[7] = (byte) (now & 0x00000000000000ffL);
+
+		int id = messageIds.getAndIncrement();
+		payload[8] = (byte) ((id & 0xff000000) >> 24);
+		payload[9] = (byte) ((id & 0x00ff0000) >> 16);
+		payload[10] = (byte) ((id & 0x0000ff00) >> 8);
+		payload[11] = (byte) (id & 0x000000ff);
+
+		for (int i = 12; i < size; i++) {
+			payload[i] = (byte) ((i - 12) & 0xff);
+		}
 
 		return payload;
 	}

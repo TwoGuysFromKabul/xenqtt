@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * <p>
@@ -48,7 +49,7 @@ final class ArgumentExtractor {
 	private ArgumentExtractor() {
 	}
 
-	static Arguments extractArguments(String... args) {
+	static Arguments extractArguments(CountDownLatch latch, String... args) {
 		if (args == null || args.length == 0) {
 			return null;
 		}
@@ -73,14 +74,14 @@ final class ArgumentExtractor {
 		}
 
 		boolean helpMode = Mode.lookup(mode) == Mode.HELP;
-		ApplicationArguments applicationArguments = getApplicationArguments(modeArguments, helpMode);
+		AppContext applicationArguments = getApplicationArguments(modeArguments, helpMode, latch);
 
 		return new Arguments(globalOptions, mode, applicationArguments);
 	}
 
-	private static ApplicationArguments getApplicationArguments(List<String> modeArguments, boolean helpMode) {
+	private static AppContext getApplicationArguments(List<String> modeArguments, boolean helpMode, CountDownLatch latch) {
 		if (modeArguments.isEmpty()) {
-			return new ApplicationArguments();
+			return new AppContext();
 		}
 
 		if (helpMode) {
@@ -88,7 +89,7 @@ final class ArgumentExtractor {
 			Map<String, String> args = new HashMap<String, String>();
 			args.put("-m", desiredHelp);
 
-			return new ApplicationArguments(Collections.<String> emptyList(), args);
+			return new AppContext(Collections.<String> emptyList(), args);
 		}
 
 		List<String> flags = new ArrayList<String>();
@@ -118,7 +119,7 @@ final class ArgumentExtractor {
 			flags.add(String.format("-%c", previousFlagOrArg));
 		}
 
-		return new ApplicationArguments(flags, arguments);
+		return new AppContext(flags, arguments, latch);
 	}
 
 	private static char parseFlags(String modeArgument, List<String> flags) {
@@ -235,9 +236,9 @@ final class ArgumentExtractor {
 		final Mode mode;
 
 		/**
-		 * The {@link ApplicationArguments arguments} to pass into the application. These arguments are optional and can be {@code null}.
+		 * The {@link AppContext arguments} to pass into the application. These arguments are optional and can be {@code null}.
 		 */
-		final ApplicationArguments applicationArguments;
+		final AppContext applicationArguments;
 
 		/**
 		 * Create a new instance of this class.
@@ -245,10 +246,10 @@ final class ArgumentExtractor {
 		 * @param mode
 		 *            The mode to run Xenqtt in. This is required and cannot be empty or {@code null}
 		 * @param applicationArguments
-		 *            The {@link ApplicationArguments arguments} to pass to the application being started as specified by the {@code mode} given. These are
-		 *            optional and may be {@code null}
+		 *            The {@link AppContext arguments} to pass to the application being started as specified by the {@code mode} given. These are optional and
+		 *            may be {@code null}
 		 */
-		Arguments(String mode, ApplicationArguments applicationArguments) {
+		Arguments(String mode, AppContext applicationArguments) {
 			this(null, mode, applicationArguments);
 		}
 
@@ -272,10 +273,10 @@ final class ArgumentExtractor {
 		 * @param mode
 		 *            The mode to run Xenqtt in. This is required and cannot be empty or {@code null}
 		 * @param applicationArguments
-		 *            The {@link ApplicationArguments arguments} to pass to the application being started as specified by the {@code mode} given. These are
-		 *            optional and may be {@code null}
+		 *            The {@link AppContext arguments} to pass to the application being started as specified by the {@code mode} given. These are optional and
+		 *            may be {@code null}
 		 */
-		Arguments(List<String> globalOptions, String mode, ApplicationArguments applicationArguments) {
+		Arguments(List<String> globalOptions, String mode, AppContext applicationArguments) {
 			if (mode == null || mode.trim().equals("")) {
 				throw new IllegalArgumentException("The mode cannot be empty or null.");
 			}

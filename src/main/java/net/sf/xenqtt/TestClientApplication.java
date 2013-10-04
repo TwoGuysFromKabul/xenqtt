@@ -32,7 +32,7 @@ final class TestClientApplication implements XenqttApplication {
 	private XenqttTestClient testClient;
 
 	@Override
-	public void start(ApplicationArguments arguments) {
+	public void start(AppContext arguments) {
 		testClient = new XenqttTestClient(arguments);
 		testClient.start();
 	}
