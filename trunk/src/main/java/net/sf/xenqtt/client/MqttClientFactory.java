@@ -29,7 +29,7 @@ import net.sf.xenqtt.message.ChannelManagerImpl;
 /**
  * Used to create multiple "sibling" {@link MqttClient clients} that share an {@link Executor}, broker URI, etc.
  */
-public final class MqttClientFactory {
+public final class MqttClientFactory implements AsyncClientFactory, SynchronousClientFactory {
 
 	private final MqttClientConfig config;
 	private final boolean synchronous;
@@ -116,9 +116,10 @@ public final class MqttClientFactory {
 	}
 
 	/**
-	 * Stops this factory. Closes all open connections to the broker. Blocks until shutdown is complete. Any other methods called after this have unpredictable
-	 * results.
+	 * @see net.sf.xenqtt.client.SynchronousClientFactory#shutdown()
+	 * @see net.sf.xenqtt.client.AsyncClientFactory#shutdown()
 	 */
+	@Override
 	public void shutdown() {
 
 		this.manager.shutdown();
@@ -141,17 +142,9 @@ public final class MqttClientFactory {
 	}
 
 	/**
-	 * Creates a synchronous {@link MqttClient client}. You may only use this method if the factory was constructed to create synchronous clients.
-	 * 
-	 * @param mqttClientListener
-	 *            Handles events from this client's channel. Use {@link MqttClientListener#NULL_LISTENER} if you don't want to receive messages or be notified
-	 *            of events.
-	 * 
-	 * @return A new synchronous {@link MqttClient client}
-	 * 
-	 * @throws IllegalStateException
-	 *             If this factory was constructed to create asynchronous clients and not synchronous clients.
+	 * @see net.sf.xenqtt.client.SynchronousClientFactory#newSynchronousClient(net.sf.xenqtt.client.MqttClientListener)
 	 */
+	@Override
 	public MqttClient newSynchronousClient(MqttClientListener mqttClientListener) throws IllegalStateException {
 		XenqttUtil.validateNotNull("mqttClientListener", mqttClientListener);
 
@@ -163,17 +156,9 @@ public final class MqttClientFactory {
 	}
 
 	/**
-	 * Creates an asynchronous {@link MqttClient client}. You may only use this method if the factory was constructed to create asynchronous clients.
-	 * 
-	 * @param asyncClientListener
-	 *            Handles events from this client's channel. Use {@link AsyncClientListener#NULL_LISTENER} if you don't want to receive messages or be notified
-	 *            of events.
-	 * 
-	 * @return A new asynchronous {@link MqttClient client}
-	 * 
-	 * @throws IllegalStateException
-	 *             If this factory was constructed to create synchronous clients and not asynchronous clients.
+	 * @see net.sf.xenqtt.client.AsyncClientFactory#newAsyncClient(net.sf.xenqtt.client.AsyncClientListener)
 	 */
+	@Override
 	public MqttClient newAsyncClient(AsyncClientListener asyncClientListener) throws IllegalStateException {
 
 		if (synchronous) {
