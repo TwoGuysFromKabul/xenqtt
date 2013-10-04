@@ -281,12 +281,9 @@ abstract class AbstractMqttClient implements MqttClient {
 	}
 
 	/**
-	 * Stops this client. Closes the connection to the broker if it is open. Blocks until shutdown is complete. Any other methods called after this have
-	 * unpredictable results.
-	 * 
-	 * @throws MqttInterruptedException
-	 *             If the thread is {@link Thread#interrupt() interrupted}
+	 * @see net.sf.xenqtt.client.MqttClient#shutdown()
 	 */
+	@Override
 	public final void shutdown() throws MqttInterruptedException {
 
 		shuttingDown = true;
