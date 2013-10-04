@@ -506,7 +506,7 @@ abstract class AbstractMqttClient implements MqttClient {
 					@Override
 					public void run() {
 						try {
-							PublishMessage publishMessage = (PublishMessage) dataByMessageId.get(message.getMessageId());
+							PublishMessage publishMessage = (PublishMessage) dataByMessageId.remove(message.getMessageId());
 							asyncClientListener.published(client, publishMessage);
 						} catch (Exception e) {
 							Log.error(e, "Failed to process message for %s: %s", channel, message);
@@ -559,7 +559,7 @@ abstract class AbstractMqttClient implements MqttClient {
 					@Override
 					public void run() {
 						try {
-							Subscription[] requestedSubscriptions = (Subscription[]) dataByMessageId.get(message.getMessageId());
+							Subscription[] requestedSubscriptions = (Subscription[]) dataByMessageId.remove(message.getMessageId());
 							try {
 								Subscription[] grantedSubscriptions = grantedSubscriptions(requestedSubscriptions, message);
 								asyncClientListener.subscribed(client, requestedSubscriptions, grantedSubscriptions, true);
@@ -594,7 +594,7 @@ abstract class AbstractMqttClient implements MqttClient {
 					@Override
 					public void run() {
 						try {
-							String[] topics = (String[]) dataByMessageId.get(message.getMessageId());
+							String[] topics = (String[]) dataByMessageId.remove(message.getMessageId());
 							asyncClientListener.unsubscribed(client, topics);
 						} catch (Exception e) {
 							Log.error(e, "Failed to process message for %s: %s", channel, message);
