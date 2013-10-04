@@ -420,11 +420,11 @@ abstract class AbstractMqttClient implements MqttClient {
 			}
 		}
 
-		mqttClientListener.disconnected(this, cause, reconnecting);
-
 		if (!reconnecting) {
 			shutdown();
 		}
+
+		mqttClientListener.disconnected(this, cause, reconnecting);
 	}
 
 	private final class AsyncMessageHandler implements MessageHandler {
