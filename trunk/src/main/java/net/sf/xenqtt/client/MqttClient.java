@@ -57,6 +57,21 @@ import net.sf.xenqtt.message.QoS;
  * </p>
  */
 public interface MqttClient {
+	/**
+	 * <p>
+	 * Stops this client. Closes the connection to the broker if it is open. Blocks until shutdown is complete. Any other methods called after this have
+	 * unpredictable results.
+	 * </p>
+	 * <p>
+	 * In the {@link SynchronousMqttClient synchronous client} this should be called after {@link #disconnect()} returns. In the {@link AsyncMqttClient
+	 * asynchronous client} this should be called after the disconnect completes. A good place to do this is in
+	 * {@link AsyncClientListener#disconnected(MqttClient, Throwable, boolean)}.
+	 * </p>
+	 * 
+	 * @throws MqttInterruptedException
+	 *             If the thread is {@link Thread#interrupt() interrupted}
+	 */
+	void shutdown() throws MqttInterruptedException;
 
 	/**
 	 * Connects this client to the broker with credentials and a WillMessage. This includes these actions:
