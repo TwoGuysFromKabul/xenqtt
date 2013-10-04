@@ -23,6 +23,7 @@ import static org.mockito.Mockito.*;
 import java.util.Arrays;
 import java.util.List;
 
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
@@ -69,10 +70,16 @@ public abstract class AbstractAsyncMqttClientIT {
 	public void after() {
 
 		if (client != null) {
-			client.shutdown();
+			try {
+				client.close();
+			} catch (MqttCommandCancelledException ignore) {
+			}
 		}
 		if (client2 != null) {
-			client2.shutdown();
+			try {
+				client2.close();
+			} catch (MqttCommandCancelledException ignore) {
+			}
 		}
 	}
 

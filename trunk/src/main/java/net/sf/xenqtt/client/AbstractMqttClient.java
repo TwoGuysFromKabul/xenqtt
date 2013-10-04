@@ -58,6 +58,7 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
  */
 abstract class AbstractMqttClient implements MqttClient {
 
+	private final boolean ownedByFactory;
 	private final MqttClientConfig config;
 	private final String brokerUri;
 	private final ChannelManager manager;
@@ -274,44 +275,18 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#close()
 	 */
 	@Override
-	public final void close() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException {
+	public final void close() throws MqttTimeoutException, MqttInterruptedException {
 
 		closeRequested = true;
 		manager.close(channel);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.client.MqttClient#isShutdown()
+	 * @see net.sf.xenqtt.client.MqttClient#isClosed()
 	 */
 	@Override
-	public final boolean isShutdown() {
+	public final boolean isClosed() {
 		return scheduledExecutor.isShutdown();
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClient#shutdown()
-	 */
-	@Override
-	public final void shutdown() throws MqttInterruptedException {
-
-		shuttingDown = true;
-		manager.shutdown();
-
-		scheduledExecutor.shutdownNow();
-		try {
-			scheduledExecutor.awaitTermination(1, TimeUnit.DAYS);
-		} catch (InterruptedException e) {
-			throw new MqttInterruptedException(e);
-		}
-
-		if (executorService != null) {
-			executorService.shutdownNow();
-			try {
-				executorService.awaitTermination(1, TimeUnit.DAYS);
-			} catch (InterruptedException e) {
-				throw new MqttInterruptedException(e);
-			}
-		}
 	}
 
 	/**
@@ -319,6 +294,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener, Executor executor,
 			ChannelManager manager, ScheduledExecutorService scheduledExecutor, MqttClientConfig config) {
+		this.ownedByFactory = true;
 		this.brokerUri = brokerUri;
 		this.config = config.clone();
 		this.mqttClientListener = mqttClientListener;
@@ -332,8 +308,29 @@ abstract class AbstractMqttClient implements MqttClient {
 		this.channel = manager.newClientChannel(brokerUri, messageHandler);
 	}
 
+	private final void shutdown() throws MqttInterruptedException {
+
+		shuttingDown = true;
+
+		if (!ownedByFactory) {
+			manager.shutdown();
+
+			scheduledExecutor.shutdownNow();
+			try {
+				scheduledExecutor.awaitTermination(1, TimeUnit.DAYS);
+			} catch (InterruptedException e) {
+				throw new MqttInterruptedException(e);
+			}
+
+			if (executorService != null) {
+				executorService.shutdown();
+			}
+		}
+	}
+
 	private AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
 			int messageHandlerThreadPoolSize, Executor executor, MqttClientConfig config) {
+		this.ownedByFactory = false;
 		this.brokerUri = brokerUri;
 		this.config = config.clone();
 		this.mqttClientListener = mqttClientListener;
@@ -424,6 +421,10 @@ abstract class AbstractMqttClient implements MqttClient {
 		}
 
 		mqttClientListener.disconnected(this, cause, reconnecting);
+
+		if (!reconnecting) {
+			shutdown();
+		}
 	}
 
 	private final class AsyncMessageHandler implements MessageHandler {

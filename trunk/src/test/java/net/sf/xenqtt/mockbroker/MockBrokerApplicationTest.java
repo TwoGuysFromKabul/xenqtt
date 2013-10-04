@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.MqttCommandCancelledException;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
 import net.sf.xenqtt.client.MqttClientListener;
@@ -253,7 +253,7 @@ public class MockBrokerApplicationTest {
 		assertEquals(2, messageCount.get());
 	}
 
-	@Test(expected = MqttCommandCancelledException.class)
+	@Test(expected = MqttInvocationException.class)
 	public void testStop() throws Exception {
 		List<String> flags = new ArrayList<String>();
 		flags.add("-a");
@@ -276,6 +276,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
+
 		new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 	}
 

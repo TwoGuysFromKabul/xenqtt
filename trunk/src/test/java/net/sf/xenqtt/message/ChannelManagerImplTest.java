@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.mock.MockMessageHandler;
 import net.sf.xenqtt.mock.MockServer;
 
@@ -162,8 +162,9 @@ public class ChannelManagerImplTest {
 		try {
 			manager.newClientChannel("foo", 123, clientHandler);
 			fail("Exception expected");
-		} catch (RuntimeException e) {
-			clientHandler.assertLastChannelClosedCause(e.getCause());
+		} catch (MqttInvocationException e) {
+			Thread.sleep(500);
+			clientHandler.assertLastChannelClosedCause(e.getRootCause().getCause());
 		}
 	}
 
@@ -176,8 +177,8 @@ public class ChannelManagerImplTest {
 		try {
 			manager.newClientChannel("foo", 123, clientHandler);
 			fail("Exception expected");
-		} catch (RuntimeException e) {
-			clientHandler.assertLastChannelClosedCause(e.getCause());
+		} catch (MqttInvocationException e) {
+			clientHandler.assertLastChannelClosedCause(e.getRootCause().getCause());
 		}
 	}
 
@@ -208,7 +209,7 @@ public class ChannelManagerImplTest {
 		try {
 			clientChannel = manager.newClientChannel("localhost", 19876, clientHandler);
 			fail("expected exception");
-		} catch (MqttCommandCancelledException e) {
+		} catch (MqttInvocationException e) {
 		}
 
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));

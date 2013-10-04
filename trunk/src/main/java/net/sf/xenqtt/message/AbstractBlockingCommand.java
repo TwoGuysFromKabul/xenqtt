@@ -19,8 +19,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
-import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttInvocationError;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 
 /**
@@ -30,6 +31,7 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 
 	private final CountDownLatch done = new CountDownLatch(1);
 
+	private boolean cancelled;
 	private T result;
 	private Throwable failCause;
 
@@ -59,14 +61,18 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 		}
 
 		if (failCause != null) {
-			if (failCause instanceof RuntimeException) {
-				throw (RuntimeException) failCause;
+			if (failCause instanceof Exception) {
+				throw new MqttInvocationException("Command failed: " + getClass().getSimpleName(), (Exception) failCause);
 			}
 			if (failCause instanceof Error) {
-				throw (Error) failCause;
+				throw new MqttInvocationError("Command failed: " + getClass().getSimpleName(), (Error) failCause);
 			}
 
-			throw new RuntimeException("Unexpected exception. This is a bug!", failCause);
+			throw new RuntimeException("Unexpected exception type. This is a bug (and should be impossible)!", failCause);
+		}
+
+		if (cancelled) {
+			throw new MqttCommandCancelledException("Command cancelled: " + getClass().getSimpleName(), this.failCause);
 		}
 
 		return result;
@@ -100,13 +106,7 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	@Override
 	public void setFailureCause(Throwable cause) {
 
-		if (cause instanceof RuntimeException) {
-			this.failCause = cause;
-		} else if (cause instanceof Exception) {
-			this.failCause = new MqttException(cause);
-		} else {
-			this.failCause = cause;
-		}
+		this.failCause = cause;
 	}
 
 	/**
@@ -124,7 +124,7 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	@Override
 	public void cancel() {
 
-		this.failCause = new MqttCommandCancelledException("Command cancelled: " + getClass().getSimpleName(), this.failCause);
+		this.cancelled = true;
 		done.countDown();
 	}
 

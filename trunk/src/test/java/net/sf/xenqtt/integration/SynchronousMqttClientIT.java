@@ -26,6 +26,7 @@ import java.util.List;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
@@ -80,10 +81,16 @@ public class SynchronousMqttClientIT {
 	public void after() {
 
 		if (client != null) {
-			client.shutdown();
+			try {
+				client.close();
+			} catch (MqttCommandCancelledException ignore) {
+			}
 		}
 		if (client2 != null) {
-			client2.shutdown();
+			try {
+				client2.close();
+			} catch (MqttCommandCancelledException ignore) {
+			}
 		}
 		if (mockBroker != null) {
 			mockBroker.shutdown(5000);
@@ -112,8 +119,8 @@ public class SynchronousMqttClientIT {
 		try {
 			client = new SynchronousMqttClient("tcp://foo:1883", listener, 5, config);
 			fail("expected exception");
-		} catch (MqttException e) {
-			thrown = e.getCause();
+		} catch (MqttInvocationException e) {
+			thrown = e.getRootCause().getCause();
 			assertEquals(UnresolvedAddressException.class, thrown.getClass());
 		}
 
@@ -179,21 +186,6 @@ public class SynchronousMqttClientIT {
 		verify(reconnectionStrategy).clone();
 
 		verifyNoMoreInteractions(listener, reconnectionStrategy);
-	}
-
-	@Test
-	public void testShutdown() throws Exception {
-
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
-		mockBroker.init();
-		mockBroker.addCredentials("user1", "password1");
-		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
-
-		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
-
-		assertFalse(client.isShutdown());
-		client.shutdown();
-		assertTrue(client.isShutdown());
 	}
 
 	@Test
@@ -574,8 +566,10 @@ public class SynchronousMqttClientIT {
 
 		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
 		client.connect("testclient19", true);
+		assertFalse(client.isClosed());
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		assertTrue(client.isClosed());
 	}
 
 	@Test
@@ -583,8 +577,11 @@ public class SynchronousMqttClientIT {
 
 		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
 		client.connect("testclient20", true);
+		assertFalse(client.isClosed());
+
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		assertTrue(client.isClosed());
 	}
 
 	@Test
@@ -606,8 +603,8 @@ public class SynchronousMqttClientIT {
 		try {
 			client.connect("testclient20", true);
 			fail("expected exception");
-		} catch (MqttCommandCancelledException e) {
-			assertEquals(MqttTimeoutException.class, e.getCause().getClass());
+		} catch (MqttInvocationException e) {
+			assertEquals(MqttTimeoutException.class, e.getRootCause().getClass());
 		}
 
 		verify(listener, timeout(1500)).disconnected(eq(client), isA(MqttTimeoutException.class), eq(false));
@@ -733,6 +730,7 @@ public class SynchronousMqttClientIT {
 		client = new SynchronousMqttClient(validBrokerUri, listener, 5, config);
 		client.connect("testclient20", true);
 		verify(reconnectionStrategy, timeout(5000)).connectionEstablished();
+		assertFalse(client.isClosed());
 		PublishMessage pubMessage = new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc");
 		try {
 			client.publish(pubMessage);
@@ -746,5 +744,6 @@ public class SynchronousMqttClientIT {
 		verify(reconnectionStrategy, times(4)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
 		verify(listener, times(3)).disconnected(client, null, true);
 		verify(listener).disconnected(client, null, false);
+		assertTrue(client.isClosed());
 	}
 }
