@@ -31,9 +31,9 @@ import net.sf.xenqtt.message.QoS;
  * A client to an MQTT broker. This interface is implemented by both synchronous and asynchronous clients.
  * </p>
  * <p>
- * To use the synchronous client create a {@link SynchronousMqttClient} and {@link MqttClientListener}. The synchronous client blocks until it receives an
+ * To use the synchronous client create a {@link SyncMqttClient} and {@link MqttClientListener}. The synchronous client blocks until it receives an
  * acknowledgment from the broker for each operation that requires such an acknowledgment. Each method's javadoc details what has to happen before the calling
- * thread is allowed to return. If the timeout configured in the {@link SynchronousMqttClient} expires an {@link MqttTimeoutException} is thrown and any
+ * thread is allowed to return. If the timeout configured in the {@link SyncMqttClient} expires an {@link MqttTimeoutException} is thrown and any
  * messages it is trying to send will be cancelled. To abort any of the blocking client calls {@link Thread#interrupt() interrupt} the calling thread which will
  * cause an {@link MqttInterruptedException} to be thrown.
  * </p>
@@ -118,14 +118,14 @@ public interface MqttClient {
 	 * @param willRetain
 	 *            The retain value of the Will message. False if either retain is false or there is no Will Message.
 	 * 
-	 * @return The {@link ConnectReturnCode return code} from the broker if the {@link SynchronousMqttClient} is used. Anything other than
+	 * @return The {@link ConnectReturnCode return code} from the broker if the {@link SyncMqttClient} is used. Anything other than
 	 *         {@link ConnectReturnCode#ACCEPTED} (or null) will result in the client being immediately disconnected. Null if the {@link AsyncMqttClient}
 	 *         implementation is used.
 	 * 
 	 * @throws MqttCommandCancelledException
 	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SyncMqttClient
 	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
@@ -177,7 +177,7 @@ public interface MqttClient {
 	 * @throws MqttCommandCancelledException
 	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SyncMqttClient
 	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
@@ -206,7 +206,7 @@ public interface MqttClient {
 	 *            <li>'#': Matches the rest of the topic. Must be the last character in the topic. foo/# would match foo/bar, foo/a/b/c, etc</li>
 	 *            </ul>
 	 * 
-	 * @return The topics subscribed to and the QoS granted for each if the {@link SynchronousMqttClient} is used. Null if the {@link AsyncMqttClient}
+	 * @return The topics subscribed to and the QoS granted for each if the {@link SyncMqttClient} is used. Null if the {@link AsyncMqttClient}
 	 *         implementation is used.
 	 * 
 	 * @throws MqttQosNotGrantedException
@@ -214,7 +214,7 @@ public interface MqttClient {
 	 * @throws MqttCommandCancelledException
 	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SyncMqttClient
 	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
@@ -253,7 +253,7 @@ public interface MqttClient {
 	 * @throws MqttCommandCancelledException
 	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SyncMqttClient
 	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
@@ -286,7 +286,7 @@ public interface MqttClient {
 	 * @throws MqttCommandCancelledException
 	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SyncMqttClient
 	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
@@ -308,7 +308,7 @@ public interface MqttClient {
 	 * {@link AsyncClientListener#disconnected(MqttClient, Throwable, boolean) disconnected} method is called after these actions are completed.
 	 * 
 	 * @throws MqttTimeoutException
-	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SyncMqttClient
 	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
 	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.

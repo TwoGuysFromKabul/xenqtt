@@ -22,7 +22,7 @@ import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttInvocationError;
 import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
-import net.sf.xenqtt.client.SynchronousMqttClient;
+import net.sf.xenqtt.client.SyncMqttClient;
 
 /**
  * Command that allows the calling thread to block until the command is completed.
@@ -40,7 +40,7 @@ public interface BlockingCommand<T> {
 	 * @throws MqttCommandCancelledException
 	 *             Thrown if the command was {@link #cancel() cancelled}
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the {@link SyncMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 * @throws MqttInvocationException
 	 *             Any {@link Exception} thrown by a command will be wrapped in an {@link MqttInvocationException}
 	 * @throws MqttInvocationError
@@ -62,9 +62,9 @@ public interface BlockingCommand<T> {
 	 * @throws MqttCommandCancelledException
 	 *             Thrown if the command was {@link #cancel() cancelled}
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the {@link SyncMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 *             Thrown when the {@link SyncMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
 	 * @throws MqttInvocationException
 	 *             Any {@link Exception} thrown by a command will be wrapped in an {@link MqttInvocationException}
 	 * @throws MqttInvocationError

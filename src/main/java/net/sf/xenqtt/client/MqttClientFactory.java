@@ -29,7 +29,7 @@ import net.sf.xenqtt.message.ChannelManagerImpl;
 /**
  * Used to create multiple "sibling" {@link MqttClient clients} that share an {@link Executor}, broker URI, etc.
  */
-public final class MqttClientFactory implements AsyncClientFactory, SynchronousClientFactory {
+public final class MqttClientFactory implements AsyncClientFactory, SyncClientFactory {
 
 	private final MqttClientConfig config;
 	private final boolean synchronous;
@@ -116,7 +116,7 @@ public final class MqttClientFactory implements AsyncClientFactory, SynchronousC
 	}
 
 	/**
-	 * @see net.sf.xenqtt.client.SynchronousClientFactory#shutdown()
+	 * @see net.sf.xenqtt.client.SyncClientFactory#shutdown()
 	 * @see net.sf.xenqtt.client.AsyncClientFactory#shutdown()
 	 */
 	@Override
@@ -142,7 +142,7 @@ public final class MqttClientFactory implements AsyncClientFactory, SynchronousC
 	}
 
 	/**
-	 * @see net.sf.xenqtt.client.SynchronousClientFactory#newSynchronousClient(net.sf.xenqtt.client.MqttClientListener)
+	 * @see net.sf.xenqtt.client.SyncClientFactory#newSynchronousClient(net.sf.xenqtt.client.MqttClientListener)
 	 */
 	@Override
 	public MqttClient newSynchronousClient(MqttClientListener mqttClientListener) throws IllegalStateException {

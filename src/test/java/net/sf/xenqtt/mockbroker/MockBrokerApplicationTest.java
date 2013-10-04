@@ -35,7 +35,7 @@ import net.sf.xenqtt.client.MqttClientListener;
 import net.sf.xenqtt.client.NullReconnectStrategy;
 import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.Subscription;
-import net.sf.xenqtt.client.SynchronousMqttClient;
+import net.sf.xenqtt.client.SyncMqttClient;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
 
@@ -67,7 +67,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		SyncMqttClient client = new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 		assertSame(ConnectReturnCode.NOT_AUTHORIZED, client.connect("clientId", true));
 	}
 
@@ -91,7 +91,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		SyncMqttClient client = new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 		assertSame(ConnectReturnCode.BAD_CREDENTIALS, client.connect("clientId", true, "user1", "pass2"));
 	}
 
@@ -121,7 +121,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		SyncMqttClient client = new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true));
 
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
@@ -157,7 +157,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		SyncMqttClient client = new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, "user1", "pass1"));
 
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
@@ -201,7 +201,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		SyncMqttClient client = new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, "user1", "pass1"));
 
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
@@ -240,7 +240,7 @@ public class MockBrokerApplicationTest {
 			}
 
 		};
-		SynchronousMqttClient client = new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		SyncMqttClient client = new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true));
 
 		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
@@ -277,7 +277,7 @@ public class MockBrokerApplicationTest {
 
 		};
 
-		new SynchronousMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
 	}
 
 	private int getPort() {

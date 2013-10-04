@@ -18,7 +18,7 @@ package net.sf.xenqtt.client;
 import net.sf.xenqtt.message.QoS;
 
 /**
- * Implement this interface to use {@link SynchronousMqttClient}. The client will invoke the methods in this interface when a published message is received. A
+ * Implement this interface to use {@link SyncMqttClient}. The client will invoke the methods in this interface when a published message is received. A
  * single instance of this interface may be used with multiple clients.
  */
 public interface MqttClientListener {
