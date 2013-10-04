@@ -107,6 +107,21 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	}
 
 	@Test
+	public void testShutdown() throws Exception {
+
+		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker.init();
+		mockBroker.addCredentials("user1", "password1");
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+
+		assertFalse(client.isShutdown());
+		client.shutdown();
+		assertTrue(client.isShutdown());
+	}
+
+	@Test
 	public void testConnect_Credentials_Accepted() throws Exception {
 
 		mockBroker = new MockBroker(null, 15, 0, true, true, 50);

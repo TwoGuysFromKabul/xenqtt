@@ -57,6 +57,13 @@ import net.sf.xenqtt.message.QoS;
  * </p>
  */
 public interface MqttClient {
+
+	/**
+	 * @return True if this client has been shut down. It is possible this method will return true after {@link #shutdown()} has been called but before it
+	 *         returns.
+	 */
+	boolean isShutdown();
+
 	/**
 	 * <p>
 	 * Stops this client. Closes the connection to the broker if it is open. Blocks until shutdown is complete. Any other methods called after this have

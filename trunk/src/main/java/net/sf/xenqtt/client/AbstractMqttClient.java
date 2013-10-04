@@ -281,6 +281,14 @@ abstract class AbstractMqttClient implements MqttClient {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.client.MqttClient#isShutdown()
+	 */
+	@Override
+	public final boolean isShutdown() {
+		return scheduledExecutor.isShutdown();
+	}
+
+	/**
 	 * @see net.sf.xenqtt.client.MqttClient#shutdown()
 	 */
 	@Override
