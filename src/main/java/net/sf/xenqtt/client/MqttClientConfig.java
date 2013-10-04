@@ -113,7 +113,7 @@ public final class MqttClientConfig implements Cloneable {
 
 	/**
 	 * @return Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. 0 will wait forever. Applies only to
-	 *         asynchronous clients. It is ignored by asynchronous clients.
+	 *         synchronous clients. It is ignored by asynchronous clients.
 	 *         <p>
 	 *         Defaults to 0 (wait forever).
 	 */
@@ -124,7 +124,7 @@ public final class MqttClientConfig implements Cloneable {
 	/**
 	 * @param blockingTimeoutSeconds
 	 *            Seconds until a blocked method invocation times out and an {@link MqttTimeoutException} is thrown. 0 will wait forever. Applies only to
-	 *            asynchronous clients. It is ignored by asynchronous clients.
+	 *            synchronous clients. It is ignored by asynchronous clients.
 	 *            <p>
 	 *            Defaults to 0 (wait forever).
 	 * 
