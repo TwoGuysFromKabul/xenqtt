@@ -16,6 +16,7 @@
 package net.sf.xenqtt.mockbroker;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
@@ -26,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.Log;
+import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ChannelManagerImpl;
@@ -57,14 +59,28 @@ public final class MockBroker {
 	 * <ul>
 	 * <li>no {@link MockBrokerHandler}</li>
 	 * <li>15 second message resend interval</li>
-	 * <li>port 1883</li>
+	 * <li>Any available port. Use {@link #getPort()} to get the port.</li>
 	 * <li>allows anonymous access</li>
 	 * <li>captures broker events</li>
 	 * <li>allows 50 in-flight messages</li>
 	 * </ul>
 	 */
 	public MockBroker() {
-		this(null, 15, 1883, true, true, 50);
+		this(null, 15, 0, true, true, 50);
+	}
+
+	/**
+	 * Creates a broker with the specified {@link MockBrokerHandler handler} and the following config:
+	 * <ul>
+	 * <li>15 second message resend interval</li>
+	 * <li>Any available port. Use {@link #getPort()} to get the port.</li>
+	 * <li>allows anonymous access</li>
+	 * <li>captures broker events</li>
+	 * <li>allows 50 in-flight messages</li>
+	 * </ul>
+	 */
+	public MockBroker(MockBrokerHandler brokerHandler) {
+		this(brokerHandler, 15, 0, true, true, 50);
 	}
 
 	/**
@@ -152,6 +168,20 @@ public final class MockBroker {
 			XenqttUtil.validateNotNull("userName", userName);
 
 			credentials.put(userName, password);
+		}
+	}
+
+	/**
+	 * @return The URI to this broker
+	 */
+	public String getURI() {
+
+		try {
+			String addr = InetAddress.getLocalHost().getHostAddress();
+			int port = getPort();
+			return String.format("tcp://%s:%d", addr, port);
+		} catch (Exception e) {
+			throw new MqttException("Unable to get mock broker URI", e);
 		}
 	}
 
