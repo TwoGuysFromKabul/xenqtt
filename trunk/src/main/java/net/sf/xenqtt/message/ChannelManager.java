@@ -127,7 +127,7 @@ public interface ChannelManager {
 
 	/**
 	 * Create a new broker side {@link MqttChannelRef} for use in exchanging data using the MQTT protocol. This is the broker end of the connection. The client
-	 * will have the remove end of the connection. If an exception is thrown the socketChannel will be closed. This method only blocks long enough for the
+	 * will have the remote end of the connection. If an exception is thrown the socketChannel will be closed. This method only blocks long enough for the
 	 * channel to be created.
 	 * 
 	 * @param socketChannel
