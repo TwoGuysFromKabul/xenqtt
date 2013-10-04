@@ -23,6 +23,7 @@ import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 
 import net.sf.xenqtt.MqttException;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
@@ -82,8 +83,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		try {
 			client = new AsyncMqttClient("tcp://foo:1883", listener, 5, config);
 			fail("expected exception");
-		} catch (MqttException e) {
-			thrown = e.getCause();
+		} catch (MqttInvocationException e) {
+			thrown = e.getRootCause().getCause();
 			assertEquals(UnresolvedAddressException.class, thrown.getClass());
 		}
 
@@ -104,21 +105,6 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		verify(reconnectionStrategy).clone();
 
 		verifyNoMoreInteractions(listener, reconnectionStrategy);
-	}
-
-	@Test
-	public void testShutdown() throws Exception {
-
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
-		mockBroker.init();
-		mockBroker.addCredentials("user1", "password1");
-		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
-
-		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
-
-		assertFalse(client.isShutdown());
-		client.shutdown();
-		assertTrue(client.isShutdown());
 	}
 
 	@Test
@@ -183,8 +169,11 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
 		client.connect("testclient19", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+		assertFalse(client.isClosed());
+
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		assertTrue(client.isClosed());
 	}
 
 	@Test
@@ -193,8 +182,12 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
 		client.connect("testclient20", true);
 		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+		assertFalse(client.isClosed());
+
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+
+		assertTrue(client.isClosed());
 	}
 
 	@Test
@@ -356,6 +349,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		// verify connection is lost
 		verify(reconnectionStrategy, timeout(5000)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
 		verify(listener, timeout(5000)).disconnected(client, null, true);
+		assertFalse(client.isClosed());
 
 		// verify reconnect in about 1 second
 		long start = System.currentTimeMillis();
@@ -365,6 +359,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		// verify connection is lost again
 		verify(reconnectionStrategy, timeout(5000).times(2)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
 		verify(listener, timeout(5000).times(2)).disconnected(client, null, true);
+		assertFalse(client.isClosed());
 
 		// verify reconnect in about 1 second
 		start = System.currentTimeMillis();
@@ -374,6 +369,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		// verify connection is lost again
 		verify(reconnectionStrategy, timeout(5000).times(3)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
 		verify(listener, timeout(5000).times(3)).disconnected(client, null, true);
+		assertFalse(client.isClosed());
 
 		// verify reconnect in about 1 second
 		start = System.currentTimeMillis();
@@ -383,12 +379,12 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		// verify connection is lost again
 		verify(reconnectionStrategy, timeout(5000).times(4)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
 		verify(listener, timeout(5000)).disconnected(client, null, false);
+		assertTrue(client.isClosed());
 
 		// verify the message we sent before closing the channel never got published
 		verify(listener, timeout(1000).never()).published(client, pubMessage);
 
-		// disconnect the client
-		client.disconnect();
+		// verify the client is disconnected
 		verify(listener, timeout(5000)).disconnected(client, null, false);
 	}
 }

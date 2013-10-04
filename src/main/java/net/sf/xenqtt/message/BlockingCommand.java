@@ -18,8 +18,9 @@ package net.sf.xenqtt.message;
 import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
-import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttInvocationError;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.client.SynchronousMqttClient;
 
@@ -40,12 +41,12 @@ public interface BlockingCommand<T> {
 	 *             Thrown if the command was {@link #cancel() cancelled}
 	 * @throws MqttInterruptedException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
-	 * @throws MqttException
-	 *             Any checked exception thrown by the command will be wrapped in an {@link MqttException}
-	 * @throws RuntimeException
-	 *             Of course, any {@link RuntimeException} may be thrown
+	 * @throws MqttInvocationException
+	 *             Any {@link Exception} thrown by a command will be wrapped in an {@link MqttInvocationException}
+	 * @throws MqttInvocationError
+	 *             Any {@link Error} thrown by a command will be wrapped in an {@link MqttInvocationError}
 	 */
-	T await() throws MqttCommandCancelledException, MqttInterruptedException, MqttException, RuntimeException;
+	T await() throws MqttCommandCancelledException, MqttInterruptedException, MqttInvocationException, MqttInvocationError;
 
 	/**
 	 * Waits for the specified amount of time for the command to complete
@@ -64,12 +65,13 @@ public interface BlockingCommand<T> {
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
 	 * @throws MqttTimeoutException
 	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
-	 * @throws MqttException
-	 *             Any checked exception thrown by the command will be wrapped in an {@link MqttException}
-	 * @throws RuntimeException
-	 *             Of course, any {@link RuntimeException} may be thrown
+	 * @throws MqttInvocationException
+	 *             Any {@link Exception} thrown by a command will be wrapped in an {@link MqttInvocationException}
+	 * @throws MqttInvocationError
+	 *             Any {@link Error} thrown by a command will be wrapped in an {@link MqttInvocationError}
 	 */
-	T await(long timeout, TimeUnit unit) throws MqttCommandCancelledException, MqttInterruptedException, MqttTimeoutException, MqttException, RuntimeException;
+	T await(long timeout, TimeUnit unit) throws MqttCommandCancelledException, MqttInterruptedException, MqttTimeoutException, MqttInvocationException,
+			MqttInvocationError;
 
 	/**
 	 * <p>
@@ -88,9 +90,8 @@ public interface BlockingCommand<T> {
 	void setResult(T result);
 
 	/**
-	 * Sets the cause if the command fails. Null to clear any existing cause. If this is non-null then it is thrown by {@link #await()} or
-	 * {@link #await(long, TimeUnit)} after {@link #complete()} is called. If cause is a checked exception it will be wrapped in {@link MqttException} before
-	 * being thrown by {@link #await()} or {@link #await(long, TimeUnit)}.This should only be called by the same thread that calls {@link #execute()}.
+	 * Sets the cause if the command fails. Null to clear any existing cause. If this is non-null then it is wrapped and re-thrown by {@link #await()} or
+	 * {@link #await(long, TimeUnit)} after {@link #complete()} is called. This should only be called by the same thread that calls {@link #execute()}.
 	 */
 	void setFailureCause(Throwable cause);
 

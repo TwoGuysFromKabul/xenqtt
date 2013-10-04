@@ -21,8 +21,9 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
-import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttInvocationError;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class AbstractBlockingCommandTest {
 		cmd.await(0, TimeUnit.MILLISECONDS);
 	}
 
-	@Test
+	@Test(expected = MqttInvocationException.class)
 	public void testAwait_Cancelled_WithException() throws Exception {
 
 		Exception exception = new IllegalStateException();
@@ -54,13 +55,7 @@ public class AbstractBlockingCommandTest {
 		cmd = new TestBlockingCommand();
 		cmd.setFailureCause(exception);
 		cmd.cancel();
-
-		try {
-			cmd.await(0, TimeUnit.MILLISECONDS);
-			fail("expected exception");
-		} catch (MqttCommandCancelledException e) {
-			assertSame(exception, e.getCause());
-		}
+		cmd.await(0, TimeUnit.MILLISECONDS);
 	}
 
 	@Test(expected = MqttCommandCancelledException.class)
@@ -79,7 +74,7 @@ public class AbstractBlockingCommandTest {
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test(expected = MqttInvocationException.class)
 	public void testAwait_ThrowsRuntimeException() {
 		cmd.execute();
 		cmd.setFailureCause(new IllegalStateException());
@@ -109,7 +104,7 @@ public class AbstractBlockingCommandTest {
 		assertSame(cmd.returnValue, cmd.await(10, TimeUnit.MILLISECONDS));
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test(expected = MqttInvocationException.class)
 	public void testAwaitLongTimeUnit_ThrowsRuntimeException() {
 		cmd.execute();
 		cmd.setFailureCause(new IllegalStateException());
@@ -144,7 +139,7 @@ public class AbstractBlockingCommandTest {
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test(expected = MqttInvocationException.class)
 	public void testExecute_RuntimeException() {
 		cmd.exceptionToThrow = new IllegalStateException();
 		cmd.execute();
@@ -162,18 +157,24 @@ public class AbstractBlockingCommandTest {
 		try {
 			cmd.await();
 			fail("expected exception");
-		} catch (MqttException e) {
-			assertSame(cmd.exceptionToThrow, e.getCause());
+		} catch (MqttInvocationException e) {
+			assertSame(cmd.exceptionToThrow, e.getRootCause());
 		}
 	}
 
-	@Test(expected = Error.class)
+	@Test
 	public void testExecute_Error() {
 
 		cmd.errorToThrow = new Error();
 		cmd.execute();
 		cmd.complete();
-		cmd.await();
+
+		try {
+			cmd.await();
+			fail("expected error");
+		} catch (MqttInvocationError e) {
+			assertSame(cmd.errorToThrow, e.getRootCause());
+		}
 	}
 
 	@Test
@@ -183,7 +184,7 @@ public class AbstractBlockingCommandTest {
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test(expected = MqttInvocationException.class)
 	public void testComplete_WithException() {
 		cmd.execute();
 		cmd.setFailureCause(new IllegalStateException());

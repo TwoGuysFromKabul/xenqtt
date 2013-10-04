@@ -19,6 +19,8 @@ import java.util.List;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttInvocationError;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttQosNotGrantedException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.message.ConnectReturnCode;
@@ -59,26 +61,10 @@ import net.sf.xenqtt.message.QoS;
 public interface MqttClient {
 
 	/**
-	 * @return True if this client has been shut down. It is possible this method will return true after {@link #shutdown()} has been called but before it
-	 *         returns.
+	 * @return True if this client has been closed. {@link MqttClientListener#disconnected(MqttClient, Throwable, boolean) Disconnected} will have been called
+	 *         and all internal thread pools will be shut down or will be in the process of shutting down.
 	 */
-	boolean isShutdown();
-
-	/**
-	 * <p>
-	 * Stops this client. Closes the connection to the broker if it is open. Blocks until shutdown is complete. Any other methods called after this have
-	 * unpredictable results.
-	 * </p>
-	 * <p>
-	 * In the {@link SynchronousMqttClient synchronous client} this should be called after {@link #disconnect()} returns. In the {@link AsyncMqttClient
-	 * asynchronous client} this should be called after the disconnect completes. A good place to do this is in
-	 * {@link AsyncClientListener#disconnected(MqttClient, Throwable, boolean)}.
-	 * </p>
-	 * 
-	 * @throws MqttInterruptedException
-	 *             If the thread is {@link Thread#interrupt() interrupted}
-	 */
-	void shutdown() throws MqttInterruptedException;
+	boolean isClosed();
 
 	/**
 	 * Connects this client to the broker with credentials and a WillMessage. This includes these actions:
@@ -137,15 +123,20 @@ public interface MqttClient {
 	 *         implementation is used.
 	 * 
 	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
+	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
+	 * @throws MqttInvocationException
+	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
+	 * @throws MqttInvocationError
+	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
 	 */
 	ConnectReturnCode connect(String clientId, boolean cleanSession, String userName, String password, String willTopic, String willMessage, QoS willQos,
-			boolean willRetain) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+			boolean willRetain) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException,
+			MqttInvocationError;
 
 	/**
 	 * Connects this client to the broker with no credentials and no Will Message. Delegates to
@@ -153,7 +144,8 @@ public interface MqttClient {
 	 * 
 	 * @see net.sf.xenqtt.client.MqttClient#connect(String, boolean, int, String, String, String, String, QoS, boolean)
 	 */
-	ConnectReturnCode connect(String clientId, boolean cleanSession) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	ConnectReturnCode connect(String clientId, boolean cleanSession) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException,
+			MqttInvocationException, MqttInvocationError;
 
 	/**
 	 * Connects this client to the broker with credentials but no Will Message. Delegates to
@@ -162,7 +154,7 @@ public interface MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#connect(String, boolean, int, String, String, String, String, QoS, boolean)
 	 */
 	ConnectReturnCode connect(String clientId, boolean cleanSession, String userName, String password) throws MqttCommandCancelledException,
-			MqttTimeoutException, MqttInterruptedException;
+			MqttTimeoutException, MqttInterruptedException, MqttInvocationException, MqttInvocationError;
 
 	/**
 	 * Connects this client to the broker with a Will Message but no credentials. Delegates to
@@ -171,7 +163,7 @@ public interface MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#connect(String, boolean, int, String, String, String, String, QoS, boolean)
 	 */
 	ConnectReturnCode connect(String clientId, boolean cleanSession, String willTopic, String willMessage, QoS willQos, boolean willRetain)
-			throws MqttTimeoutException, MqttInterruptedException;
+			throws MqttTimeoutException, MqttInterruptedException, MqttInvocationException, MqttInvocationError;
 
 	/**
 	 * Disconnects this client from the broker. This includes these actions:
@@ -183,14 +175,18 @@ public interface MqttClient {
 	 * {@link AsyncClientListener#disconnected(MqttClient, Throwable, boolean) disconnected} method is called after these actions are completed.
 	 * 
 	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
+	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
+	 * @throws MqttInvocationException
+	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
+	 * @throws MqttInvocationError
+	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
 	 */
-	void disconnect() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	void disconnect() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException, MqttInvocationError;
 
 	/**
 	 * Subscribes to topics. This includes these actions:
@@ -216,15 +212,19 @@ public interface MqttClient {
 	 * @throws MqttQosNotGrantedException
 	 *             Thrown when the QoS granted for any topic does not match the QoS requested.
 	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
+	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
+	 * @throws MqttInvocationException
+	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
+	 * @throws MqttInvocationError
+	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
 	 */
 	Subscription[] subscribe(Subscription[] subscriptions) throws MqttQosNotGrantedException, MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException;
+			MqttInterruptedException, MqttInvocationException, MqttInvocationError;
 
 	/**
 	 * Subscribes to topics. This is the same as {@link #subscribe(Subscription[])} except it uses {@link List lists} instead of arrays.
@@ -232,7 +232,7 @@ public interface MqttClient {
 	 * @see MqttClient#subscribe(Subscription[])
 	 */
 	List<Subscription> subscribe(List<Subscription> subscriptions) throws MqttQosNotGrantedException, MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException;
+			MqttInterruptedException, MqttInvocationException, MqttInvocationError;
 
 	/**
 	 * Unsubscribes from topics. This includes these actions:
@@ -251,19 +251,25 @@ public interface MqttClient {
 	 *            <li>'#': Matches the rest of the topic. Must be the last character in the topic. foo/# would match foo/bar, foo/a/b/c, etc</li>
 	 *            </ul>
 	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
+	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
+	 * @throws MqttInvocationException
+	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
+	 * @throws MqttInvocationError
+	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
 	 */
-	void unsubscribe(String[] topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	void unsubscribe(String[] topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException,
+			MqttInvocationError;
 
 	/**
 	 * Unsubscribes from topics. This is the same as {@link #unsubscribe(String[])} except it uses {@link List lists} instead of arrays.
 	 */
-	void unsubscribe(List<String> topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	void unsubscribe(List<String> topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException,
+			MqttInvocationError;
 
 	/**
 	 * Publishes a {@link PublishMessage message}. This includes these actions:
@@ -278,14 +284,19 @@ public interface MqttClient {
 	 *            The message to publish to the broker
 	 * 
 	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
+	 *             Thrown when the internal command used to implement this feature is cancelled.
 	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
+	 * @throws MqttInvocationException
+	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
+	 * @throws MqttInvocationError
+	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
 	 */
-	void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException,
+			MqttInvocationError;
 
 	/**
 	 * Closes this client without doing a clean disconnect. This includes these actions:
@@ -296,13 +307,15 @@ public interface MqttClient {
 	 * If the synchronous client is used this method blocks until these actions are completed. If the asynchronous client is used the
 	 * {@link AsyncClientListener#disconnected(MqttClient, Throwable, boolean) disconnected} method is called after these actions are completed.
 	 * 
-	 * @throws MqttCommandCancelledException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the internal common used to implement this feature is cancelled
-	 *             typically because of some exception.
 	 * @throws MqttTimeoutException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and this method has blocked for approximately the configured timeout.
+	 *             Thrown when this method has blocked for approximately the configured timeout. Only applicable when the {@link SynchronousMqttClient
+	 *             synchronous} implementation is used.
 	 * @throws MqttInterruptedException
-	 *             Thrown when the {@link SynchronousMqttClient} implementation is used and the calling thread is {@link Thread#interrupt() interrupted}.
+	 *             Thrown when the calling thread is {@link Thread#interrupt() interrupted}.
+	 * @throws MqttInvocationException
+	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
+	 * @throws MqttInvocationError
+	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
 	 */
-	void close() throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException;
+	void close() throws MqttTimeoutException, MqttInterruptedException, MqttInvocationException, MqttInvocationError;
 }

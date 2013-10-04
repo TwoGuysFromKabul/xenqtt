@@ -287,6 +287,26 @@ public final class ChannelManagerImpl implements ChannelManager {
 			selector.close();
 		} catch (Exception ignore) {
 		}
+
+		startCleanupThread();
+	}
+
+	private void startCleanupThread() {
+
+		Thread cleanupThread = new Thread("CommandCleanup") {
+			@Override
+			public void run() {
+				try {
+					for (;;) {
+						Command<?> command = commands.take();
+						command.cancel();
+					}
+				} catch (Exception ignore) {
+				}
+			};
+		};
+		cleanupThread.setDaemon(true);
+		cleanupThread.start();
 	}
 
 	private void doConnect(long now, Set<SelectionKey> keys) {
