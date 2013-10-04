@@ -21,7 +21,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.sf.xenqtt.ApplicationArguments;
+import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.client.FixedReconnectionStrategy;
@@ -60,8 +60,9 @@ public final class TestClientConfiguration {
 	final ReconnectionStrategy reconnectionStrategy;
 	final int maxInFlightMessages;
 	final boolean unsubscribeAtEnd;
+	final int messageSize;
 
-	public TestClientConfiguration(ApplicationArguments arguments) {
+	public TestClientConfiguration(AppContext arguments) {
 		Properties properties = getConfigurationProperties(arguments.getArgAsString("-c", null));
 		clientId = arguments.getArgAsString("-i", null);
 		clientType = ClientType.getClientType(properties.getProperty("client.type"));
@@ -83,6 +84,7 @@ public final class TestClientConfiguration {
 		reconnectionStrategy = getReconnectionStrategy(properties.getProperty("client.reconnectionStrategy"));
 		maxInFlightMessages = Integer.parseInt(properties.getProperty("client.maxInFlightMessages", String.valueOf(Integer.MAX_VALUE)));
 		unsubscribeAtEnd = Boolean.parseBoolean(properties.getProperty("client.unsubscribeAtEnd", "false"));
+		messageSize = Integer.parseInt(properties.getProperty("client.messageSize", "0"));
 
 		validate();
 	}

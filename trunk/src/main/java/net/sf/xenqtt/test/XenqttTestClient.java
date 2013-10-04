@@ -20,13 +20,15 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import net.sf.xenqtt.ApplicationArguments;
+import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.client.AsyncMqttClient;
@@ -34,6 +36,7 @@ import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.client.SynchronousMqttClient;
+import net.sf.xenqtt.test.XenqttTestClientStats.Gap;
 
 /**
  * A test client that facilitates load and validation testing of the Xenqtt MQTT client.
@@ -45,11 +48,11 @@ public final class XenqttTestClient {
 	/**
 	 * Create a new instance of this class.
 	 * 
-	 * @param arguments
-	 *            The {@link ApplicationArguments arguments} that were passed in on the command-line
+	 * @param context
+	 *            The {@link AppContext context} that were passed in on the command-line
 	 */
-	public XenqttTestClient(ApplicationArguments arguments) {
-		runner = new TestClientRunner(arguments);
+	public XenqttTestClient(AppContext context) {
+		runner = new TestClientRunner(context);
 	}
 
 	/**
@@ -133,6 +136,7 @@ public final class XenqttTestClient {
 
 	private static final class TestClientRunner extends Thread {
 
+		private final AppContext context;
 		private final TestClientConfiguration configuration;
 		private final MqttClient client;
 
@@ -144,9 +148,10 @@ public final class XenqttTestClient {
 		private final XenqttTestClientStats stats;
 		private final Thread statsReporter;
 
-		private TestClientRunner(ApplicationArguments arguments) {
+		private TestClientRunner(AppContext context) {
 			super("TestClientRunner");
-			configuration = new TestClientConfiguration(arguments);
+			this.context = context;
+			configuration = new TestClientConfiguration(context);
 			stats = new XenqttTestClientStats(configuration.clientType);
 			statsReporter = new Thread(new Runnable() {
 
@@ -187,8 +192,6 @@ public final class XenqttTestClient {
 			inFlight = new Semaphore(configuration.maxInFlightMessages);
 			client = createMqttClient();
 			publisherPool = createPublisherPool(client);
-
-			setDaemon(true);
 		}
 
 		private MqttClient createMqttClient() {
@@ -233,10 +236,11 @@ public final class XenqttTestClient {
 
 				if (publisherPool != null) {
 					boolean async = client instanceof AsyncMqttClient;
+					AtomicInteger ids = new AtomicInteger();
 					for (int i = 0; i < configuration.publishers; i++) {
 						Publisher publisher = getPublisher();
-						publisherPool.execute(new PublishWorker(String.format("Publisher-%d", i), async, configuration.topicToPublishTo, configuration.qos,
-								publisherCompleteLatch, stats, publisher, inFlight));
+						publisherPool.execute(new PublishWorker(String.format("Publisher-%d", i), async, configuration.topicToPublishTo,
+								configuration.messageSize, ids, configuration.qos, publisherCompleteLatch, stats, publisher, inFlight));
 					}
 				}
 
@@ -257,6 +261,7 @@ public final class XenqttTestClient {
 
 			shutdown();
 			System.out.println("Xenqtt Test Client Shutdown Complete");
+			context.applicationDone();
 		}
 
 		private Publisher getPublisher() {
@@ -318,16 +323,31 @@ public final class XenqttTestClient {
 				writer.write(String.format("Messages Published:              %d\n", stats.getNumMessagesPublished()));
 				writer.write(String.format("Average Publish Time:            %.2f\n", stats.getAveragePublishDuration()));
 				writer.write(String.format("Publish Throughput (Per-Second): %.2f\n", stats.getPublishThroughput()));
+				writer.write(String.format("Publish Gaps: %s\n", getGapReport(stats.getPublishMessageGaps())));
 				writer.write("\n----------------------------------------  Subscribe Stats  ----------------------------------------\n");
 				writer.write(String.format("Messages Received:                %d\n", stats.getMessagesReceived()));
 				writer.write(String.format("Duplicates Received:              %d\n", stats.getDuplicates()));
 				writer.write(String.format("Message Latency:                  %s\n", String.format("%.2f", stats.getAverageMessageLatency())));
 				writer.write(String.format("Received Throughput (Per-Second): %.2f\n", stats.getMessagesReceivedThroughput()));
+				writer.write(String.format("Receive Gaps: %s\n", getGapReport(stats.getReceivedMessageGaps())));
 				writer.write("\n===================================================================================================\n");
 				writer.close();
 			} catch (Exception ex) {
 				Log.error(ex, "Unable to write out the stats report.");
 			}
+		}
+
+		private Object getGapReport(List<Gap> gaps) {
+			if (gaps.isEmpty()) {
+				return "None";
+			}
+
+			StringBuilder gapsReport = new StringBuilder();
+			for (Gap gap : gaps) {
+				gapsReport.append(String.format("%s, ", gap));
+			}
+
+			return gapsReport.toString().substring(0, gapsReport.length() - 2);
 		}
 
 	}

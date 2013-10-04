@@ -25,9 +25,9 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ApplicationArgumentsTest {
+public class AppContextTest {
 
-	ApplicationArguments arguments;
+	AppContext arguments;
 
 	@Before
 	public void setup() {
@@ -43,7 +43,7 @@ public class ApplicationArgumentsTest {
 		argumentsMap.put("-b", "true");
 		argumentsMap.put("-s", "I am the very model of a modern Major General.");
 
-		arguments = new ApplicationArguments(flags, argumentsMap);
+		arguments = new AppContext(flags, argumentsMap);
 	}
 
 	@Test
@@ -195,7 +195,7 @@ public class ApplicationArgumentsTest {
 	@Test
 	public void testIsEmpty() {
 		assertFalse(arguments.isEmpty());
-		assertTrue(new ApplicationArguments().isEmpty());
+		assertTrue(new AppContext().isEmpty());
 	}
 
 }

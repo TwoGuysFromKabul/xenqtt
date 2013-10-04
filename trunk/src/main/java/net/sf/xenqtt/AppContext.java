@@ -20,20 +20,22 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 /**
- * Supplies arguments and flags for the disparate modes available in Xenqtt.
+ * Contains the application context for a Xenqtt {@link XenqttApplication application}
  */
-public final class ApplicationArguments {
+public final class AppContext {
 
 	private final List<Flag> flags;
 	private final Map<String, String> arguments;
+	private final CountDownLatch latch;
 
 	/**
 	 * Create a new instance of this class.
 	 */
-	public ApplicationArguments() {
-		this(Collections.<String> emptyList(), new HashMap<String, String>());
+	public AppContext() {
+		this(Collections.<String> emptyList(), new HashMap<String, String>(), null);
 	}
 
 	/**
@@ -44,9 +46,25 @@ public final class ApplicationArguments {
 	 * @param arguments
 	 *            The arguments that were specified for the application
 	 */
-	public ApplicationArguments(List<String> flags, Map<String, String> arguments) {
+	public AppContext(List<String> flags, Map<String, String> arguments) {
+		this(flags, arguments, null);
+	}
+
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param flags
+	 *            The flags that were specified for the application
+	 * @param arguments
+	 *            The arguments that were specified for the application
+	 * @param latch
+	 *            The {@link CountDownLatch latch} which the main application thread will await on. Trigger this if your application can terminate after
+	 *            performing certain tasks (e.g. a test)
+	 */
+	public AppContext(List<String> flags, Map<String, String> arguments, CountDownLatch latch) {
 		this.flags = getFlags(flags);
 		this.arguments = arguments;
+		this.latch = latch;
 	}
 
 	private List<Flag> getFlags(List<String> stringFlags) {
@@ -394,6 +412,13 @@ public final class ApplicationArguments {
 	 */
 	public boolean isEmpty() {
 		return flags.isEmpty() && arguments.isEmpty();
+	}
+
+	/**
+	 * Invoke if your application has finished its work and no longer needs to run.
+	 */
+	public void applicationDone() {
+		latch.countDown();
 	}
 
 	private static final class Flag {

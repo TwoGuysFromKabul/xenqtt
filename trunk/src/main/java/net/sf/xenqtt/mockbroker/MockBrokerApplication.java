@@ -15,7 +15,7 @@
  */
 package net.sf.xenqtt.mockbroker;
 
-import net.sf.xenqtt.ApplicationArguments;
+import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.XenqttApplication;
 import net.sf.xenqtt.XenqttUtil;
 
@@ -35,7 +35,7 @@ public class MockBrokerApplication implements XenqttApplication {
 	private MockBroker broker;
 
 	@Override
-	public void start(ApplicationArguments arguments) {
+	public void start(AppContext arguments) {
 
 		int timeout = arguments.getArgAsInt("t", 15);
 		int port = arguments.getArgAsInt("p", 1883);
