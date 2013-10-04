@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.client.AsyncMqttClient;
-import net.sf.xenqtt.client.SynchronousMqttClient;
+import net.sf.xenqtt.client.SyncMqttClient;
 import net.sf.xenqtt.message.QoS;
 
 /**
@@ -45,7 +45,7 @@ final class PublishWorker implements Runnable {
 	 * @param name
 	 *            The name to assign to this {@link PublishWorker worker}
 	 * @param async
-	 *            Whether or not the {@link AsyncMqttClient asynchronous} or the {@link SynchronousMqttClient synchronous} MQTT client is being used
+	 *            Whether or not the {@link AsyncMqttClient asynchronous} or the {@link SyncMqttClient synchronous} MQTT client is being used
 	 * @param publishTopic
 	 *            The topic to publish to
 	 * @param messageSize

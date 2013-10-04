@@ -23,7 +23,7 @@ import net.sf.xenqtt.XenqttUtil;
  * An {@link MqttClient} that interacts with an MQTT broker in a synchronous fashion. All MQTT-related operations happen in a blocking style where method
  * invocations will return once the operation completes.
  */
-public final class SynchronousMqttClient extends AbstractMqttClient {
+public final class SyncMqttClient extends AbstractMqttClient {
 
 	/**
 	 * Constructs an instance of this class using an {@link Executor} owned by this class with the default {@link MqttClientConfig config}.
@@ -36,7 +36,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 * @param messageHandlerThreadPoolSize
 	 *            The number of threads used to handle incoming messages and invoke the {@link MqttClientListener listener's} methods
 	 */
-	public SynchronousMqttClient(String brokerUri, MqttClientListener listener, int messageHandlerThreadPoolSize) {
+	public SyncMqttClient(String brokerUri, MqttClientListener listener, int messageHandlerThreadPoolSize) {
 		this(brokerUri, listener, messageHandlerThreadPoolSize, new MqttClientConfig());
 	}
 
@@ -53,7 +53,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 * @param config
 	 *            The configuration for the client
 	 */
-	public SynchronousMqttClient(String brokerUri, MqttClientListener listener, int messageHandlerThreadPoolSize, MqttClientConfig config) {
+	public SyncMqttClient(String brokerUri, MqttClientListener listener, int messageHandlerThreadPoolSize, MqttClientConfig config) {
 		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
 				XenqttUtil.validateNotNull("listener", listener), //
 				XenqttUtil.validateGreaterThan("messageHandlerThreadPoolSize", messageHandlerThreadPoolSize, 0), //
@@ -72,7 +72,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 *            The executor used to handle incoming messages and invoke the {@link MqttClientListener listener's} methods. This class will NOT shut down the
 	 *            executor.
 	 */
-	public SynchronousMqttClient(String brokerUri, MqttClientListener listener, Executor executor) {
+	public SyncMqttClient(String brokerUri, MqttClientListener listener, Executor executor) {
 		this(brokerUri, listener, executor, new MqttClientConfig());
 	}
 
@@ -90,7 +90,7 @@ public final class SynchronousMqttClient extends AbstractMqttClient {
 	 * @param config
 	 *            The configuration for the client
 	 */
-	public SynchronousMqttClient(String brokerUri, MqttClientListener listener, Executor executor, MqttClientConfig config) {
+	public SyncMqttClient(String brokerUri, MqttClientListener listener, Executor executor, MqttClientConfig config) {
 		super(XenqttUtil.validateNotEmpty("brokerUri", brokerUri), //
 				XenqttUtil.validateNotNull("listener", listener), //
 				XenqttUtil.validateNotNull("executor", executor), //

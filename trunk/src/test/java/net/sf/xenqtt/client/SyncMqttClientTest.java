@@ -19,59 +19,59 @@ import java.util.concurrent.Executors;
 
 import org.junit.Test;
 
-public class SynchronousMqttClientTest {
+public class SyncMqttClientTest {
 
 	MqttClientConfig config = new MqttClientConfig().setReconnectionStrategy(new NullReconnectStrategy()).setConnectTimeoutSeconds(0)
 			.setMessageResendIntervalSeconds(5).setBlockingTimeoutSeconds(0);
 
 	@Test
 	public void testCtor_NoExecutor() throws Exception {
-		new SynchronousMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), 1, config);
+		new SyncMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), 1, config);
 	}
 
 	@Test
 	public void testCtor_Executor() throws Exception {
-		new SynchronousMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), Executors.newFixedThreadPool(1), config);
+		new SyncMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), Executors.newFixedThreadPool(1), config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_BlankBrokerUri() throws Exception {
-		new SynchronousMqttClient("", new TestMqttClientListener(), Executors.newFixedThreadPool(1), config);
+		new SyncMqttClient("", new TestMqttClientListener(), Executors.newFixedThreadPool(1), config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_BlankBrokerUri() throws Exception {
-		new SynchronousMqttClient("", new TestMqttClientListener(), 1, config);
+		new SyncMqttClient("", new TestMqttClientListener(), 1, config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullBrokerUri() throws Exception {
-		new SynchronousMqttClient(null, new TestMqttClientListener(), Executors.newFixedThreadPool(1), config);
+		new SyncMqttClient(null, new TestMqttClientListener(), Executors.newFixedThreadPool(1), config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_NullBrokerUri() throws Exception {
-		new SynchronousMqttClient(null, new TestMqttClientListener(), 1, config);
+		new SyncMqttClient(null, new TestMqttClientListener(), 1, config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullMqttClientListener() throws Exception {
-		new SynchronousMqttClient("tcp://q.m2m.io:1883", null, Executors.newFixedThreadPool(1), config);
+		new SyncMqttClient("tcp://q.m2m.io:1883", null, Executors.newFixedThreadPool(1), config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_NullMqttClientListener() throws Exception {
-		new SynchronousMqttClient("tcp://q.m2m.io:1883", null, 1, config);
+		new SyncMqttClient("tcp://q.m2m.io:1883", null, 1, config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_ThreadPoolSizeLessThanOne() throws Exception {
-		new SynchronousMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), 0, config);
+		new SyncMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), 0, config);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullExecutor() throws Exception {
-		new SynchronousMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), null, config);
+		new SyncMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), null, config);
 	}
 
 	private static final class TestMqttClientListener implements MqttClientListener {

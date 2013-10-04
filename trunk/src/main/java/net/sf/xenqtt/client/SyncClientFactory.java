@@ -18,9 +18,9 @@ package net.sf.xenqtt.client;
 import java.util.concurrent.Executor;
 
 /**
- * Used to create multiple "sibling" {@link SynchronousMqttClient synchronous clients} that share an {@link Executor}, broker URI, etc.
+ * Used to create multiple "sibling" {@link SyncMqttClient synchronous clients} that share an {@link Executor}, broker URI, etc.
  */
-public interface SynchronousClientFactory {
+public interface SyncClientFactory {
 
 	/**
 	 * Stops this factory. Closes all open connections to the broker. Blocks until shutdown is complete. Any other methods called after this have unpredictable

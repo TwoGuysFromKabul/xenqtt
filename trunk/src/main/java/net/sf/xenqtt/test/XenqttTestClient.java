@@ -35,7 +35,7 @@ import net.sf.xenqtt.client.AsyncMqttClient;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
 import net.sf.xenqtt.client.Subscription;
-import net.sf.xenqtt.client.SynchronousMqttClient;
+import net.sf.xenqtt.client.SyncMqttClient;
 import net.sf.xenqtt.test.XenqttTestClientStats.Gap;
 
 /**
@@ -85,7 +85,7 @@ public final class XenqttTestClient {
 	static enum ClientType {
 
 		/**
-		 * Specifies usage of the {@link SynchronousMqttClient synchronous} MQTT client.
+		 * Specifies usage of the {@link SyncMqttClient synchronous} MQTT client.
 		 */
 		SYNC("sync"),
 
@@ -199,7 +199,7 @@ public final class XenqttTestClient {
 			MqttClientConfig config = getClientConfiguration();
 			if (configuration.clientType == ClientType.SYNC) {
 				config.setBlockingTimeoutSeconds(configuration.blockingTimeoutSeconds);
-				return new SynchronousMqttClient(configuration.brokerUri, listener, configuration.messageHandlerThreadPoolSize, config);
+				return new SyncMqttClient(configuration.brokerUri, listener, configuration.messageHandlerThreadPoolSize, config);
 			} else {
 				return new AsyncMqttClient(configuration.brokerUri, listener, configuration.messageHandlerThreadPoolSize, config);
 			}
