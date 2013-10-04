@@ -15,11 +15,21 @@
  */
 package net.sf.xenqtt.mockbroker;
 
+import static org.junit.Assert.*;
+
+import java.util.regex.Pattern;
+
+import org.junit.After;
 import org.junit.Test;
 
 public class MockBrokerTest {
 
 	MockBroker broker = new MockBroker(null, 15, 0, true, true, 50);
+
+	@After
+	public void after() {
+		broker.shutdown(5000);
+	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_InvalidMessageResendIntervalSeconds() {
@@ -49,5 +59,18 @@ public class MockBrokerTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testAddCredentials_NullUserName() {
 		broker.addCredentials(null, "password");
+	}
+
+	@Test
+	public void testGetPort() throws Exception {
+
+		assertEquals(24156, new MockBroker(null, 15, 24156, true, true, 50).getPort());
+	}
+
+	@Test
+	public void testUri() throws Exception {
+
+		String uri = new MockBroker(null, 15, 24156, true, true, 50).getURI();
+		assertTrue(Pattern.matches("tcp://\\d+\\.\\d+\\.\\d+\\.\\d+:24156", uri));
 	}
 }
