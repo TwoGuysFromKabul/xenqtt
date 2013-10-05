@@ -15,44 +15,25 @@
  */
 package net.sf.xenqtt.mockbroker;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
-import net.sf.xenqtt.Log;
-import net.sf.xenqtt.MqttException;
+import net.sf.xenqtt.SimpleBroker;
 import net.sf.xenqtt.XenqttUtil;
-import net.sf.xenqtt.message.ChannelManager;
-import net.sf.xenqtt.message.ChannelManagerImpl;
 import net.sf.xenqtt.message.ConnectMessage;
-import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttMessage;
 
 // TODO [jim] - update javadoc
 /**
  * Mock MQTT broker used to test MQTT clients and applications. If debug level logging is enabled all broker events will be logged.
  */
-public final class MockBroker {
+public final class MockBroker extends SimpleBroker {
 
 	private final ConcurrentHashMap<String, String> credentials = new ConcurrentHashMap<String, String>();
 
 	private final BrokerEvents events;
-
-	private final CountDownLatch readyLatch = new CountDownLatch(1);
-	private final ChannelManager manager;
-	private final ServerSocketChannel server;
-	private final Thread serverThread = new ServerThread();
-	private final MessageHandler messageHandler;
-
-	private volatile Exception ioException;
-	private volatile int port;
+	private final BrokerMessageHandler messageHandler;
 
 	/**
 	 * Creates a broker with the following config:
@@ -101,60 +82,20 @@ public final class MockBroker {
 	 */
 	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean captureBrokerEvents,
 			int maxInFlightMessages) {
-		XenqttUtil.validateGreaterThanOrEqualTo("messageResendIntervalSeconds", messageResendIntervalSeconds, 0);
+
+		super(messageResendIntervalSeconds, port);
+
 		XenqttUtil.validateGreaterThan("maxInFlightMessages", maxInFlightMessages, 0);
 
 		this.events = captureBrokerEvents ? new BrokerEventsImpl() : new NullBrokerEvents();
 		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess, maxInFlightMessages);
-		this.manager = new ChannelManagerImpl(messageResendIntervalSeconds);
-		this.port = XenqttUtil.validateInRange("port", port, 0, 65535);
-
-		try {
-			server = ServerSocketChannel.open();
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to create mock broker", e);
-		}
 	}
 
 	/**
 	 * Starts the mock broker
 	 */
 	public void init() {
-		manager.init();
-		serverThread.setName("MockBrokerServer");
-		serverThread.start();
-		try {
-			readyLatch.await();
-			if (ioException != null) {
-				throw ioException;
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("Init failed", e);
-		}
-	}
-
-	/**
-	 * Shuts down the mock broker
-	 * 
-	 * @param millis
-	 *            Milliseconds to wait for shutdown to complete. 0 means to wait forever.
-	 * 
-	 * @return true if shutdown is successful, otherwise false.
-	 */
-	public boolean shutdown(long millis) {
-		XenqttUtil.validateGreaterThanOrEqualTo("millis", millis, 0);
-
-		try {
-			server.close();
-			serverThread.join(millis);
-			manager.shutdown();
-			if (ioException != null) {
-				throw ioException;
-			}
-			return !serverThread.isAlive();
-		} catch (Exception e) {
-			throw new RuntimeException("Shutdown failed", e);
-		}
+		super.init(messageHandler, "MockBrokerServer");
 	}
 
 	/**
@@ -169,27 +110,6 @@ public final class MockBroker {
 
 			credentials.put(userName, password);
 		}
-	}
-
-	/**
-	 * @return The URI to this broker
-	 */
-	public String getURI() {
-
-		try {
-			String addr = InetAddress.getLocalHost().getHostAddress();
-			int port = getPort();
-			return String.format("tcp://%s:%d", addr, port);
-		} catch (Exception e) {
-			throw new MqttException("Unable to get mock broker URI", e);
-		}
-	}
-
-	/**
-	 * @return The port the mock broker is running on. Not valid until after {@link #init()} is called.
-	 */
-	public int getPort() {
-		return port;
 	}
 
 	/**
@@ -220,36 +140,5 @@ public final class MockBroker {
 		XenqttUtil.validateNotNull("eventsToRemove", eventsToRemove);
 
 		events.removeEvents(eventsToRemove);
-	}
-
-	private void doIo() throws Exception {
-
-		server.socket().bind(new InetSocketAddress(port));
-		port = server.socket().getLocalPort();
-
-		try {
-			readyLatch.countDown();
-			for (;;) {
-				SocketChannel client = server.accept();
-				manager.newBrokerChannel(client, messageHandler);
-			}
-		} finally {
-			server.close();
-		}
-	}
-
-	private final class ServerThread extends Thread {
-
-		@Override
-		public void run() {
-
-			try {
-				doIo();
-			} catch (ClosedChannelException ignore) {
-			} catch (Exception e) {
-				Log.error(e, "Mock broker IO error");
-				ioException = new RuntimeException("Mock broker IO thread failed", e);
-			}
-		}
 	}
 }
