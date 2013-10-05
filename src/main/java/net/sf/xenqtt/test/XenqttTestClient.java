@@ -141,6 +141,7 @@ public final class XenqttTestClient {
 		private final MqttClient client;
 
 		private final ExecutorService publisherPool;
+		private final CountDownLatch connectedLatch;
 		private final CountDownLatch publisherCompleteLatch;
 		private final CountDownLatch messageReceivedLatch;
 		private final Semaphore inFlight;
@@ -164,6 +165,9 @@ public final class XenqttTestClient {
 							Thread.sleep(5000);
 							reportStats(shouldReportHeader, format);
 							shouldReportHeader--;
+							if (shouldReportHeader < 0) {
+								shouldReportHeader = 30;
+							}
 						} catch (InterruptedException ex) {
 							Thread.currentThread().interrupt();
 							reportStats(shouldReportHeader, format);
@@ -176,7 +180,6 @@ public final class XenqttTestClient {
 					if (shouldReportHeader == 0) {
 						System.out.printf("%-26s%-20s%-20s%-20s%3s%-20s%-20s%-20s%-20s\n", "", "Published", "Duration (Millis)", "Throughput (Per-Sec)", " | ",
 								"Received", "Duplicates", "Latency (Millis)", "Throughput (Per-Sec)");
-						shouldReportHeader = 30;
 					}
 
 					System.out.printf("%-26s%-20d%-20.2f%-20.2f%3s%-20d%-20d%-20.2f%-20.2f\n", format.format(new Date()), stats.getNumMessagesPublished(),
@@ -186,6 +189,7 @@ public final class XenqttTestClient {
 
 			});
 
+			connectedLatch = configuration.clientType == ClientType.ASYNC ? new CountDownLatch(1) : new CountDownLatch(0);
 			publisherCompleteLatch = configuration.publishers > 0 ? new CountDownLatch(configuration.publishers * configuration.messagesToPublish)
 					: new CountDownLatch(0);
 			messageReceivedLatch = configuration.messagesToReceive > 0 ? new CountDownLatch(configuration.messagesToReceive) : new CountDownLatch(0);
@@ -195,7 +199,8 @@ public final class XenqttTestClient {
 		}
 
 		private MqttClient createMqttClient() {
-			TestClientAsyncClientListener listener = new TestClientAsyncClientListener(stats, publisherCompleteLatch, messageReceivedLatch, inFlight);
+			TestClientAsyncClientListener listener = new TestClientAsyncClientListener(stats, connectedLatch, publisherCompleteLatch, messageReceivedLatch,
+					inFlight);
 			MqttClientConfig config = getClientConfiguration();
 			if (configuration.clientType == ClientType.SYNC) {
 				config.setBlockingTimeoutSeconds(configuration.blockingTimeoutSeconds);
@@ -233,6 +238,8 @@ public final class XenqttTestClient {
 				} else {
 					client.connect(configuration.clientId, configuration.cleanSession);
 				}
+
+				connectedLatch.await();
 
 				if (publisherPool != null) {
 					boolean async = client instanceof AsyncMqttClient;

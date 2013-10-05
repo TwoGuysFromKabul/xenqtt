@@ -18,6 +18,7 @@ package net.sf.xenqtt.test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
+import net.sf.xenqtt.Log;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.PublishMessage;
@@ -30,12 +31,15 @@ import net.sf.xenqtt.message.ConnectReturnCode;
 final class TestClientAsyncClientListener implements AsyncClientListener {
 
 	private final XenqttTestClientStats stats;
+	private final CountDownLatch connectedLatch;
 	private final CountDownLatch publishCompleteLatch;
 	private final CountDownLatch messageReceivedLatch;
 	private final Semaphore inFlight;
 
-	TestClientAsyncClientListener(XenqttTestClientStats stats, CountDownLatch publishCompleteLatch, CountDownLatch messageReceivedLatch, Semaphore inFlight) {
+	TestClientAsyncClientListener(XenqttTestClientStats stats, CountDownLatch connectedLatch, CountDownLatch publishCompleteLatch,
+			CountDownLatch messageReceivedLatch, Semaphore inFlight) {
 		this.stats = stats;
+		this.connectedLatch = connectedLatch;
 		this.publishCompleteLatch = publishCompleteLatch;
 		this.messageReceivedLatch = messageReceivedLatch;
 		this.inFlight = inFlight;
@@ -65,6 +69,15 @@ final class TestClientAsyncClientListener implements AsyncClientListener {
 	 */
 	@Override
 	public void connected(MqttClient client, ConnectReturnCode returnCode) {
+		if (returnCode != ConnectReturnCode.ACCEPTED) {
+			Log.error("The broker refused the connection. Error code: %s", returnCode);
+			System.err.println("The broker refused the connection. This error is not recoverable.");
+			System.exit(-1);
+		}
+
+		if (connectedLatch != null) {
+			connectedLatch.countDown();
+		}
 	}
 
 	/**
