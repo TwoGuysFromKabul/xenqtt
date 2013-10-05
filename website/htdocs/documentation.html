@@ -115,14 +115,15 @@ Released   : 20121119
 						<p class="code-header">Synchronous Subscriber</p>
 						<pre class="prettyprint code">
 import java.util.ArrayList;
+
+import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.xenqtt.client.FixedReconnectionStrategy;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientListener;
 import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.Subscription;
-import net.sf.xenqtt.client.SyncMqttClient;
+import net.sf.xenqtt.client.SynchronousMqttClient;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
 
@@ -161,10 +162,10 @@ public class MusicSubscriber {
 		};
 
 		// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
-		SynchronousMqttClient client = new SynchronousMqttClient("tcp://mqtt.broker:1883", listener, new FixedReconnectionStrategy(5000, 3), 5, 90, 15, 5);
+		SynchronousMqttClient client = new SynchronousMqttClient("tcp://mqtt.broker:1883", listener, 5);
 
 		// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
-		ConnectReturnCode returnCode = client.connect("musicLover", true, 15);
+		ConnectReturnCode returnCode = client.connect("musicLover", true);
 		if (returnCode != ConnectReturnCode.ACCEPTED) {
 			log.error("Unable to connect to the MQTT broker. Reason: " + returnCode);
 			return;
@@ -201,11 +202,10 @@ public class MusicSubscriber {
 						</pre>
 						<p class="code-header">Synchronous Publisher</p>
 						<pre class="prettyprint code">
-import net.sf.xenqtt.client.FixedReconnectionStrategy;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientListener;
 import net.sf.xenqtt.client.PublishMessage;
-import net.sf.xenqtt.client.SyncMqttClient;
+import net.sf.xenqtt.client.SynchronousMqttClient;
 import net.sf.xenqtt.message.QoS;
 
 import org.apache.log4j.Logger;
@@ -240,7 +240,7 @@ public class MusicProducer {
 		};
 
 		// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
-		MqttClient client = new SynchronousMqttClient("tcp://mqtt.broker:1883", listener, new FixedReconnectionStrategy(5000, 3), 5, 90, 15, 5);
+		MqttClient client = new SynchronousMqttClient("tcp://mqtt.broker:1883", listener, 5);
 
 		// Publish a musical catalog
 		client.publish(new PublishMessage("grand/funk/railroad", QoS.AT_MOST_ONCE, "On Time"));
