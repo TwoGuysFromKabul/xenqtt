@@ -26,7 +26,9 @@ import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.message.ConnectReturnCode;
 
 /**
- * TODO [jeremy] - Document this type.
+ * An {@link AsyncClientListener} that provides the {@link XenqttTestClient test client} with appropriate controls and stats monitoring as messages are
+ * exchanged through an MQTT broker. This implementation allows for the test client to await at appropriate stages (connect, publish, and receive completion),
+ * controls in-flight message limits (publish pathway), and helps to track and monitor stats.
  */
 final class TestClientAsyncClientListener implements AsyncClientListener {
 
@@ -36,6 +38,20 @@ final class TestClientAsyncClientListener implements AsyncClientListener {
 	private final CountDownLatch messageReceivedLatch;
 	private final Semaphore inFlight;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param stats
+	 *            The {@link XenqttTestClientStats stats} that are being trended for the current test
+	 * @param connectedLatch
+	 *            The latch that is triggered after receipt of a CONNACK with a state of accepted
+	 * @param publishCompleteLatch
+	 *            A latch that is triggered each time a message is published
+	 * @param messageReceivedLatch
+	 *            A latch that is triggered each time a message is received
+	 * @param inFlight
+	 *            A {@link Semaphore semaphore} that is used to regular in-flight messages (publish pathway)
+	 */
 	TestClientAsyncClientListener(XenqttTestClientStats stats, CountDownLatch connectedLatch, CountDownLatch publishCompleteLatch,
 			CountDownLatch messageReceivedLatch, Semaphore inFlight) {
 		this.stats = stats;
