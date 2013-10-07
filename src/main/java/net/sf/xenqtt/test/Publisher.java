@@ -18,7 +18,7 @@ package net.sf.xenqtt.test;
 import net.sf.xenqtt.message.QoS;
 
 /**
- * TODO [jeremy] - Document this type.
+ * Specifies a type that publishes messages to an MQTT broker.
  */
 interface Publisher {
 
