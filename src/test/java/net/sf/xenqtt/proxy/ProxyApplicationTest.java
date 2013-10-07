@@ -17,15 +17,15 @@ package net.sf.xenqtt.proxy;
 
 import static org.junit.Assert.*;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
-/**
- * FIXME [jim] - needs javadoc
- */
 public class ProxyApplicationTest {
 
+	@Ignore
 	@Test
 	public void test() {
+		// FIXME [jim] - implement
 		fail("Not yet implemented");
 	}
 
