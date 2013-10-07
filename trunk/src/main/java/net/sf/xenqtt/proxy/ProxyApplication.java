@@ -18,7 +18,6 @@ package net.sf.xenqtt.proxy;
 import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.SimpleBroker;
 import net.sf.xenqtt.XenqttApplication;
-import net.sf.xenqtt.message.MessageHandler;
 
 /**
  * A {@link XenqttApplication} is that acts as an MQTT proxy to allow a cluster of servers to act as a single MQTT proxy. All connections to this proxy that
@@ -31,7 +30,7 @@ public class ProxyApplication implements XenqttApplication {
 			+ "\n\tp port : Port to listen on. Defaults to 1883." //
 	;
 
-	private final MessageHandler brokerMessageHandler = null;
+	private final ServerMessageHandler serverMessageHandler = new ServerMessageHandler();
 	private SimpleBroker simpleBroker;
 	private String brokerUri;
 
@@ -45,7 +44,7 @@ public class ProxyApplication implements XenqttApplication {
 		int port = arguments.getArgAsInt("p", 1883);
 
 		simpleBroker = new SimpleBroker(0, port);
-		simpleBroker.init(brokerMessageHandler, "ProxyServer");
+		simpleBroker.init(serverMessageHandler, "ProxyServer");
 	}
 
 	/**
