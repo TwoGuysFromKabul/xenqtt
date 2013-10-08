@@ -286,6 +286,56 @@ public interface ChannelManager {
 			MqttInvocationException, MqttInvocationError;
 
 	/**
+	 * Detaches the specified channel from this manager's control. This is used in conjunction with {@link #attachChannel(MqttChannelRef)} to move handling of
+	 * the channel's messages from one manager to another. This is always a synchronous operation.
+	 * 
+	 * @param channel
+	 *            The channel to detach
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
+	 * @throws MqttInvocationException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. Any {@link Exception} thrown while the command is being
+	 *             processed will be wrapped in an {@link MqttInvocationException}.
+	 * @throws MqttInvocationError
+	 *             The channel manager uses a command pattern to process this request on the IO thread. Any {@link Error} thrown while the command is being
+	 *             processed will be wrapped in an {@link MqttInvocationError}.
+	 */
+	void detachChannel(MqttChannelRef channel) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException,
+			MqttInvocationError;
+
+	/**
+	 * Attaches the specified channel to this manager's control. This is used in conjunction with {@link #detachChannel(MqttChannelRef)} to move handling of the
+	 * channel's messages from one manager to another. This is always a synchronous operation.
+	 * 
+	 * @param channel
+	 *            The channel to attach
+	 * @param messageHandler
+	 *            The {@link MessageHandler message handler} to use for all received messages
+	 * 
+	 * @throws MqttCommandCancelledException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. If the command is cancelled for some reason, like the
+	 *             channel closes, this exception is thrown.
+	 * @throws MqttTimeoutException
+	 *             Thrown when using a synchronous implementation and the timeout specified for a blocked method expires
+	 * @throws MqttInterruptedException
+	 *             Thrown when the calling thread is interrupted
+	 * @throws MqttInvocationException
+	 *             The channel manager uses a command pattern to process this request on the IO thread. Any {@link Exception} thrown while the command is being
+	 *             processed will be wrapped in an {@link MqttInvocationException}.
+	 * @throws MqttInvocationError
+	 *             The channel manager uses a command pattern to process this request on the IO thread. Any {@link Error} thrown while the command is being
+	 *             processed will be wrapped in an {@link MqttInvocationError}.
+	 */
+	void attachChannel(MqttChannelRef channel, MessageHandler messageHandler) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException, MqttInvocationException, MqttInvocationError;
+
+	/**
 	 * Starts this channel manager. Must be called before any other methods
 	 */
 	void init();

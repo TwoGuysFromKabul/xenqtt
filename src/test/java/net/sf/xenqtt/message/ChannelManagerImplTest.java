@@ -163,8 +163,7 @@ public class ChannelManagerImplTest {
 			manager.newClientChannel("foo", 123, clientHandler);
 			fail("Exception expected");
 		} catch (MqttInvocationException e) {
-			Thread.sleep(500);
-			clientHandler.assertLastChannelClosedCause(e.getRootCause().getCause());
+			clientHandler.assertLastChannelClosedCause(e.getRootCause());
 		}
 	}
 
@@ -178,7 +177,7 @@ public class ChannelManagerImplTest {
 			manager.newClientChannel("foo", 123, clientHandler);
 			fail("Exception expected");
 		} catch (MqttInvocationException e) {
-			clientHandler.assertLastChannelClosedCause(e.getRootCause().getCause());
+			clientHandler.assertLastChannelClosedCause(e.getRootCause());
 		}
 	}
 
@@ -530,6 +529,57 @@ public class ChannelManagerImplTest {
 		assertNull(manager.send(clientChannel2, message));
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 		brokerHandler2.assertMessages(message, message, message);
+	}
+
+	@Test
+	public void testDetachChannel() throws Exception {
+
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		brokerHandler.onMessage(MessageType.PUBACK, trigger);
+		manager.send(clientChannel, new PubAckMessage(1));
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
+
+		manager.detachChannel(clientChannel);
+
+		trigger = new CountDownLatch(1);
+		brokerHandler.onMessage(MessageType.PUBACK, trigger);
+		manager.send(clientChannel, new PubAckMessage(1));
+		assertFalse(trigger.await(1, TimeUnit.SECONDS));
+	}
+
+	@Test
+	public void testAttachChannel() throws Exception {
+
+		ChannelManagerImpl manager2 = new ChannelManagerImpl(2);
+		manager2.init();
+
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		brokerHandler.onMessage(MessageType.PUBACK, trigger);
+		manager.send(clientChannel, new PubAckMessage(1));
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
+
+		manager.detachChannel(clientChannel);
+
+		manager2.attachChannel(clientChannel, clientHandler);
+
+		trigger = new CountDownLatch(1);
+		brokerHandler.onMessage(MessageType.PUBACK, trigger);
+		manager2.send(clientChannel, new PubAckMessage(1));
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
+
+		manager2.shutdown();
 	}
 
 	@Test
