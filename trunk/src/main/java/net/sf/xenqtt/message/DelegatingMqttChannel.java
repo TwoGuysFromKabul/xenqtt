@@ -185,4 +185,28 @@ final class DelegatingMqttChannel implements MqttChannel {
 
 		return delegate.getRemoteAddress();
 	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		return delegate.equals(obj);
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return delegate.hashCode();
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return delegate.toString();
+	}
 }

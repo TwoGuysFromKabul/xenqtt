@@ -410,7 +410,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private void channelClosed(MqttChannel channel) {
 
-		openChannels.remove(channel);
+		removeFromOpenChannels(channel);
 	}
 
 	private void executeCommands(long now) {
@@ -434,6 +434,22 @@ public final class ChannelManagerImpl implements ChannelManager {
 		selector.wakeup();
 
 		return command;
+	}
+
+	private void addToOpenChannels(MqttChannel channel) {
+		if (channel instanceof DelegatingMqttChannel) {
+			openChannels.add(((DelegatingMqttChannel) channel).delegate);
+		} else {
+			openChannels.add(channel);
+		}
+	}
+
+	private void removeFromOpenChannels(MqttChannel channel) {
+		if (channel instanceof DelegatingMqttChannel) {
+			openChannels.remove(((DelegatingMqttChannel) channel).delegate);
+		} else {
+			openChannels.remove(channel);
+		}
 	}
 
 	private abstract class Command<T> extends AbstractBlockingCommand<T> {
@@ -548,6 +564,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		@Override
 		public void doExecute() {
 
+			removeFromOpenChannels(channel);
 			channel.deregister();
 		}
 	}
@@ -566,6 +583,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		@Override
 		public void doExecute() {
 			channel.register(selector, messageHandler);
+			addToOpenChannels(channel);
 		}
 	}
 
@@ -585,8 +603,9 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		@Override
 		public void doExecute() throws Exception {
-			channel = new DelegatingMqttChannel(new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this));
-			openChannels.add(channel);
+			MqttChannel c = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this);
+			channel = new DelegatingMqttChannel(c);
+			addToOpenChannels(c);
 			setResult(channel);
 		}
 	}
@@ -606,7 +625,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		public void doExecute() {
 			try {
 				MqttBrokerChannel channel = new MqttBrokerChannel(socketChannel, messageHandler, selector, messageResendIntervalMillis);
-				openChannels.add(channel);
+				addToOpenChannels(channel);
 				setResult(channel);
 			} catch (Exception e) {
 				try {
