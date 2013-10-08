@@ -32,8 +32,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.Log;
+import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInterruptedException;
+import net.sf.xenqtt.MqttInvocationError;
+import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 
 /**
@@ -220,6 +223,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 */
 	@Override
 	public List<MqttMessage> getUnsentMessages(MqttChannelRef channel) {
+
 		return addCommand(new GetUnsentMessagesCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
@@ -228,8 +232,29 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 */
 	@Override
 	public void transfer(MqttChannelRef oldChannel, MqttChannelRef newChannel) {
+
 		addCommand(new TransferCommand(oldChannel, newChannel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
+
+	/**
+	 * @see net.sf.xenqtt.message.ChannelManager#detachChannel(net.sf.xenqtt.message.MqttChannelRef)
+	 */
+	@Override
+	public void detachChannel(MqttChannelRef channel) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException,
+			MqttInvocationException, MqttInvocationError {
+
+		addCommand(new DetachChannelCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.ChannelManager#attachChannel(net.sf.xenqtt.message.MqttChannelRef, net.sf.xenqtt.message.MessageHandler)
+	 */
+	@Override
+	public void attachChannel(MqttChannelRef channel, MessageHandler messageHandler) throws MqttCommandCancelledException, MqttTimeoutException,
+			MqttInterruptedException, MqttInvocationException, MqttInvocationError {
+
+		addCommand(new AttachChannelCommand(channel, messageHandler)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+	};
 
 	private void closeAll() {
 
@@ -511,6 +536,39 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 	}
 
+	private final class DetachChannelCommand extends Command<List<MqttMessage>> {
+
+		private final MqttChannel channel;
+
+		public DetachChannelCommand(MqttChannelRef channel) {
+			super(true);
+			this.channel = (MqttChannel) channel;
+		}
+
+		@Override
+		public void doExecute() {
+
+			channel.deregister();
+		}
+	}
+
+	private final class AttachChannelCommand extends Command<List<MqttMessage>> {
+
+		private final MqttChannel channel;
+		private final MessageHandler messageHandler;
+
+		public AttachChannelCommand(MqttChannelRef channel, MessageHandler messageHandler) {
+			super(true);
+			this.messageHandler = messageHandler;
+			this.channel = (MqttChannel) channel;
+		}
+
+		@Override
+		public void doExecute() {
+			channel.register(selector, messageHandler);
+		}
+	}
+
 	private final class NewClientChannelCommand extends Command<MqttChannel> {
 
 		private final String host;
@@ -526,14 +584,10 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
-			try {
-				channel = new DelegatingMqttChannel(new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this));
-				openChannels.add(channel);
-				setResult(channel);
-			} catch (Exception e) {
-				throw new MqttException("MQTT Client channel creation failed", e);
-			}
+		public void doExecute() throws Exception {
+			channel = new DelegatingMqttChannel(new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this));
+			openChannels.add(channel);
+			setResult(channel);
 		}
 	}
 
