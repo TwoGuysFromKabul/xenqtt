@@ -40,8 +40,7 @@ public final class ClientMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -103,8 +102,7 @@ public final class ClientMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void subscribe(MqttChannel channel, SubscribeMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -121,8 +119,7 @@ public final class ClientMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -139,8 +136,7 @@ public final class ClientMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void disconnect(MqttChannel channel, DisconnectMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -166,8 +162,7 @@ public final class ClientMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelAttached(MqttChannel channel) {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -175,7 +170,6 @@ public final class ClientMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelDetached(MqttChannel channel) {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 }
