@@ -361,6 +361,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		establishConnection();
 
 		assertFalse(clientChannel.register(null, clientHandler));
+		clientHandler.assertChannelAttachedCount(0);
 	}
 
 	@Test
@@ -374,6 +375,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		clientHandler = new MockMessageHandler();
 		assertTrue(clientChannel.register(newSelector, clientHandler));
 		assertEquals(1, newSelector.keys().size());
+		clientHandler.assertChannelAttachedCount(1);
 
 		closeConnection();
 	}
@@ -391,6 +393,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		}
 
 		clientChannel.deregister();
+		clientHandler.assertChannelDetachedCount(1);
 
 		int cancelledKeyCount = 0;
 		for (SelectionKey key : selector.keys()) {

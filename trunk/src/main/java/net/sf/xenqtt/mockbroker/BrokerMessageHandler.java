@@ -310,4 +310,17 @@ final class BrokerMessageHandler implements MessageHandler {
 	private Client getClient(MqttChannel channel) {
 		return clientByChannel.get(channel);
 	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#channelAttached(net.sf.xenqtt.message.MqttChannel)
+	 */
+	@Override
+	public void channelAttached(MqttChannel channel) {
+		// this should never be called for the mock broker
+	}
+
+	@Override
+	public void channelDetached(MqttChannel channel) {
+		// this should never be called for the mock broker
+	}
 }

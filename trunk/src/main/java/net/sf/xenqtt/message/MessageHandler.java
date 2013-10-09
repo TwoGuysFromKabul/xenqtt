@@ -91,7 +91,7 @@ public interface MessageHandler {
 	void channelOpened(MqttChannel channel);
 
 	/**
-	 * Called when a {@link MqttChannel MQTT channel} is formally closed.
+	 * Called when an {@link MqttChannel MQTT channel} is formally closed.
 	 * 
 	 * @param channel
 	 *            The channel that was closed
@@ -99,4 +99,22 @@ public interface MessageHandler {
 	 *            The reason the channel was closed. Null if the channel was not closed because of an exception.
 	 */
 	void channelClosed(MqttChannel channel, Throwable cause);
+
+	/**
+	 * Called when an {@link MqttChannel MQTT channel} is {@link ChannelManager#detachChannel(MqttChannelRef) attached} to a {@link ChannelManager channel
+	 * manager}.
+	 * 
+	 * @param channel
+	 *            The channel that was attached
+	 */
+	void channelAttached(MqttChannel channel);
+
+	/**
+	 * Called when an {@link MqttChannel MQTT channel} is {@link ChannelManager#detachChannel(MqttChannelRef) detached} from a {@link ChannelManager channel
+	 * manager}.
+	 * 
+	 * @param channel
+	 *            The channel that was detached
+	 */
+	void channelDetached(MqttChannel channel);
 }

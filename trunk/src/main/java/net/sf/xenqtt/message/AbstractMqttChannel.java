@@ -141,6 +141,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	public final void deregister() {
 
 		selectionKey.cancel();
+		handler.channelDetached(this);
 		Log.debug("Deregistered %s", this);
 	}
 
@@ -156,6 +157,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			selectionKey.cancel();
 			selectionKey = channel.register(selector, ops, this);
 			this.handler = handler;
+			handler.channelAttached(this);
 
 			Log.debug("Registered %s with selector %s", this, selector);
 			return true;

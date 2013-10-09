@@ -662,6 +662,22 @@ abstract class AbstractMqttClient implements MqttClient {
 				}
 			});
 		}
+
+		/**
+		 * @see net.sf.xenqtt.message.MessageHandler#channelAttached(net.sf.xenqtt.message.MqttChannel)
+		 */
+		@Override
+		public void channelAttached(MqttChannel channel) {
+			// this should never be called for a client
+		}
+
+		/**
+		 * @see net.sf.xenqtt.message.MessageHandler#channelDetached(net.sf.xenqtt.message.MqttChannel)
+		 */
+		@Override
+		public void channelDetached(MqttChannel channel) {
+			// this should never be called for a client
+		}
 	}
 
 	private final class ConnectTimeout implements Runnable {
