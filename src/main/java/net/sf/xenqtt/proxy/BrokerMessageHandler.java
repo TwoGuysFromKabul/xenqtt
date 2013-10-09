@@ -57,8 +57,7 @@ public final class BrokerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void connAck(MqttChannel channel, ConnAckMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -120,8 +119,7 @@ public final class BrokerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void subAck(MqttChannel channel, SubAckMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -138,8 +136,7 @@ public final class BrokerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void unsubAck(MqttChannel channel, UnsubAckMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -156,8 +153,7 @@ public final class BrokerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelOpened(MqttChannel channel) {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
 
 	/**
@@ -183,8 +179,6 @@ public final class BrokerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelDetached(MqttChannel channel) {
-		// TODO Auto-generated method stub
-
+		// should never happen
 	}
-
 }

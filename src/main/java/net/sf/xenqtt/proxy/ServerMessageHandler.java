@@ -41,6 +41,9 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
 public final class ServerMessageHandler implements MessageHandler {
 
 	private final String brokerUri;
+	// FIXME [jim] - once we have created a channel manager for a clustered client how do we know when all the channels are closed?
+	// maybe add a way to get the number of channels in the manager then check periodically, like every time a client connects, and shut down and remove the
+	// ones that have no channels?
 	private final Map<String, ChannelManager> channelManagerByClientId = new HashMap<String, ChannelManager>();
 	private final ChannelManager serverChannelManager;
 
@@ -68,9 +71,8 @@ public final class ServerMessageHandler implements MessageHandler {
 			channelManagerByClientId.put(clientId, manager);
 		}
 
-		serverChannelManager.detachChannel(channel);
-
 		BrokerMessageHandler handler = new BrokerMessageHandler(brokerUri, message);
+		serverChannelManager.detachChannel(channel);
 		manager.attachChannel(channel, handler);
 	}
 
@@ -180,8 +182,7 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelAttached(MqttChannel channel) {
-		// TODO Auto-generated method stub
-
+		// this should never happen
 	}
 
 	/**
@@ -189,7 +190,6 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelDetached(MqttChannel channel) {
-		// TODO Auto-generated method stub
-
+		// ignore
 	}
 }
