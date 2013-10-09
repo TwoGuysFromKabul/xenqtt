@@ -15,7 +15,6 @@
  */
 package net.sf.xenqtt.test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,7 +34,7 @@ final class PublishWorker implements Runnable {
 	private final int messageSize;
 	private final AtomicInteger messageIds;
 	private final QoS qos;
-	private final CountDownLatch latch;
+	private final StageControl stageControl;
 	private final Publisher publisher;
 	private final Semaphore inFlight;
 
@@ -54,24 +53,22 @@ final class PublishWorker implements Runnable {
 	 *            Produces IDs for each message sent by this and every other {@link PublishWorker worker}
 	 * @param qos
 	 *            The QoS level at which data is being published
-	 * @param latch
-	 *            A {@link CountDownLatch latch} that is triggered following the publish of each message, regardless of whether or not the publish succeeded
-	 * @param stats
-	 *            The {@link XenqttTestClientStats stats} instance being used in this test
+	 * @param stageControl
+	 *            The {@link StageControl control} apparatus being used to control the life-cycle of the test
 	 * @param publisher
 	 *            The {@link Publisher publisher} to use in actually publishing messages to the broker
 	 * @param inFlight
 	 *            The maximum number of in-flight messages allowed across all publish workers
 	 */
-	PublishWorker(String name, boolean async, String publishTopic, int messageSize, AtomicInteger messageIds, QoS qos, CountDownLatch latch,
-			XenqttTestClientStats stats, Publisher publisher, Semaphore inFlight) {
+	PublishWorker(String name, boolean async, String publishTopic, int messageSize, AtomicInteger messageIds, QoS qos, StageControl stageControl,
+			Publisher publisher, Semaphore inFlight) {
 		this.name = name;
 		this.async = async;
 		this.publishTopic = publishTopic;
 		this.messageSize = messageSize;
 		this.messageIds = messageIds;
 		this.qos = qos;
-		this.latch = latch;
+		this.stageControl = stageControl;
 		this.publisher = publisher;
 		this.inFlight = inFlight;
 	}
@@ -81,11 +78,12 @@ final class PublishWorker implements Runnable {
 	 */
 	@Override
 	public void run() {
+		boolean syncOrQosAtMostOnce = !async || qos == QoS.AT_MOST_ONCE;
 		for (;;) {
 			try {
 				inFlight.acquire();
 				long messagesRemaining = publisher.publish(publishTopic, qos, createPayload());
-				if (!async || qos == QoS.AT_MOST_ONCE) {
+				if (syncOrQosAtMostOnce) {
 					inFlight.release();
 				}
 				if (messagesRemaining == 0) {
@@ -98,8 +96,8 @@ final class PublishWorker implements Runnable {
 			} catch (Exception ex) {
 				Log.error(ex, "Unable to publish a message");
 			} finally {
-				if (!async || qos == QoS.AT_MOST_ONCE) {
-					latch.countDown();
+				if (syncOrQosAtMostOnce) {
+					stageControl.messagePublished();
 				}
 			}
 		}

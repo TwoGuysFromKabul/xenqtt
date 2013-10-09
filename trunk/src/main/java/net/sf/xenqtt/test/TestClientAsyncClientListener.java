@@ -15,10 +15,8 @@
  */
 package net.sf.xenqtt.test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
-import net.sf.xenqtt.Log;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.PublishMessage;
@@ -33,9 +31,7 @@ import net.sf.xenqtt.message.ConnectReturnCode;
 final class TestClientAsyncClientListener implements AsyncClientListener {
 
 	private final XenqttTestClientStats stats;
-	private final CountDownLatch connectedLatch;
-	private final CountDownLatch publishCompleteLatch;
-	private final CountDownLatch messageReceivedLatch;
+	private final StageControl stageControl;
 	private final Semaphore inFlight;
 
 	/**
@@ -43,21 +39,14 @@ final class TestClientAsyncClientListener implements AsyncClientListener {
 	 * 
 	 * @param stats
 	 *            The {@link XenqttTestClientStats stats} that are being trended for the current test
-	 * @param connectedLatch
-	 *            The latch that is triggered after receipt of a CONNACK with a state of accepted
-	 * @param publishCompleteLatch
-	 *            A latch that is triggered each time a message is published
-	 * @param messageReceivedLatch
-	 *            A latch that is triggered each time a message is received
+	 * @param stageControl
+	 *            The {@link StageControl control} apparatus being used to manage the life-cycle of the test
 	 * @param inFlight
 	 *            A {@link Semaphore semaphore} that is used to regular in-flight messages (publish pathway)
 	 */
-	TestClientAsyncClientListener(XenqttTestClientStats stats, CountDownLatch connectedLatch, CountDownLatch publishCompleteLatch,
-			CountDownLatch messageReceivedLatch, Semaphore inFlight) {
+	TestClientAsyncClientListener(XenqttTestClientStats stats, StageControl stageControl, Semaphore inFlight) {
 		this.stats = stats;
-		this.connectedLatch = connectedLatch;
-		this.publishCompleteLatch = publishCompleteLatch;
-		this.messageReceivedLatch = messageReceivedLatch;
+		this.stageControl = stageControl;
 		this.inFlight = inFlight;
 	}
 
@@ -69,7 +58,7 @@ final class TestClientAsyncClientListener implements AsyncClientListener {
 		message.ack();
 		stats.messageReceived(message);
 		if (!message.isDuplicate()) {
-			messageReceivedLatch.countDown();
+			stageControl.messageReceived();
 		}
 	}
 
@@ -85,15 +74,7 @@ final class TestClientAsyncClientListener implements AsyncClientListener {
 	 */
 	@Override
 	public void connected(MqttClient client, ConnectReturnCode returnCode) {
-		if (returnCode != ConnectReturnCode.ACCEPTED) {
-			Log.error("The broker refused the connection. Error code: %s", returnCode);
-			System.err.println("The broker refused the connection. This error is not recoverable.");
-			System.exit(-1);
-		}
-
-		if (connectedLatch != null) {
-			connectedLatch.countDown();
-		}
+		stageControl.connected(returnCode);
 	}
 
 	/**
@@ -118,7 +99,7 @@ final class TestClientAsyncClientListener implements AsyncClientListener {
 	public void published(MqttClient client, PublishMessage message) {
 		stats.publishComplete(message);
 		inFlight.release();
-		publishCompleteLatch.countDown();
+		stageControl.messagePublished();
 	}
 
 }

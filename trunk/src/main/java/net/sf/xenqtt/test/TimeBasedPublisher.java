@@ -27,7 +27,6 @@ final class TimeBasedPublisher implements Publisher {
 
 	private final MqttClient client;
 	private final XenqttTestClientStats stats;
-	private final long endTime;
 	private final boolean asyncClient;
 
 	/**
@@ -37,16 +36,12 @@ final class TimeBasedPublisher implements Publisher {
 	 *            The {@link MqttClient client} to use in publishing messages to the broker
 	 * @param stats
 	 *            The {@link XenqttTestClientStats stats} being used in this test
-	 * @param endTime
-	 *            The time at which the publisher should stop publishing messages. It is not guaranteed that the publisher will stop publishing messages exactly
-	 *            at this point; rather, right around this time
 	 * @param asyncClient
 	 *            Whether or not the specified {@link client} was asynchronous or not
 	 */
-	TimeBasedPublisher(MqttClient client, XenqttTestClientStats stats, long endTime, boolean asyncClient) {
+	TimeBasedPublisher(MqttClient client, XenqttTestClientStats stats, boolean asyncClient) {
 		this.client = client;
 		this.stats = stats;
-		this.endTime = endTime;
 		this.asyncClient = asyncClient;
 	}
 
@@ -65,7 +60,7 @@ final class TimeBasedPublisher implements Publisher {
 			Log.error(ex, "Failed to publish a message to the following topic: %s", topic);
 		}
 
-		return System.currentTimeMillis() >= endTime ? 0 : 1;
+		return 1;
 	}
 
 }
