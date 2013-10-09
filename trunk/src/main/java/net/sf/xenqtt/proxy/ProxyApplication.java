@@ -16,7 +16,6 @@
 package net.sf.xenqtt.proxy;
 
 import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.SimpleBroker;
 import net.sf.xenqtt.XenqttApplication;
 
 /**
@@ -30,9 +29,7 @@ public class ProxyApplication implements XenqttApplication {
 			+ "\n\tp port : Port to listen on. Defaults to 1883." //
 	;
 
-	private final ServerMessageHandler serverMessageHandler = new ServerMessageHandler();
-	private SimpleBroker simpleBroker;
-	private String brokerUri;
+	private ProxyBroker broker;
 
 	/**
 	 * @see net.sf.xenqtt.XenqttApplication#start(net.sf.xenqtt.AppContext)
@@ -40,11 +37,10 @@ public class ProxyApplication implements XenqttApplication {
 	@Override
 	public void start(AppContext arguments) {
 
-		brokerUri = arguments.getArgAsString("b");
+		String brokerUri = arguments.getArgAsString("b");
 		int port = arguments.getArgAsInt("p", 1883);
 
-		simpleBroker = new SimpleBroker(0, port);
-		simpleBroker.init(serverMessageHandler, "ProxyServer");
+		broker = new ProxyBroker(brokerUri, port);
 	}
 
 	/**
@@ -53,8 +49,8 @@ public class ProxyApplication implements XenqttApplication {
 	@Override
 	public void stop() {
 
-		if (simpleBroker != null) {
-			simpleBroker.shutdown(15000);
+		if (broker != null) {
+			broker.shutdown(15000);
 		}
 	}
 
