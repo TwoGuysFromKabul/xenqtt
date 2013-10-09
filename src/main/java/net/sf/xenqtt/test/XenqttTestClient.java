@@ -21,7 +21,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -141,9 +140,7 @@ public final class XenqttTestClient {
 		private final MqttClient client;
 
 		private final ExecutorService publisherPool;
-		private final CountDownLatch connectedLatch;
-		private final CountDownLatch publisherCompleteLatch;
-		private final CountDownLatch messageReceivedLatch;
+		private final StageControl stageControl;
 		private final Semaphore inFlight;
 
 		private final XenqttTestClientStats stats;
@@ -189,18 +186,24 @@ public final class XenqttTestClient {
 
 			});
 
-			connectedLatch = configuration.clientType == ClientType.ASYNC ? new CountDownLatch(1) : new CountDownLatch(0);
-			publisherCompleteLatch = configuration.publishers > 0 ? new CountDownLatch(configuration.publishers * configuration.messagesToPublish)
-					: new CountDownLatch(0);
-			messageReceivedLatch = configuration.messagesToReceive > 0 ? new CountDownLatch(configuration.messagesToReceive) : new CountDownLatch(0);
+			stageControl = createStageControl();
 			inFlight = new Semaphore(configuration.maxInFlightMessages);
 			client = createMqttClient();
 			publisherPool = createPublisherPool(client);
 		}
 
+		private StageControl createStageControl() {
+			boolean awaitConnect = configuration.clientType == ClientType.ASYNC;
+			if (configuration.isTimeBasedTest()) {
+				return new StageControl(awaitConnect, configuration.duration);
+			}
+
+			int messagesToPublish = configuration.messagesToPublish * configuration.publishers;
+			return new StageControl(awaitConnect, messagesToPublish, configuration.messagesToReceive);
+		}
+
 		private MqttClient createMqttClient() {
-			TestClientAsyncClientListener listener = new TestClientAsyncClientListener(stats, connectedLatch, publisherCompleteLatch, messageReceivedLatch,
-					inFlight);
+			TestClientAsyncClientListener listener = new TestClientAsyncClientListener(stats, stageControl, inFlight);
 			MqttClientConfig config = getClientConfiguration();
 			if (configuration.clientType == ClientType.SYNC) {
 				config.setBlockingTimeoutSeconds(configuration.blockingTimeoutSeconds);
@@ -220,7 +223,7 @@ public final class XenqttTestClient {
 		}
 
 		private ExecutorService createPublisherPool(MqttClient client) {
-			if (configuration.publishers < 1 || configuration.messagesToPublish < 1) {
+			if (configuration.publishers < 1 || (configuration.messagesToPublish < 1 && !configuration.isTimeBasedTest())) {
 				return null;
 			}
 
@@ -239,7 +242,7 @@ public final class XenqttTestClient {
 					client.connect(configuration.clientId, configuration.cleanSession);
 				}
 
-				connectedLatch.await();
+				stageControl.awaitConnect();
 
 				if (publisherPool != null) {
 					boolean async = client instanceof AsyncMqttClient;
@@ -247,21 +250,17 @@ public final class XenqttTestClient {
 					for (int i = 0; i < configuration.publishers; i++) {
 						Publisher publisher = getPublisher();
 						publisherPool.execute(new PublishWorker(String.format("Publisher-%d", i), async, configuration.topicToPublishTo,
-								configuration.messageSize, ids, configuration.qos, publisherCompleteLatch, stats, publisher, inFlight));
+								configuration.messageSize, ids, configuration.qos, stageControl, publisher, inFlight));
 					}
 				}
 
-				if (configuration.topicToSubscribeTo != null && configuration.messagesToReceive > 0) {
+				if (configuration.topicToSubscribeTo != null && (configuration.messagesToReceive > 0 || configuration.isTimeBasedTest())) {
 					client.subscribe(new Subscription[] { new Subscription(configuration.topicToSubscribeTo, configuration.qos) });
 				}
 
-				publisherCompleteLatch.await();
-				messageReceivedLatch.await();
+				stageControl.awaitTestCompletion();
 				stats.testEnded();
 				Log.info("Test complete. Commencing shutdown.");
-			} catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-				Log.warn(ex, "The test client runner was interrupted. Shutting down.");
 			} catch (Exception ex) {
 				Log.error(ex, "Unable to start the test client.");
 			}
@@ -274,7 +273,7 @@ public final class XenqttTestClient {
 		private Publisher getPublisher() {
 			boolean async = client instanceof AsyncMqttClient;
 			if (configuration.isTimeBasedTest()) {
-				return new TimeBasedPublisher(client, stats, configuration.duration, async);
+				return new TimeBasedPublisher(client, stats, async);
 			}
 
 			return new FixedQuantityPublisher(client, configuration.messagesToPublish, stats, async);
@@ -288,14 +287,6 @@ public final class XenqttTestClient {
 			}
 
 			reportStats();
-
-			try {
-				if (!publisherCompleteLatch.await(5, TimeUnit.SECONDS)) {
-					Log.warn("Unable to cleanly shutdown all the publishers.");
-				}
-			} catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-			}
 
 			if (publisherPool != null) {
 				publisherPool.shutdown();
