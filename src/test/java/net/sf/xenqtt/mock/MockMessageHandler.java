@@ -53,6 +53,8 @@ public class MockMessageHandler implements MessageHandler {
 	private volatile RuntimeException exceptionToThrow;
 	private volatile int channelOpenedCount;
 	private volatile int channelClosedCount;
+	private volatile int channelAttachedCount;
+	private volatile int channelDetachedCount;
 	private volatile Throwable lastChannelClosedCause;
 
 	/**
@@ -172,6 +174,24 @@ public class MockMessageHandler implements MessageHandler {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#channelAttached(net.sf.xenqtt.message.MqttChannel)
+	 */
+	@Override
+	public void channelAttached(MqttChannel channel) {
+		channelAttachedCount++;
+		doHandleInvocation(channel, "channelAttached");
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#channelDetached(net.sf.xenqtt.message.MqttChannel)
+	 */
+	@Override
+	public void channelDetached(MqttChannel channel) {
+		channelDetachedCount++;
+		doHandleInvocation(channel, "channelDetached");
+	}
+
+	/**
 	 * Called by test channels when a {@link PingReqMessage} is received so it can be handled by this mock like other messages.
 	 */
 	public void pingReq(MqttChannel channel, PingReqMessage message) throws Exception {
@@ -205,6 +225,20 @@ public class MockMessageHandler implements MessageHandler {
 	 */
 	public final int channelClosedCalledCount() {
 		return channelClosedCount;
+	}
+
+	/**
+	 * @return The number of times {@link #channelAttached(MqttChannel)} has been called
+	 */
+	public final int channelAttachedCalledCount() {
+		return channelOpenedCount;
+	}
+
+	/**
+	 * @return The number of times {@link #channelDetached(MqttChannel)} has been called
+	 */
+	public final int channelDetachedCalledCount() {
+		return channelDetachedCount;
 	}
 
 	/**
@@ -247,6 +281,20 @@ public class MockMessageHandler implements MessageHandler {
 	 */
 	public final void assertChannelClosedCount(int value) {
 		assertEquals(value, channelClosedCount);
+	}
+
+	/**
+	 * asserts that {@link #channelAttached(MqttChannel)} has been called the specified number of times
+	 */
+	public final void assertChannelAttachedCount(int value) {
+		assertEquals(value, channelAttachedCount);
+	}
+
+	/**
+	 * asserts that {@link #channelDetached(MqttChannel)} has been called the specified number of times
+	 */
+	public final void assertChannelDetachedCount(int value) {
+		assertEquals(value, channelDetachedCount);
 	}
 
 	/**
@@ -320,6 +368,20 @@ public class MockMessageHandler implements MessageHandler {
 	 */
 	public final void onChannelClosed(CountDownLatch trigger) {
 		triggers.put("channelClosed", trigger);
+	}
+
+	/**
+	 * Counts down the trigger when {@link #channelAttached(MqttChannel)} is invoked
+	 */
+	public final void onChannelAttached(CountDownLatch trigger) {
+		triggers.put("channelAttached", trigger);
+	}
+
+	/**
+	 * Counts down the trigger when {@link #channelDetached(MqttChannel)} is invoked
+	 */
+	public final void onChannelDetached(CountDownLatch trigger) {
+		triggers.put("channelDetached", trigger);
 	}
 
 	/**

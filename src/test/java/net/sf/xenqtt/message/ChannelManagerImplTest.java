@@ -545,7 +545,10 @@ public class ChannelManagerImplTest {
 		manager.send(clientChannel, new PubAckMessage(1));
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
+		trigger = new CountDownLatch(1);
+		clientHandler.onChannelDetached(trigger);
 		manager.detachChannel(clientChannel);
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
 		trigger = new CountDownLatch(1);
 		brokerHandler.onMessage(MessageType.PUBACK, trigger);
@@ -570,9 +573,15 @@ public class ChannelManagerImplTest {
 		manager.send(clientChannel, new PubAckMessage(1));
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
+		trigger = new CountDownLatch(1);
+		clientHandler.onChannelDetached(trigger);
 		manager.detachChannel(clientChannel);
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
+		trigger = new CountDownLatch(1);
+		clientHandler.onChannelAttached(trigger);
 		manager2.attachChannel(clientChannel, clientHandler);
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
 		trigger = new CountDownLatch(1);
 		brokerHandler.onMessage(MessageType.PUBACK, trigger);
