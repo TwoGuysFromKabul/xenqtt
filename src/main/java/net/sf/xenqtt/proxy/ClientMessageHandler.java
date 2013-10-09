@@ -15,11 +15,6 @@
  */
 package net.sf.xenqtt.proxy;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import net.sf.xenqtt.message.ChannelManager;
-import net.sf.xenqtt.message.ChannelManagerImpl;
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.DisconnectMessage;
@@ -36,42 +31,17 @@ import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
 /**
- * Handles messages from proxy server clients before they are assigned to a cluster
+ * Handles messages for the client end of the connection to the broker for a proxied cluster.
  */
-public final class ServerMessageHandler implements MessageHandler {
-
-	private final String brokerUri;
-	private final Map<String, ChannelManager> channelManagerByClientId = new HashMap<String, ChannelManager>();
-	private final ChannelManager serverChannelManager;
-
-	/**
-	 * @param brokerUri
-	 *            URI of the MQTT broker new clusters connect to
-	 * @param serverChannelManager
-	 *            {@link ChannelManager} this handler is used by
-	 */
-	public ServerMessageHandler(String brokerUri, ChannelManager serverChannelManager) {
-		this.brokerUri = brokerUri;
-		this.serverChannelManager = serverChannelManager;
-	}
+public final class ClientMessageHandler implements MessageHandler {
 
 	/**
 	 * @see net.sf.xenqtt.message.MessageHandler#connect(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)
 	 */
 	@Override
 	public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
+		// TODO Auto-generated method stub
 
-		String clientId = message.getClientId();
-		ChannelManager manager = channelManagerByClientId.get(clientId);
-		if (manager == null) {
-			manager = new ChannelManagerImpl(0);
-			channelManagerByClientId.put(clientId, manager);
-		}
-
-		serverChannelManager.detachChannel(channel);
-
-		BrokerMessageHandler handler = new BrokerMessageHandler(brokerUri, message);
-		manager.attachChannel(channel, handler);
 	}
 
 	/**
@@ -79,7 +49,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void connAck(MqttChannel channel, ConnAckMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -87,7 +58,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void publish(MqttChannel channel, PubMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -95,7 +67,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void pubAck(MqttChannel channel, PubAckMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -103,7 +76,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void pubRec(MqttChannel channel, PubRecMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -111,7 +85,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void pubRel(MqttChannel channel, PubRelMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -119,7 +94,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void pubComp(MqttChannel channel, PubCompMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -127,7 +103,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void subscribe(MqttChannel channel, SubscribeMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -135,12 +112,17 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void subAck(MqttChannel channel, SubAckMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#unsubscribe(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.UnsubscribeMessage)
+	 */
 	@Override
 	public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -148,7 +130,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void unsubAck(MqttChannel channel, UnsubAckMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -156,7 +139,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void disconnect(MqttChannel channel, DisconnectMessage message) throws Exception {
-		// Should never happen
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -164,7 +148,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelOpened(MqttChannel channel) {
-		// ignore
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
@@ -172,7 +157,8 @@ public final class ServerMessageHandler implements MessageHandler {
 	 */
 	@Override
 	public void channelClosed(MqttChannel channel, Throwable cause) {
-		// ignore
+		// TODO Auto-generated method stub
+
 	}
 
 	/**
