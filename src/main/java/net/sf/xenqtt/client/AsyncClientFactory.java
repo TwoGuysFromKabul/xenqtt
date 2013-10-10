@@ -20,13 +20,7 @@ import java.util.concurrent.Executor;
 /**
  * Used to create multiple "sibling" {@link AsyncMqttClient async clients} that share an {@link Executor}, broker URI, etc.
  */
-public interface AsyncClientFactory {
-
-	/**
-	 * Stops this factory. Closes all open connections to the broker. Blocks until shutdown is complete. Any other methods called after this have unpredictable
-	 * results.
-	 */
-	void shutdown();
+public interface AsyncClientFactory extends ClientFactory {
 
 	/**
 	 * Creates an asynchronous {@link MqttClient client}. You may only use this method if the factory was constructed to create asynchronous clients.

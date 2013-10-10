@@ -33,6 +33,7 @@ public final class MqttClientConfig implements Cloneable {
 	private int messageResendIntervalSeconds = 30;
 	private int blockingTimeoutSeconds = 0;
 	private int keepAliveSeconds = 300;
+	private MqttClientDebugListener clientDebugListener;
 
 	/**
 	 * @return The algorithm used to reconnect to the broker if the connection is lost.
@@ -177,6 +178,22 @@ public final class MqttClientConfig implements Cloneable {
 	public MqttClientConfig setKeepAliveSeconds(int keepAliveSeconds) {
 		this.keepAliveSeconds = XenqttUtil.validateGreaterThanOrEqualTo("keepAliveSeconds", keepAliveSeconds, 0);
 		return this;
+	}
+
+	/**
+	 * @return The {@link MqttClientDebugListener listener} that will receive events for this client. Null if there is no listener.
+	 */
+	public MqttClientDebugListener getClientDebugListener() {
+		return clientDebugListener;
+	}
+
+	/**
+	 * @param clientDebugListener
+	 *            The {@link MqttClientDebugListener listener} that will receive events for this client. Null to have no listener. This can have a significant
+	 *            performance impact and should only be used when debugging.
+	 */
+	public void setClientDebugListener(MqttClientDebugListener clientDebugListener) {
+		this.clientDebugListener = clientDebugListener;
 	}
 
 	/**
