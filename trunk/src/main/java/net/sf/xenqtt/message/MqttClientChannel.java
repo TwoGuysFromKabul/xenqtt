@@ -39,8 +39,8 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when the {@link ConnAckMessage} is received.
 	 */
 	public MqttClientChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis,
-			BlockingCommand<?> connectionCompleteCommand) throws IOException {
-		super(host, port, handler, selector, messageResendIntervalMillis, connectionCompleteCommand);
+			BlockingCommand<?> connectionCompleteCommand, MutableMessageStats stats) throws IOException {
+		super(host, port, handler, selector, messageResendIntervalMillis, connectionCompleteCommand, stats);
 	}
 
 	/**

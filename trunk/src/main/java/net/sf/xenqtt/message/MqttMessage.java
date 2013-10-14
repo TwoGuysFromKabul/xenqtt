@@ -53,7 +53,7 @@ public class MqttMessage {
 	/**
 	 * The time when this message is queued for eventual sending. This is used to track the send latency.
 	 */
-	long queuedTime;
+	long originalSendTime;
 
 	private MessageType messageType;
 

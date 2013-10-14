@@ -25,7 +25,7 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 
 	@Override
 	MqttClientChannel newClientChannel(BlockingCommand<?> connectionCompleteCommand) throws Exception {
-		return new MqttClientChannel("localhost", port, clientHandler, selector, 10000, connectionCompleteCommand);
+		return new MqttClientChannel("localhost", port, clientHandler, selector, 10000, connectionCompleteCommand, null);
 	}
 
 	@Override

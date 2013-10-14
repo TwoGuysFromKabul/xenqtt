@@ -32,8 +32,9 @@ public final class MqttBrokerChannel extends AbstractMqttChannel {
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	public MqttBrokerChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
-		super(channel, handler, selector, messageResendIntervalMillis);
+	public MqttBrokerChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis, MutableMessageStats stats)
+			throws IOException {
+		super(channel, handler, selector, messageResendIntervalMillis, stats);
 	}
 
 	/**

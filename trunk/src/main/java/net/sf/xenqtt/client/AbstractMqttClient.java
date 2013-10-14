@@ -294,7 +294,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 * @see net.sf.xenqtt.client.MqttClient#getStats(boolean)
 	 */
 	@Override
-	public MqttClientStats getStats(boolean reset) {
+	public MessageStats getStats(boolean reset) {
 		return manager.getStats(reset);
 	}
 
@@ -441,33 +441,6 @@ abstract class AbstractMqttClient implements MqttClient {
 	private final class AsyncMessageHandler implements MessageHandler {
 
 		private final MqttClient client = AbstractMqttClient.this;
-
-		/**
-		 * @see net.sf.xenqtt.message.MessageHandler#messageSent(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
-		 */
-		@Override
-		public void messageSent(MqttChannel channel, MqttMessage message) {
-			// TODO [jeremy] - Implement this method.
-
-		}
-
-		/**
-		 * @see net.sf.xenqtt.message.MessageHandler#messageReceived(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
-		 */
-		@Override
-		public void messageReceived(MqttChannel channel, MqttMessage message) {
-			// TODO [jeremy] - Implement this method.
-
-		}
-
-		/**
-		 * @see net.sf.xenqtt.message.MessageHandler#messageReceived(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage, long)
-		 */
-		@Override
-		public void messageReceived(MqttChannel channel, MqttMessage message, long latency) {
-			// TODO [jeremy] - Implement this method.
-
-		}
 
 		/**
 		 * @see net.sf.xenqtt.message.MessageHandler#connect(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)

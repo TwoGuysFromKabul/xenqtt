@@ -20,7 +20,7 @@ import net.sf.xenqtt.message.QoS;
 /**
  * Statistics for the MQTT client
  */
-public interface MqttClientStats {
+public interface MessageStats {
 
 	/**
 	 * @return The number of messages queued to send. These messages are waiting to be sent. This stat cannot be reset

@@ -22,23 +22,6 @@ package net.sf.xenqtt.message;
 public interface MessageHandler {
 
 	/**
-	 * Called when an {@link MqttMessage MQTT message} of arbitrary type is fully sent into the TCP buffer for dispatch to the broker.
-	 */
-	void messageSent(MqttChannel channel, MqttMessage message);
-
-	/**
-	 * Called when an {@link MqttMessage MQTT message} of arbitrary type is received from the broker. This callback is invoked prior to the message-specific
-	 * callback.
-	 */
-	void messageReceived(MqttChannel channel, MqttMessage message);
-
-	/**
-	 * Called when an {@link MqttMessage MQTT message} of arbitrary type is received from the broker. This particular callback is used for messages where
-	 * latency is tracked. This callback is invoked prior to the message-specific callback.
-	 */
-	void messageReceived(MqttChannel channel, MqttMessage message, long latency);
-
-	/**
 	 * Called when a {@link ConnectMessage} is received through the specified channel
 	 */
 	void connect(MqttChannel channel, ConnectMessage message) throws Exception;

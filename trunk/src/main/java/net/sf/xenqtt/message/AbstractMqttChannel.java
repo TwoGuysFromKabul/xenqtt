@@ -74,6 +74,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private boolean channelCloseCalled;
 
+	private final MutableMessageStats stats;
+
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
 	 * {@link SelectionKey#OP_CONNECT} as a ready op then {@link #finishConnect()} should be called.
@@ -84,11 +86,12 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 *            If not null then this latch is {@link BlockingCommand#complete(Throwable) complete} when the connection is established.
 	 */
 	AbstractMqttChannel(String host, int port, MessageHandler handler, Selector selector, long messageResendIntervalMillis,
-			BlockingCommand<?> connectionCompleteCommand) throws IOException {
+			BlockingCommand<?> connectionCompleteCommand, MutableMessageStats stats) throws IOException {
 
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
 		this.connectionCompleteCommand = connectionCompleteCommand;
+		this.stats = stats;
 
 		try {
 			this.channel = SocketChannel.open();
@@ -113,10 +116,12 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @param messageResendIntervalMillis
 	 *            Millis between attempts to resend a message that {@link MqttMessage#isAckable()}. 0 to disable message resends
 	 */
-	AbstractMqttChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
+	AbstractMqttChannel(SocketChannel channel, MessageHandler handler, Selector selector, long messageResendIntervalMillis, MutableMessageStats stats)
+			throws IOException {
 
 		this.handler = handler;
 		this.messageResendIntervalMillis = messageResendIntervalMillis;
+		this.stats = stats;
 		this.connectionCompleteCommand = null;
 		this.channel = channel;
 
@@ -459,7 +464,6 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			message.buffer.rewind();
 
 			Log.debug("%s sending %s", this, message);
-			message.queuedTime = now;
 			if (sendMessageInProgress != null) {
 				writesPending.offer(message);
 				return true;
@@ -491,7 +495,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			Log.debug("%s sent %s", this, sendMessageInProgress);
 
-			// TODO [jeremy] - Message has been completely sent. Update the stats accordingly.
+			if (!sendMessageInProgress.isDuplicate()) {
+				sendMessageInProgress.originalSendTime = now;
+			}
+			stats.messageSent(sendMessageInProgress.isDuplicate());
 
 			MessageType type = sendMessageInProgress.getMessageType();
 			if (type == MessageType.DISCONNECT) {
@@ -751,13 +758,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case PUBACK:
 				PubAckMessage pubAckMessage = new PubAckMessage(buffer);
 				msg = pubAckMessage;
-				ackReceived(pubAckMessage);
+				ackReceived(pubAckMessage, now);
 				handler.pubAck(this, pubAckMessage);
 				break;
 			case PUBREC:
 				PubRecMessage pubRecMessage = new PubRecMessage(buffer);
 				msg = pubRecMessage;
-				ackReceived(pubRecMessage);
+				ackReceived(pubRecMessage, now);
 				handler.pubRec(this, pubRecMessage);
 				break;
 			case PUBREL:
@@ -768,7 +775,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case PUBCOMP:
 				PubCompMessage pubCompMessage = new PubCompMessage(buffer);
 				msg = pubCompMessage;
-				ackReceived(pubCompMessage);
+				ackReceived(pubCompMessage, now);
 				handler.pubComp(this, pubCompMessage);
 				break;
 			case SUBSCRIBE:
@@ -779,7 +786,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case SUBACK:
 				SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength);
 				msg = subAckMessage;
-				ackReceived(subAckMessage);
+				ackReceived(subAckMessage, now);
 				handler.subAck(this, subAckMessage);
 				break;
 			case UNSUBSCRIBE:
@@ -790,7 +797,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			case UNSUBACK:
 				UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer);
 				msg = unsubAckMessage;
-				ackReceived(unsubAckMessage);
+				ackReceived(unsubAckMessage, now);
 				handler.unsubAck(this, unsubAckMessage);
 				break;
 			case PINGREQ:
@@ -815,8 +822,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			Log.debug("%s received %s", this, msg);
 
-			// TODO [jeremy] - This is where messageReceived would be invoked via the stats.
-
+			stats.messageReceived(msg.isDuplicate());
 		} catch (Exception e) {
 
 			if (msg != null) {
@@ -830,10 +836,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		return result;
 	}
 
-	private void ackReceived(IdentifiableMqttMessage ackMessage) {
+	private void ackReceived(IdentifiableMqttMessage ackMessage, long now) {
 
 		IdentifiableMqttMessage ackedMessage = inFlightMessages.remove(ackMessage.getMessageId());
 		if (ackedMessage != null) {
+			if (ackedMessage instanceof PubAckMessage) {
+				stats.messageAcked(now - ackMessage.originalSendTime);
+			}
 			commandComplete(ackedMessage.blockingCommand, ackMessage);
 		}
 	}
