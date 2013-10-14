@@ -39,7 +39,7 @@ import net.sf.xenqtt.MqttInvocationError;
 import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.client.LatencyStat;
-import net.sf.xenqtt.client.MqttClientStats;
+import net.sf.xenqtt.client.MessageStats;
 
 /**
  * Uses a single thread and non-blocking NIO to manage one or more {@link MqttChannel}s. You must call {@link #init()} before using this manager and
@@ -59,7 +59,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final boolean blocking;
 	private final long blockingTimeoutMillis;
 
-	private final MqttClientStatsImpl stats;
+	private final MessageStatsImpl stats;
 
 	/**
 	 * Use this constructor for the asynchronous API
@@ -85,7 +85,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		this.blocking = blockingTimeoutSeconds >= 0;
 		this.blockingTimeoutMillis = blockingTimeoutSeconds <= 0 ? Long.MAX_VALUE : blockingTimeoutSeconds * 1000;
 		this.messageResendIntervalMillis = messageResendIntervalSeconds * 1000;
-		this.stats = new MqttClientStatsImpl(openChannels);
+		this.stats = new MessageStatsImpl(openChannels);
 		ioThread = new Thread(new Runnable() {
 
 			@Override
@@ -265,7 +265,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 * @see net.sf.xenqtt.message.ChannelManager#getStats(boolean)
 	 */
 	@Override
-	public MqttClientStats getStats(boolean reset) {
+	public MessageStats getStats(boolean reset) {
 		return addCommand(new GetStatsCommand(stats, reset)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
@@ -610,7 +610,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		@Override
 		public void doExecute(long now) throws Exception {
-			MqttChannel c = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this);
+			MqttChannel c = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this, stats);
 			channel = new DelegatingMqttChannel(c);
 			addToOpenChannels(c);
 			setResult(channel);
@@ -631,7 +631,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		@Override
 		public void doExecute(long now) {
 			try {
-				MqttBrokerChannel channel = new MqttBrokerChannel(socketChannel, messageHandler, selector, messageResendIntervalMillis);
+				MqttBrokerChannel channel = new MqttBrokerChannel(socketChannel, messageHandler, selector, messageResendIntervalMillis, stats);
 				addToOpenChannels(channel);
 				setResult(channel);
 			} catch (Exception e) {
@@ -656,12 +656,12 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 	}
 
-	private final class GetStatsCommand extends Command<MqttClientStats> {
+	private final class GetStatsCommand extends Command<MessageStats> {
 
-		private final MqttClientStatsImpl stats;
+		private final MessageStatsImpl stats;
 		private final boolean reset;
 
-		public GetStatsCommand(MqttClientStatsImpl stats, boolean reset) {
+		public GetStatsCommand(MessageStatsImpl stats, boolean reset) {
 			super(true);
 			this.stats = stats;
 			this.reset = reset;
@@ -670,7 +670,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		@Override
 		public void doExecute(long now) {
 			try {
-				MqttClientStats stats = this.stats.clone();
+				MessageStats stats = this.stats.clone();
 				if (reset) {
 					this.stats.reset();
 				}
@@ -683,7 +683,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	}
 
-	private final class MqttClientStatsImpl implements MqttClientStats {
+	private final class MessageStatsImpl implements MutableMessageStats {
 
 		private final Set<MqttChannel> registeredChannels;
 		private final long messagesQueuedToSend;
@@ -692,7 +692,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		private final MessageStat messagesReceived;
 		private final LatencyStatImpl ackLatency;
 
-		public MqttClientStatsImpl(Set<MqttChannel> registeredChannels) {
+		public MessageStatsImpl(Set<MqttChannel> registeredChannels) {
 			this.registeredChannels = registeredChannels;
 			messagesQueuedToSend = 0;
 			messagesInFlight = 0;
@@ -702,7 +702,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesQueuedToSend()
+		 * @see net.sf.xenqtt.client.MessageStats#getMessagesQueuedToSend()
 		 */
 		@Override
 		public long getMessagesQueuedToSend() {
@@ -710,7 +710,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesInFlight()
+		 * @see net.sf.xenqtt.client.MessageStats#getMessagesInFlight()
 		 */
 		@Override
 		public long getMessagesInFlight() {
@@ -718,7 +718,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesSent()
+		 * @see net.sf.xenqtt.client.MessageStats#getMessagesSent()
 		 */
 		@Override
 		public long getMessagesSent() {
@@ -726,7 +726,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesResent()
+		 * @see net.sf.xenqtt.client.MessageStats#getMessagesResent()
 		 */
 		@Override
 		public long getMessagesResent() {
@@ -734,7 +734,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesReceived()
+		 * @see net.sf.xenqtt.client.MessageStats#getMessagesReceived()
 		 */
 		@Override
 		public long getMessagesReceived() {
@@ -742,7 +742,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getDuplicateMessagesReceived()
+		 * @see net.sf.xenqtt.client.MessageStats#getDuplicateMessagesReceived()
 		 */
 		@Override
 		public long getDuplicateMessagesReceived() {
@@ -750,7 +750,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getMinAckLatencyMillis()
+		 * @see net.sf.xenqtt.client.MessageStats#getMinAckLatencyMillis()
 		 */
 		@Override
 		public long getMinAckLatencyMillis() {
@@ -758,7 +758,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getMaxAckLatencyMillis()
+		 * @see net.sf.xenqtt.client.MessageStats#getMaxAckLatencyMillis()
 		 */
 		@Override
 		public long getMaxAckLatencyMillis() {
@@ -766,33 +766,49 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * @see net.sf.xenqtt.client.MqttClientStats#getAverageAckLatencyMillis()
+		 * @see net.sf.xenqtt.client.MessageStats#getAverageAckLatencyMillis()
 		 */
 		@Override
 		public double getAverageAckLatencyMillis() {
 			return ackLatency.getAverage();
 		}
 
-		private void messageSent(boolean resent) {
+		/**
+		 * @see net.sf.xenqtt.message.MutableMessageStats#messageSent(boolean)
+		 */
+		@Override
+		public void messageSent(boolean resent) {
 			messagesSent.messageInteraction(resent);
 		}
 
-		private void messageAcked(long ackLatency) {
+		/**
+		 * @see net.sf.xenqtt.message.MutableMessageStats#messageAcked(long)
+		 */
+		@Override
+		public void messageAcked(long ackLatency) {
 			this.ackLatency.processLatency(ackLatency);
 		}
 
-		private void messageReceived(boolean duplicate) {
+		/**
+		 * @see net.sf.xenqtt.message.MutableMessageStats#messageReceived(boolean)
+		 */
+		@Override
+		public void messageReceived(boolean duplicate) {
 			messagesReceived.messageInteraction(duplicate);
 		}
 
-		private void reset() {
+		/**
+		 * @see net.sf.xenqtt.message.MutableMessageStats#reset()
+		 */
+		@Override
+		public void reset() {
 			messagesSent.reset();
 			messagesReceived.reset();
 			ackLatency.reset();
 		}
 
 		/**
-		 * Returns a clone of this {@link MqttClientStatsImpl stats} instance. This method is invoked when a stats snapshot is requested. The clone is a deep
+		 * Returns a clone of this {@link MessageStatsImpl stats} instance. This method is invoked when a stats snapshot is requested. The clone is a deep
 		 * copy.
 		 * 
 		 * @return A deep copy of this instance
@@ -800,12 +816,12 @@ public final class ChannelManagerImpl implements ChannelManager {
 		 * @see java.lang.Object#clone()
 		 */
 		@Override
-		public MqttClientStatsImpl clone() {
+		public MessageStatsImpl clone() {
 			long queuedToSend = getQueuedToSend();
 			long inFlight = getInFlight();
 
 			try {
-				return new MqttClientStatsImpl(queuedToSend, inFlight, messagesSent.clone(), messagesReceived.clone(), ackLatency.clone());
+				return new MessageStatsImpl(queuedToSend, inFlight, messagesSent.clone(), messagesReceived.clone(), ackLatency.clone());
 			} catch (Exception ex) {
 				Log.error(ex, "Unable to get the statistics snapshot");
 				return null;
@@ -839,7 +855,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		/**
-		 * Create a new instance of this class. This constructor is used when making a deep copy of this {@link MqttClientStatsImpl stats} instance.
+		 * Create a new instance of this class. This constructor is used when making a deep copy of this {@link MessageStatsImpl stats} instance.
 		 * 
 		 * @param messagesQueuedToSend
 		 *            The messages currently queued for sending at the time of construction
@@ -856,7 +872,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		 * @param ackLatency
 		 *            The latency around acks
 		 */
-		private MqttClientStatsImpl(long messagesQueuedToSend, long messagesInFlight, MessageStat messagesSent, MessageStat messagesReceived,
+		private MessageStatsImpl(long messagesQueuedToSend, long messagesInFlight, MessageStat messagesSent, MessageStat messagesReceived,
 				LatencyStatImpl ackLatency) {
 			this.messagesQueuedToSend = messagesQueuedToSend;
 			this.messagesInFlight = messagesInFlight;

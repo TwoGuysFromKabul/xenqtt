@@ -30,7 +30,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 
 	@Override
 	MqttBrokerChannel newBrokerChannel(SocketChannel brokerSocketChannel) throws Exception {
-		return new MqttBrokerChannel(brokerSocketChannel, brokerHandler, selector, 10000);
+		return new MqttBrokerChannel(brokerSocketChannel, brokerHandler, selector, 10000, null);
 	}
 
 	@Test

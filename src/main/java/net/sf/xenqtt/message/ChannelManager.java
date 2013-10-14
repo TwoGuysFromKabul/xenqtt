@@ -25,7 +25,7 @@ import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttInvocationError;
 import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
-import net.sf.xenqtt.client.MqttClientStats;
+import net.sf.xenqtt.client.MessageStats;
 
 /**
  * <p>
@@ -359,7 +359,7 @@ public interface ChannelManager {
 	 *            If {@code true} following the acquisition of the statistics all applicable counters that can be reset will be. This is useful if statistics
 	 *            are being gathered and reported at regular intervals and the desire is to see the statistics for the previous interval
 	 * 
-	 * @return The {@link MqttClientStats statistics} for the MQTT client
+	 * @return The {@link MessageStats statistics} for the MQTT client
 	 */
-	MqttClientStats getStats(boolean reset);
+	MessageStats getStats(boolean reset);
 }

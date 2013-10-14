@@ -13,14 +13,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package net.sf.xenqtt.client;
+package net.sf.xenqtt.message;
 
-import net.sf.xenqtt.message.MqttMessage;
+import net.sf.xenqtt.client.MessageStats;
 
 /**
- * Extends {@link MqttClientStats} to add methods used to update the stats
+ * Extends {@link MessageStats} to add methods used to update the stats
  */
-interface MutableMqttClientStats extends MqttClientStats, Cloneable {
+interface MutableMessageStats extends MessageStats, Cloneable {
 
 	/**
 	 * Called when a message is successfully sent.

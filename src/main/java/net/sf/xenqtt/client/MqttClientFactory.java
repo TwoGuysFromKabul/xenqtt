@@ -172,7 +172,7 @@ public final class MqttClientFactory implements AsyncClientFactory, SyncClientFa
 	 * @see net.sf.xenqtt.client.ClientFactory#getStats(boolean)
 	 */
 	@Override
-	public MqttClientStats getStats(boolean reset) {
+	public MessageStats getStats(boolean reset) {
 		return manager.getStats(reset);
 	}
 

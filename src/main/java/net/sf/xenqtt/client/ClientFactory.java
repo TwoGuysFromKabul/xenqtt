@@ -33,5 +33,5 @@ public interface ClientFactory {
 	 * 
 	 * @return A snapshot of the statistics for all the clients created by this factory.
 	 */
-	MqttClientStats getStats(boolean reset);
+	MessageStats getStats(boolean reset);
 }

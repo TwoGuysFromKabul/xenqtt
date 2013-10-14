@@ -327,5 +327,5 @@ public interface MqttClient {
 	 * @return A snapshot of the statistics for this client. If this client was created using an {@link MqttClientFactory} these stats will be for all the
 	 *         clients created using the same factory as this client.
 	 */
-	MqttClientStats getStats(boolean reset);
+	MessageStats getStats(boolean reset);
 }
