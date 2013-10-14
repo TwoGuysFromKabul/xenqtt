@@ -20,6 +20,7 @@ import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.DisconnectMessage;
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
+import net.sf.xenqtt.message.MqttMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubCompMessage;
 import net.sf.xenqtt.message.PubMessage;
@@ -41,6 +42,27 @@ public final class BrokerMessageHandler implements MessageHandler {
 	public BrokerMessageHandler(String brokerUri, ConnectMessage message) {
 		this.brokerUri = brokerUri;
 		this.message = message;
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#messageSent(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
+	 */
+	@Override
+	public void messageSent(MqttChannel channel, MqttMessage message) {
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#messageReceived(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
+	 */
+	@Override
+	public void messageReceived(MqttChannel channel, MqttMessage message) {
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#messageReceived(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage, long)
+	 */
+	@Override
+	public void messageReceived(MqttChannel channel, MqttMessage message, long latency) {
 	}
 
 	/**
