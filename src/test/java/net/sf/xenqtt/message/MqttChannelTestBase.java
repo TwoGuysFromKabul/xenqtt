@@ -182,11 +182,11 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 10000);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		clientChannel.send(connMsg, null);
+		clientChannel.send(connMsg, null, now);
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		brokerChannel.send(ackMsg, null);
+		brokerChannel.send(ackMsg, null, now);
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
@@ -199,7 +199,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	 */
 	void disconnect() throws Exception {
 
-		clientChannel.send(new DisconnectMessage(), null);
+		clientChannel.send(new DisconnectMessage(), null, now);
 		readWrite(0, 1);
 
 		assertFalse(clientChannel.isConnected());

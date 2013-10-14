@@ -168,6 +168,14 @@ public final class MqttClientFactory implements AsyncClientFactory, SyncClientFa
 		return new FactoryClient(asyncClientListener, asyncClientListener);
 	}
 
+	/**
+	 * @see net.sf.xenqtt.client.ClientFactory#getStats(boolean)
+	 */
+	@Override
+	public MqttClientStats getStats(boolean reset) {
+		return manager.getStats(reset);
+	}
+
 	private MqttClientFactory(String brokerUri, int messageHandlerThreadPoolSize, Executor executor, boolean synchronous, MqttClientConfig config) {
 
 		this.config = config.clone();

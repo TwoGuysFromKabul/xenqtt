@@ -15,31 +15,29 @@
  */
 package net.sf.xenqtt.client;
 
-import net.sf.xenqtt.message.MqttMessage;
-
 /**
- * Extends {@link MqttClientStats} to add methods used to update the stats
+ * Specifies a type that provides latency-based statistics for disparate Xenqtt operations.
  */
-interface MutableMqttClientStats extends MqttClientStats, Cloneable {
+public interface LatencyStat {
 
 	/**
-	 * Called when a message is successfully sent.
+	 * @return The count of events that have been received by this stat
 	 */
-	void messageSent(boolean resent);
+	long getCount();
 
 	/**
-	 * Called when a message has been ACKed by the broker.
+	 * @return The minimum latency value received thus far
 	 */
-	void messageAcked(long ackLatency);
+	long getMin();
 
 	/**
-	 * Called when a message has been received. The {@link MqttMessage#isDuplicate()} must be correctly set when this is called.
+	 * @return The maximum latency value received thus far
 	 */
-	void messageReceived(boolean duplicate);
+	long getMax();
 
 	/**
-	 * Resets all applicable stats
+	 * @return The average latency
 	 */
-	void reset();
+	double getAverage();
 
 }

@@ -50,6 +50,11 @@ public class MqttMessage {
 	 */
 	BlockingCommand<MqttMessage> blockingCommand;
 
+	/**
+	 * The time when this message is queued for eventual sending. This is used to track the send latency.
+	 */
+	long queuedTime;
+
 	private MessageType messageType;
 
 	/**

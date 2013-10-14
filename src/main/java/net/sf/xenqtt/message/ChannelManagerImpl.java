@@ -38,6 +38,8 @@ import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttInvocationError;
 import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
+import net.sf.xenqtt.client.LatencyStat;
+import net.sf.xenqtt.client.MqttClientStats;
 
 /**
  * Uses a single thread and non-blocking NIO to manage one or more {@link MqttChannel}s. You must call {@link #init()} before using this manager and
@@ -56,6 +58,8 @@ public final class ChannelManagerImpl implements ChannelManager {
 	private final Selector selector;
 	private final boolean blocking;
 	private final long blockingTimeoutMillis;
+
+	private final MqttClientStatsImpl stats;
 
 	/**
 	 * Use this constructor for the asynchronous API
@@ -81,6 +85,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		this.blocking = blockingTimeoutSeconds >= 0;
 		this.blockingTimeoutMillis = blockingTimeoutSeconds <= 0 ? Long.MAX_VALUE : blockingTimeoutSeconds * 1000;
 		this.messageResendIntervalMillis = messageResendIntervalSeconds * 1000;
+		this.stats = new MqttClientStatsImpl(openChannels);
 		ioThread = new Thread(new Runnable() {
 
 			@Override
@@ -254,7 +259,15 @@ public final class ChannelManagerImpl implements ChannelManager {
 			MqttInterruptedException, MqttInvocationException, MqttInvocationError {
 
 		addCommand(new AttachChannelCommand(channel, messageHandler)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
-	};
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.ChannelManager#getStats(boolean)
+	 */
+	@Override
+	public MqttClientStats getStats(boolean reset) {
+		return addCommand(new GetStatsCommand(stats, reset)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+	}
 
 	private void closeAll() {
 
@@ -421,7 +434,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			if (command == null) {
 				break;
 			}
-			command.execute();
+			command.execute(now);
 			if (command.unblockImmediately) {
 				command.complete();
 			}
@@ -437,19 +450,13 @@ public final class ChannelManagerImpl implements ChannelManager {
 	}
 
 	private void addToOpenChannels(MqttChannel channel) {
-		if (channel instanceof DelegatingMqttChannel) {
-			openChannels.add(((DelegatingMqttChannel) channel).delegate);
-		} else {
-			openChannels.add(channel);
-		}
+		channel = channel instanceof DelegatingMqttChannel ? ((DelegatingMqttChannel) channel).delegate : channel;
+		openChannels.add(channel);
 	}
 
 	private void removeFromOpenChannels(MqttChannel channel) {
-		if (channel instanceof DelegatingMqttChannel) {
-			openChannels.remove(((DelegatingMqttChannel) channel).delegate);
-		} else {
-			openChannels.remove(channel);
-		}
+		channel = channel instanceof DelegatingMqttChannel ? ((DelegatingMqttChannel) channel).delegate : channel;
+		openChannels.remove(channel);
 	}
 
 	private abstract class Command<T> extends AbstractBlockingCommand<T> {
@@ -473,8 +480,8 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
-			channel.send(message, this);
+		public void doExecute(long now) {
+			channel.send(message, this, now);
 		}
 	}
 
@@ -490,7 +497,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 
 			channel.close(cause);
 		}
@@ -506,7 +513,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 
 			channel.cancelBlockingCommands();
 		}
@@ -524,12 +531,12 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 
 			List<MqttMessage> unsentMessages = oldChannel.getUnsentMessages();
 			for (MqttMessage message : unsentMessages) {
 				message.blockingCommand.setFailureCause(null);
-				newChannel.send(message, message.blockingCommand);
+				newChannel.send(message, message.blockingCommand, now);
 			}
 			oldChannel.delegate = newChannel.delegate;
 		}
@@ -545,7 +552,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 
 			List<MqttMessage> unsentMessages = channel.getUnsentMessages();
 			setResult(unsentMessages);
@@ -562,7 +569,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 
 			removeFromOpenChannels(channel);
 			channel.deregister();
@@ -581,7 +588,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 			channel.register(selector, messageHandler);
 			addToOpenChannels(channel);
 		}
@@ -602,7 +609,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() throws Exception {
+		public void doExecute(long now) throws Exception {
 			MqttChannel c = new MqttClientChannel(host, port, messageHandler, selector, messageResendIntervalMillis, this);
 			channel = new DelegatingMqttChannel(c);
 			addToOpenChannels(c);
@@ -622,7 +629,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 			try {
 				MqttBrokerChannel channel = new MqttBrokerChannel(socketChannel, messageHandler, selector, messageResendIntervalMillis);
 				addToOpenChannels(channel);
@@ -644,8 +651,303 @@ public final class ChannelManagerImpl implements ChannelManager {
 		}
 
 		@Override
-		public void doExecute() {
+		public void doExecute(long now) {
 			doShutdown = true;
 		}
+	}
+
+	private final class GetStatsCommand extends Command<MqttClientStats> {
+
+		private final MqttClientStatsImpl stats;
+		private final boolean reset;
+
+		public GetStatsCommand(MqttClientStatsImpl stats, boolean reset) {
+			super(true);
+			this.stats = stats;
+			this.reset = reset;
+		}
+
+		@Override
+		public void doExecute(long now) {
+			try {
+				MqttClientStats stats = this.stats.clone();
+				if (reset) {
+					this.stats.reset();
+				}
+
+				setResult(stats);
+			} catch (Exception ex) {
+				Log.error(ex, "Unable to get a snapshot of the current stats.");
+			}
+		}
+
+	}
+
+	private final class MqttClientStatsImpl implements MqttClientStats {
+
+		private final Set<MqttChannel> registeredChannels;
+		private final long messagesQueuedToSend;
+		private final long messagesInFlight;
+		private final MessageStat messagesSent;
+		private final MessageStat messagesReceived;
+		private final LatencyStatImpl ackLatency;
+
+		public MqttClientStatsImpl(Set<MqttChannel> registeredChannels) {
+			this.registeredChannels = registeredChannels;
+			messagesQueuedToSend = 0;
+			messagesInFlight = 0;
+			messagesSent = new MessageStat();
+			messagesReceived = new MessageStat();
+			ackLatency = new LatencyStatImpl();
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesQueuedToSend()
+		 */
+		@Override
+		public long getMessagesQueuedToSend() {
+			return messagesQueuedToSend;
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesInFlight()
+		 */
+		@Override
+		public long getMessagesInFlight() {
+			return messagesInFlight;
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesSent()
+		 */
+		@Override
+		public long getMessagesSent() {
+			return messagesSent.value;
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesResent()
+		 */
+		@Override
+		public long getMessagesResent() {
+			return messagesSent.resendOrDup;
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesReceived()
+		 */
+		@Override
+		public long getMessagesReceived() {
+			return messagesReceived.value;
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getDuplicateMessagesReceived()
+		 */
+		@Override
+		public long getDuplicateMessagesReceived() {
+			return messagesReceived.resendOrDup;
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getMinAckLatencyMillis()
+		 */
+		@Override
+		public long getMinAckLatencyMillis() {
+			return ackLatency.getMin();
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getMaxAckLatencyMillis()
+		 */
+		@Override
+		public long getMaxAckLatencyMillis() {
+			return ackLatency.getMax();
+		}
+
+		/**
+		 * @see net.sf.xenqtt.client.MqttClientStats#getAverageAckLatencyMillis()
+		 */
+		@Override
+		public double getAverageAckLatencyMillis() {
+			return ackLatency.getAverage();
+		}
+
+		private void messageSent(boolean resent) {
+			messagesSent.messageInteraction(resent);
+		}
+
+		private void messageAcked(long ackLatency) {
+			this.ackLatency.processLatency(ackLatency);
+		}
+
+		private void messageReceived(boolean duplicate) {
+			messagesReceived.messageInteraction(duplicate);
+		}
+
+		private void reset() {
+			messagesSent.reset();
+			messagesReceived.reset();
+			ackLatency.reset();
+		}
+
+		/**
+		 * Returns a clone of this {@link MqttClientStatsImpl stats} instance. This method is invoked when a stats snapshot is requested. The clone is a deep
+		 * copy.
+		 * 
+		 * @return A deep copy of this instance
+		 * 
+		 * @see java.lang.Object#clone()
+		 */
+		@Override
+		public MqttClientStatsImpl clone() {
+			long queuedToSend = getQueuedToSend();
+			long inFlight = getInFlight();
+
+			try {
+				return new MqttClientStatsImpl(queuedToSend, inFlight, messagesSent.clone(), messagesReceived.clone(), ackLatency.clone());
+			} catch (Exception ex) {
+				Log.error(ex, "Unable to get the statistics snapshot");
+				return null;
+			}
+		}
+
+		private long getQueuedToSend() {
+			if (registeredChannels == null) {
+				return 0;
+			}
+
+			long queuedForSend = 0;
+			for (MqttChannel channel : registeredChannels) {
+				queuedForSend += channel.sendQueueDepth();
+			}
+
+			return queuedForSend;
+		}
+
+		private long getInFlight() {
+			if (registeredChannels == null) {
+				return 0;
+			}
+
+			long inFlight = 0;
+			for (MqttChannel channel : registeredChannels) {
+				inFlight += channel.inFlightMessageCount();
+			}
+
+			return inFlight;
+		}
+
+		/**
+		 * Create a new instance of this class. This constructor is used when making a deep copy of this {@link MqttClientStatsImpl stats} instance.
+		 * 
+		 * @param messagesQueuedToSend
+		 *            The messages currently queued for sending at the time of construction
+		 * @param messagesInFlight
+		 *            The messages in-flight at the time of construction
+		 * @param messagesReceived
+		 *            The messages received at the time of construction along with any resends
+		 * @param messagesQueued
+		 *            The messages that have been queued at the time of construction along with duplicates
+		 * @param processQueueLatency
+		 *            The latency of the process queue
+		 * @param sendLatency
+		 *            The latency of sending messages
+		 * @param ackLatency
+		 *            The latency around acks
+		 */
+		private MqttClientStatsImpl(long messagesQueuedToSend, long messagesInFlight, MessageStat messagesSent, MessageStat messagesReceived,
+				LatencyStatImpl ackLatency) {
+			this.messagesQueuedToSend = messagesQueuedToSend;
+			this.messagesInFlight = messagesInFlight;
+			this.messagesSent = messagesSent;
+			this.messagesReceived = messagesReceived;
+			this.ackLatency = ackLatency;
+			registeredChannels = null;
+		}
+
+		private final class MessageStat implements Cloneable {
+
+			private long value;
+			private long resendOrDup;
+
+			private void messageInteraction(boolean resendOrDup) {
+				value++;
+				if (resendOrDup) {
+					this.resendOrDup++;
+				}
+			}
+
+			private void reset() {
+				value = resendOrDup = 0;
+			}
+
+			@Override
+			public MessageStat clone() throws CloneNotSupportedException {
+				return (MessageStat) super.clone();
+			}
+
+		}
+
+		private final class LatencyStatImpl implements LatencyStat, Cloneable {
+
+			private long count;
+			private long sum;
+			private long min;
+			private long max;
+
+			private void processLatency(long latency) {
+				count++;
+				sum += latency;
+				if (min == 0 || latency < min) {
+					min = latency;
+				}
+
+				if (max == 0 || latency > max) {
+					max = latency;
+				}
+			}
+
+			@Override
+			public long getCount() {
+				return count;
+			}
+
+			@Override
+			public long getMin() {
+				return min;
+			}
+
+			/**
+			 * @see net.sf.xenqtt.client.LatencyStat#getMax()
+			 */
+			@Override
+			public long getMax() {
+				return max;
+			}
+
+			/**
+			 * @see net.sf.xenqtt.client.LatencyStat#getAverage()
+			 */
+			@Override
+			public double getAverage() {
+				if (count == 0) {
+					return 0.0;
+				}
+
+				return (sum * 1.0) / count;
+			}
+
+			private void reset() {
+				count = sum = min = max = 0;
+			}
+
+			@Override
+			public LatencyStatImpl clone() throws CloneNotSupportedException {
+				return (LatencyStatImpl) super.clone();
+			}
+
+		}
+
 	}
 }

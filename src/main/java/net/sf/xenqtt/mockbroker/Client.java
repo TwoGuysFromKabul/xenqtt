@@ -111,7 +111,7 @@ public final class Client {
 			inFlightMessages.add(pubMessage.getMessageId());
 		}
 
-		channel.send(message, null);
+		channel.send(message, null, Long.MIN_VALUE);
 		events.addEvent(BrokerEventType.MESSAGE_SENT, this, message);
 	}
 

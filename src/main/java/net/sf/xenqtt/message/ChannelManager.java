@@ -25,6 +25,7 @@ import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttInvocationError;
 import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
+import net.sf.xenqtt.client.MqttClientStats;
 
 /**
  * <p>
@@ -162,6 +163,7 @@ public interface ChannelManager {
 	 *            {@link #newChannel(String, int, MessageHandler)} or {@link #newChannel(SocketChannel, MessageHandler)} methods
 	 * @param message
 	 *            The {@code message} to send. This can be any type of MQTT message
+	 * 
 	 * @return In a synchronous implementation this returns the ack message if the message being sent is a {@link ConnectMessage} or has a
 	 *         {@link MqttMessage#getQoSLevel() QoS} > 0.
 	 * 
@@ -349,4 +351,15 @@ public interface ChannelManager {
 	 * @return True if this manager is running and not yet stopped. This really means the manager's IO thread is running.
 	 */
 	boolean isRunning();
+
+	/**
+	 * Request the current snapshot of statistics that are available from this {@link ChannelManager channel manager}.
+	 * 
+	 * @param reset
+	 *            If {@code true} following the acquisition of the statistics all applicable counters that can be reset will be. This is useful if statistics
+	 *            are being gathered and reported at regular intervals and the desire is to see the statistics for the previous interval
+	 * 
+	 * @return The {@link MqttClientStats statistics} for the MQTT client
+	 */
+	MqttClientStats getStats(boolean reset);
 }
