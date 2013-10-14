@@ -82,9 +82,9 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	 * @see net.sf.xenqtt.message.BlockingCommand#execute()
 	 */
 	@Override
-	public final void execute() {
+	public final void execute(long now) {
 		try {
-			doExecute();
+			doExecute(now);
 		} catch (Throwable t) {
 			setFailureCause(t);
 			complete();
@@ -129,10 +129,13 @@ public abstract class AbstractBlockingCommand<T> implements BlockingCommand<T> {
 	}
 
 	/**
-	 * Extensions implement this method to execute the command
+	 * Extensions implement this method to execute the command.
+	 * 
+	 * @param now
+	 *            The time the command is being executed
 	 * 
 	 * @throws Exception
 	 *             Any exception thrown by the command. This will be set as the failure cause using {@link #setFailureCause(Throwable)}.
 	 */
-	protected abstract void doExecute() throws Throwable;
+	protected abstract void doExecute(long now) throws Throwable;
 }

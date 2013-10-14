@@ -70,6 +70,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	private final MessageHandler messageHandler;
 	private final MqttClientListener mqttClientListener;
 	private final AsyncClientListener asyncClientListener;
+	private final MqttClientDebugListener debugListener;
 
 	private final Map<Integer, Object> dataByMessageId;
 	private final AtomicInteger messageIdGenerator = new AtomicInteger();
@@ -290,6 +291,14 @@ abstract class AbstractMqttClient implements MqttClient {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.client.MqttClient#getStats(boolean)
+	 */
+	@Override
+	public MqttClientStats getStats(boolean reset) {
+		return manager.getStats(reset);
+	}
+
+	/**
 	 * Package visible and only for use by the {@link MqttClientFactory}
 	 */
 	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener, Executor executor,
@@ -299,6 +308,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		this.config = config.clone();
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
+		this.debugListener = config.getClientDebugListener();
 		this.executor = executor;
 		this.scheduledExecutor = scheduledExecutor;
 		this.executorService = null;
@@ -335,6 +345,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		this.config = config.clone();
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
+		this.debugListener = config.getClientDebugListener();
 		this.executorService = executor == null ? Executors.newFixedThreadPool(messageHandlerThreadPoolSize) : null;
 		this.executor = executor == null ? executorService : executor;
 		this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -499,6 +510,21 @@ abstract class AbstractMqttClient implements MqttClient {
 
 				}
 			});
+
+			if (debugListener != null) {
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							// TODO [jeremy] - Need the local and remote addresses.
+							debugListener.messageReceived(client, null, null, message);
+						} catch (Exception ex) {
+							Log.error(ex, "Failed to provide a debug hook for %s: %s", channel, message);
+						}
+					}
+
+				});
+			}
 		}
 
 		/**
@@ -638,6 +664,20 @@ abstract class AbstractMqttClient implements MqttClient {
 
 					}
 				});
+
+				if (debugListener != null) {
+					executor.execute(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								// TODO [jeremy] - Get the local and remote addresses.
+								debugListener.connectionOpened(client, null, null);
+							} catch (Exception ex) {
+								Log.error(ex, "Failed to update the debug listener for %s", channel);
+							}
+						}
+					});
+				}
 			} else {
 				firstConnectPending = false;
 			}
@@ -661,6 +701,20 @@ abstract class AbstractMqttClient implements MqttClient {
 
 				}
 			});
+
+			if (debugListener != null) {
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							// TODO [jeremy] - Need the local and remote addresses.
+							debugListener.connectionOpened(client, null, null);
+						} catch (Exception ex) {
+							Log.error(ex, "Unable to notify the debug listener of channel closed.");
+						}
+					}
+				});
+			}
 		}
 
 		/**

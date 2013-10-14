@@ -79,8 +79,11 @@ public interface BlockingCommand<T> {
 	 * exception occurs {@link #setFailureCause(Throwable)} is called with the thrown exception and {@link #complete()} is invoked to complete the command. If
 	 * the command returns a result use {@link #setResult(Object)} to set it.
 	 * </p>
+	 * 
+	 * @param now
+	 *            The time the command was executed
 	 */
-	void execute();
+	void execute(long now);
 
 	/**
 	 * Sets the result of this command. This is the value returned by {@link #await()} and {@link #await(long, TimeUnit)}. This must be set before

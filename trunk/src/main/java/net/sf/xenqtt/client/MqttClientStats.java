@@ -23,86 +23,53 @@ import net.sf.xenqtt.message.QoS;
 public interface MqttClientStats {
 
 	/**
-	 * @return The number of messages queued to send. These messages are waiting to be sent.
+	 * @return The number of messages queued to send. These messages are waiting to be sent. This stat cannot be reset
 	 */
 	long getMessagesQueuedToSend();
 
 	/**
 	 * @return The number of messages currently in-flight. An in-flight message is a message with a QOS other than {@link QoS#AT_MOST_ONCE} that has been sent
-	 *         to the broker but that has not been acked by the broker.
+	 *         to the broker but that has not been acked by the broker. This stat cannot be reset
 	 */
 	long getMessagesInFlight();
 
 	/**
-	 * @return The number of messages that have been sent to the broker. This does not include the {@link #getMessagesResent() resent} messages.
+	 * @return The number of messages that have been sent to the broker. This does not include the {@link #getMessagesResent() resent} messages. This stat can
+	 *         be reset
 	 */
 	long getMessagesSent();
 
 	/**
-	 * @return The number of messages that have been resent. This happens when an ack is not received from the broker in a timely manner.
+	 * @return The number of messages that have been resent. This happens when an ack is not received from the broker in a timely manner. This stat can be reset
 	 */
 	long getMessagesResent();
 
 	/**
 	 * @return The number of messages that have been received from the broker. This does not include the {@link #getDuplicateMessagesReceived() duplicate}
-	 *         messages received.
+	 *         messages received. This stat can be reset
 	 */
 	long getMessagesReceived();
 
 	/**
-	 * @return The number of duplicate messages that have been received.
+	 * @return The number of duplicate messages that have been received. This stat can be reset
 	 */
 	long getDuplicateMessagesReceived();
 
 	/**
-	 * @return The number of messages that have been received and are queued for processing by the application.
-	 */
-	long getMessagesQueuedToProcess();
-
-	/**
-	 * @return Minimum milliseconds it takes to start processing a received message from the time it is received.
-	 */
-	long getMinProcessQueueLatencyMillis();
-
-	/**
-	 * @return Maximum milliseconds it takes to start processing a received message from the time it is received.
-	 */
-	long getMaxProcessQueueLatencyMillis();
-
-	/**
-	 * @return Average milliseconds it takes to start processing a received message from the time it is received.
-	 */
-	double getAverageProcessQueueLatencyMillis();
-
-	/**
-	 * @return Minimum milliseconds it takes to completely send a message from the time it is queued for sending
-	 */
-	long getMinSendLatencyMillis();
-
-	/**
-	 * @return Maximum milliseconds it takes to completely send a message from the time it is queued for sending
-	 */
-	long getMaxSendLatencyMillis();
-
-	/**
-	 * @return Average milliseconds it takes to completely send a message from the time it is queued for sending
-	 */
-	double getAverageSendLatencyMillis();
-
-	/**
 	 * @return Minimum milliseconds it takes to receive and ack from the broker for {@link QoS#AT_LEAST_ONCE} ({@link QoS#EXACTLY_ONCE not supported by the
-	 *         client})
+	 *         client}). This stat can be reset
 	 */
 	long getMinAckLatencyMillis();
 
 	/**
-	 * @return Max milliseconds it takes to receive and ack from the broker for {@link QoS#AT_LEAST_ONCE} ({@link QoS#EXACTLY_ONCE not supported by the client})
+	 * @return Max milliseconds it takes to receive and ack from the broker for {@link QoS#AT_LEAST_ONCE} ({@link QoS#EXACTLY_ONCE not supported by the client}
+	 *         ). This stat can be reset
 	 */
 	long getMaxAckLatencyMillis();
 
 	/**
 	 * @return Average milliseconds it takes to receive and ack from the broker for {@link QoS#AT_LEAST_ONCE} ({@link QoS#EXACTLY_ONCE not supported by the
-	 *         client})
+	 *         client}). This stat can be reset
 	 */
 	double getAverageAckLatencyMillis();
 }

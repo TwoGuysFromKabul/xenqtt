@@ -15,15 +15,35 @@
  */
 package net.sf.xenqtt.client;
 
+import java.util.Set;
+
+import net.sf.xenqtt.Log;
+import net.sf.xenqtt.message.MqttChannel;
+
 public class MqttClientStatsImpl implements MutableMqttClientStats {
+
+	private final Set<MqttChannel> registeredChannels;
+	private final long messagesQueuedToSend;
+	private final long messagesInFlight;
+	private final MessageStat messagesSent;
+	private final MessageStat messagesReceived;
+	private final LatencyStat ackLatency;
+
+	public MqttClientStatsImpl(Set<MqttChannel> registeredChannels) {
+		this.registeredChannels = registeredChannels;
+		messagesQueuedToSend = 0;
+		messagesInFlight = 0;
+		messagesSent = new MessageStat();
+		messagesReceived = new MessageStat();
+		ackLatency = new LatencyStat();
+	}
 
 	/**
 	 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesQueuedToSend()
 	 */
 	@Override
 	public long getMessagesQueuedToSend() {
-		// TODO Auto-generated method stub
-		return 0;
+		return messagesQueuedToSend;
 	}
 
 	/**
@@ -31,8 +51,7 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public long getMessagesInFlight() {
-		// TODO Auto-generated method stub
-		return 0;
+		return messagesInFlight;
 	}
 
 	/**
@@ -40,8 +59,7 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public long getMessagesSent() {
-		// TODO Auto-generated method stub
-		return 0;
+		return messagesSent.value;
 	}
 
 	/**
@@ -49,8 +67,7 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public long getMessagesResent() {
-		// TODO Auto-generated method stub
-		return 0;
+		return messagesSent.resendOrDup;
 	}
 
 	/**
@@ -58,8 +75,7 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public long getMessagesReceived() {
-		// TODO Auto-generated method stub
-		return 0;
+		return messagesReceived.value;
 	}
 
 	/**
@@ -67,71 +83,7 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public long getDuplicateMessagesReceived() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClientStats#getMessagesQueuedToProcess()
-	 */
-	@Override
-	public long getMessagesQueuedToProcess() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClientStats#getMinProcessQueueLatencyMillis()
-	 */
-	@Override
-	public long getMinProcessQueueLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClientStats#getMaxProcessQueueLatencyMillis()
-	 */
-	@Override
-	public long getMaxProcessQueueLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClientStats#getAverageProcessQueueLatencyMillis()
-	 */
-	@Override
-	public double getAverageProcessQueueLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClientStats#getMinSendLatencyMillis()
-	 */
-	@Override
-	public long getMinSendLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClientStats#getMaxSendLatencyMillis()
-	 */
-	@Override
-	public long getMaxSendLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/**
-	 * @see net.sf.xenqtt.client.MqttClientStats#getAverageSendLatencyMillis()
-	 */
-	@Override
-	public double getAverageSendLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
+		return messagesReceived.resendOrDup;
 	}
 
 	/**
@@ -139,8 +91,7 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public long getMinAckLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
+		return ackLatency.min;
 	}
 
 	/**
@@ -148,8 +99,7 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public long getMaxAckLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
+		return ackLatency.max;
 	}
 
 	/**
@@ -157,8 +107,176 @@ public class MqttClientStatsImpl implements MutableMqttClientStats {
 	 */
 	@Override
 	public double getAverageAckLatencyMillis() {
-		// TODO Auto-generated method stub
-		return 0;
+		return ackLatency.average();
+	}
+
+	/**
+	 * @see net.sf.xenqtt.client.MutableMqttClientStats#messageSent(boolean)
+	 */
+	@Override
+	public void messageSent(boolean resent) {
+		messagesSent.messageInteraction(resent);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.client.MutableMqttClientStats#messageAcked(long)
+	 */
+	@Override
+	public void messageAcked(long ackLatency) {
+		this.ackLatency.processLatency(ackLatency);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.client.MutableMqttClientStats#messageReceived(boolean)
+	 */
+	@Override
+	public void messageReceived(boolean duplicate) {
+		messagesReceived.messageInteraction(duplicate);
+	}
+
+	/**
+	 * @see net.sf.xenqtt.client.MutableMqttClientStats#reset()
+	 */
+	@Override
+	public void reset() {
+		messagesSent.reset();
+		messagesReceived.reset();
+		ackLatency.reset();
+	}
+
+	/**
+	 * Returns a clone of this {@link MqttClientStatsImpl stats} instance. This method is invoked when a stats snapshot is requested. The clone is a deep copy.
+	 * 
+	 * @return A deep copy of this instance
+	 * 
+	 * @see java.lang.Object#clone()
+	 */
+	@Override
+	public MqttClientStatsImpl clone() {
+		long queuedToSend = getQueuedToSend();
+		long inFlight = getInFlight();
+
+		try {
+			return new MqttClientStatsImpl(queuedToSend, inFlight, messagesSent.clone(), messagesReceived.clone(), ackLatency.clone());
+		} catch (Exception ex) {
+			Log.error(ex, "Unable to get the statistics snapshot");
+			return null;
+		}
+	}
+
+	private long getQueuedToSend() {
+		if (registeredChannels == null) {
+			return 0;
+		}
+
+		long queuedForSend = 0;
+		for (MqttChannel channel : registeredChannels) {
+			queuedForSend += channel.sendQueueDepth();
+		}
+
+		return queuedForSend;
+	}
+
+	private long getInFlight() {
+		if (registeredChannels == null) {
+			return 0;
+		}
+
+		long inFlight = 0;
+		for (MqttChannel channel : registeredChannels) {
+			inFlight += channel.inFlightMessageCount();
+		}
+
+		return inFlight;
+	}
+
+	/**
+	 * Create a new instance of this class. This constructor is used when making a deep copy of this {@link MqttClientStatsImpl stats} instance.
+	 * 
+	 * @param messagesQueuedToSend
+	 *            The messages currently queued for sending at the time of construction
+	 * @param messagesInFlight
+	 *            The messages in-flight at the time of construction
+	 * @param messagesReceived
+	 *            The messages received at the time of construction along with any resends
+	 * @param messagesQueued
+	 *            The messages that have been queued at the time of construction along with duplicates
+	 * @param processQueueLatency
+	 *            The latency of the process queue
+	 * @param sendLatency
+	 *            The latency of sending messages
+	 * @param ackLatency
+	 *            The latency around acks
+	 */
+	private MqttClientStatsImpl(long messagesQueuedToSend, long messagesInFlight, MessageStat messagesSent, MessageStat messagesReceived, LatencyStat ackLatency) {
+		this.messagesQueuedToSend = messagesQueuedToSend;
+		this.messagesInFlight = messagesInFlight;
+		this.messagesSent = messagesSent;
+		this.messagesReceived = messagesReceived;
+		this.ackLatency = ackLatency;
+		registeredChannels = null;
+	}
+
+	private static final class MessageStat implements Cloneable {
+
+		private long value;
+		private long resendOrDup;
+
+		private void messageInteraction(boolean resendOrDup) {
+			value++;
+			if (resendOrDup) {
+				this.resendOrDup++;
+			}
+		}
+
+		private void reset() {
+			value = resendOrDup = 0;
+		}
+
+		@Override
+		public MessageStat clone() throws CloneNotSupportedException {
+			return (MessageStat) super.clone();
+		}
+
+	}
+
+	// TODO [jeremy] - Make this external and change the interface methods to return an instance of this.
+	private static final class LatencyStat implements Cloneable {
+
+		private long count;
+		private long sum;
+		private long min;
+		private long max;
+
+		private void processLatency(long latency) {
+			count++;
+			sum += latency;
+			if (min == 0 || latency < min) {
+				min = latency;
+			}
+
+			if (max == 0 || latency > max) {
+				max = latency;
+			}
+		}
+
+		private double average() {
+			if (count == 0) {
+				return 0.0;
+			}
+
+			return (sum * 1.0) / count;
+		}
+
+		private void reset() {
+			count = sum = min = max = 0;
+		}
+
+		@Override
+		public LatencyStat clone() throws CloneNotSupportedException {
+			return (LatencyStat) super.clone();
+		}
+
 	}
 
 }

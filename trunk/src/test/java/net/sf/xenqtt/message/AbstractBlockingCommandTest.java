@@ -31,6 +31,7 @@ import org.junit.Test;
 public class AbstractBlockingCommandTest {
 
 	TestBlockingCommand cmd = new TestBlockingCommand();
+	long now = System.currentTimeMillis();
 
 	@Test
 	public void testDefaultCtor() throws Exception {
@@ -69,14 +70,14 @@ public class AbstractBlockingCommandTest {
 	@Test
 	public void testAwait_Success() {
 
-		cmd.execute();
+		cmd.execute(now);
 		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
 	@Test(expected = MqttInvocationException.class)
 	public void testAwait_ThrowsRuntimeException() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.setFailureCause(new IllegalStateException());
 		cmd.complete();
 		cmd.await();
@@ -84,7 +85,7 @@ public class AbstractBlockingCommandTest {
 
 	@Test(expected = Error.class)
 	public void testAwait_ThrowsError() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.setFailureCause(new Error());
 		cmd.complete();
 		cmd.await();
@@ -92,21 +93,21 @@ public class AbstractBlockingCommandTest {
 
 	@Test(expected = MqttInterruptedException.class)
 	public void testAwait_Interrupted() {
-		cmd.execute();
+		cmd.execute(now);
 		Thread.currentThread().interrupt();
 		cmd.await();
 	}
 
 	@Test
 	public void testAwaitLongTimeUnit_Success() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await(10, TimeUnit.MILLISECONDS));
 	}
 
 	@Test(expected = MqttInvocationException.class)
 	public void testAwaitLongTimeUnit_ThrowsRuntimeException() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.setFailureCause(new IllegalStateException());
 		cmd.complete();
 		cmd.await(10, TimeUnit.MILLISECONDS);
@@ -114,7 +115,7 @@ public class AbstractBlockingCommandTest {
 
 	@Test(expected = Error.class)
 	public void testAwaitLongTimeUnit_ThrowsError() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.setFailureCause(new Error());
 		cmd.complete();
 		cmd.await(10, TimeUnit.MILLISECONDS);
@@ -122,7 +123,7 @@ public class AbstractBlockingCommandTest {
 
 	@Test(expected = MqttInterruptedException.class)
 	public void testAwaitLongTimeUnit_Interrupted() {
-		cmd.execute();
+		cmd.execute(now);
 		Thread.currentThread().interrupt();
 		cmd.await(10, TimeUnit.MILLISECONDS);
 	}
@@ -134,7 +135,7 @@ public class AbstractBlockingCommandTest {
 
 	@Test
 	public void testExecute_Success() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await());
 	}
@@ -142,7 +143,7 @@ public class AbstractBlockingCommandTest {
 	@Test(expected = MqttInvocationException.class)
 	public void testExecute_RuntimeException() {
 		cmd.exceptionToThrow = new IllegalStateException();
-		cmd.execute();
+		cmd.execute(now);
 		cmd.complete();
 		cmd.await();
 	}
@@ -151,7 +152,7 @@ public class AbstractBlockingCommandTest {
 	public void testExecute_CheckedException() {
 
 		cmd.exceptionToThrow = new IOException();
-		cmd.execute();
+		cmd.execute(now);
 		cmd.complete();
 
 		try {
@@ -166,7 +167,7 @@ public class AbstractBlockingCommandTest {
 	public void testExecute_Error() {
 
 		cmd.errorToThrow = new Error();
-		cmd.execute();
+		cmd.execute(now);
 		cmd.complete();
 
 		try {
@@ -179,14 +180,14 @@ public class AbstractBlockingCommandTest {
 
 	@Test
 	public void testComplete_NoException() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.complete();
 		assertSame(cmd.returnValue, cmd.await());
 	}
 
 	@Test(expected = MqttInvocationException.class)
 	public void testComplete_WithException() {
-		cmd.execute();
+		cmd.execute(now);
 		cmd.setFailureCause(new IllegalStateException());
 		cmd.complete();
 		cmd.await();
@@ -199,7 +200,7 @@ public class AbstractBlockingCommandTest {
 		Error errorToThrow;
 
 		@Override
-		protected void doExecute() throws Exception {
+		protected void doExecute(long now) throws Exception {
 
 			if (errorToThrow != null) {
 				throw errorToThrow;

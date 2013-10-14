@@ -95,7 +95,7 @@ public class SimpleBrokerTest {
 				SubscribeMessage message = (SubscribeMessage) invocation.getArguments()[1];
 
 				assertArrayEquals(new String[] { "foo" }, message.getTopics());
-				channel.send(new SubAckMessage(message.getMessageId(), message.getRequestedQoSes()), null);
+				channel.send(new SubAckMessage(message.getMessageId(), message.getRequestedQoSes()), null, System.currentTimeMillis());
 				return null;
 			}
 		}).when(messageHandler).subscribe(isA(MqttChannel.class), isA(SubscribeMessage.class));

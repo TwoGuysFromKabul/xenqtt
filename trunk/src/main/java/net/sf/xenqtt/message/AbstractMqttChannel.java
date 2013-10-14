@@ -213,10 +213,10 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand)
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand, long)
 	 */
 	@Override
-	public boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand) {
+	public boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand, long now) {
 
 		if (message.getMessageType() == MessageType.CONNECT) {
 			connAckReceivedCommand = blockingCommand;
@@ -224,7 +224,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			message.blockingCommand = blockingCommand;
 		}
 
-		return doSend(message);
+		return doSend(message, now);
 	}
 
 	/**
@@ -453,12 +453,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		handler.channelOpened(this);
 	}
 
-	private boolean doSend(MqttMessage message) {
+	private boolean doSend(MqttMessage message, long now) {
 
 		try {
 			message.buffer.rewind();
 
 			Log.debug("%s sending %s", this, message);
+			message.queuedTime = now;
 			if (sendMessageInProgress != null) {
 				writesPending.offer(message);
 				return true;
@@ -489,6 +490,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			Log.debug("%s sent %s", this, sendMessageInProgress);
+
+			// TODO [jeremy] - Message has been completely sent. Update the stats accordingly.
 
 			MessageType type = sendMessageInProgress.getMessageType();
 			if (type == MessageType.DISCONNECT) {
@@ -685,7 +688,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			for (IdentifiableMqttMessage msg : messagesToResend) {
 				msg.setDuplicateFlag();
-				doSend(msg);
+				doSend(msg, now);
 			}
 
 			messagesToResend.clear();
@@ -811,6 +814,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			Log.debug("%s received %s", this, msg);
+
+			// TODO [jeremy] - This is where messageReceived would be invoked via the stats.
 
 		} catch (Exception e) {
 

@@ -19,15 +19,18 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import java.lang.reflect.Field;
 import java.net.ConnectException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInvocationException;
+import net.sf.xenqtt.client.MqttClientStatsImpl;
 import net.sf.xenqtt.mock.MockMessageHandler;
 import net.sf.xenqtt.mock.MockServer;
 
@@ -103,6 +106,8 @@ public class ChannelManagerImplTest {
 		clientHandler.assertChannelClosedCount(0);
 		brokerHandler.assertChannelClosedCount(0);
 
+		assertChannelsRegistered(2);
+
 		manager.shutdown();
 
 		clientHandler.assertChannelClosedCount(1);
@@ -120,6 +125,8 @@ public class ChannelManagerImplTest {
 
 		clientHandler.assertChannelClosedCount(0);
 		brokerHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(2);
 
 		manager.shutdown();
 
@@ -164,6 +171,7 @@ public class ChannelManagerImplTest {
 			fail("Exception expected");
 		} catch (MqttInvocationException e) {
 			clientHandler.assertLastChannelClosedCause(e.getRootCause());
+			assertChannelsRegistered(0);
 		}
 	}
 
@@ -178,6 +186,7 @@ public class ChannelManagerImplTest {
 			fail("Exception expected");
 		} catch (MqttInvocationException e) {
 			clientHandler.assertLastChannelClosedCause(e.getRootCause());
+			assertChannelsRegistered(0);
 		}
 	}
 
@@ -194,6 +203,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertLastChannelClosedCause(ConnectException.class);
+
+		assertChannelsRegistered(0);
 	}
 
 	@Test
@@ -214,6 +225,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertLastChannelClosedCause(ConnectException.class);
+
+		assertChannelsRegistered(0);
 	}
 
 	@Test
@@ -230,6 +243,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(1);
 	}
 
 	@Test
@@ -246,6 +261,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(1);
 	}
 
 	@Test
@@ -262,6 +279,7 @@ public class ChannelManagerImplTest {
 			fail("expected exception");
 		} catch (MqttException e) {
 			assertEquals("Invalid broker URI (scheme must be 'tcp'): http://localhost:3456", e.getMessage());
+			assertChannelsRegistered(0);
 		}
 
 		clientHandler.assertChannelOpenedCount(0);
@@ -281,6 +299,7 @@ public class ChannelManagerImplTest {
 			fail("expected exception");
 		} catch (MqttException e) {
 			assertEquals("Invalid broker URI (scheme must be 'tcp'): http://localhost:3456", e.getMessage());
+			assertChannelsRegistered(0);
 		}
 
 		clientHandler.assertChannelOpenedCount(0);
@@ -300,6 +319,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(1);
 	}
 
 	@Test
@@ -316,6 +337,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(1);
 	}
 
 	@Test
@@ -332,6 +355,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(1);
 	}
 
 	@Test
@@ -348,6 +373,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1000, TimeUnit.SECONDS));
 
 		clientHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(1);
 	}
 
 	@Test
@@ -363,6 +390,8 @@ public class ChannelManagerImplTest {
 		brokerHandler.assertChannelOpenedCount(1);
 		clientHandler.assertChannelClosedCount(0);
 		brokerHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(2);
 	}
 
 	@Test
@@ -378,6 +407,8 @@ public class ChannelManagerImplTest {
 		brokerHandler.assertChannelOpenedCount(1);
 		clientHandler.assertChannelClosedCount(0);
 		brokerHandler.assertChannelClosedCount(0);
+
+		assertChannelsRegistered(2);
 	}
 
 	@Test
@@ -425,6 +456,7 @@ public class ChannelManagerImplTest {
 		manager.init();
 
 		brokerHandler = mock(MockMessageHandler.class);
+		final long now = System.currentTimeMillis();
 		doAnswer(new Answer<Void>() {
 
 			@Override
@@ -432,7 +464,7 @@ public class ChannelManagerImplTest {
 
 				MqttChannel channel = (MqttChannel) invocation.getArguments()[0];
 				SubscribeMessage msg = (SubscribeMessage) invocation.getArguments()[1];
-				channel.send(new SubAckMessage(msg.getMessageId(), msg.getRequestedQoSes()), null);
+				channel.send(new SubAckMessage(msg.getMessageId(), msg.getRequestedQoSes()), null, now);
 				return null;
 			}
 		}).when(brokerHandler).subscribe(isA(MqttChannel.class), isA(SubscribeMessage.class));
@@ -715,11 +747,12 @@ public class ChannelManagerImplTest {
 
 		manager.init();
 
+		final long now = System.currentTimeMillis();
 		clientHandler = new MockMessageHandler() {
 			@Override
 			public void channelOpened(MqttChannel channel) {
 				super.channelOpened(channel);
-				channel.send(new ConnectMessage("abc", false, 1), null);
+				channel.send(new ConnectMessage("abc", false, 1), null, now);
 			}
 		};
 
@@ -727,7 +760,7 @@ public class ChannelManagerImplTest {
 			@Override
 			public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 				super.connect(channel, message);
-				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null);
+				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null, now);
 			}
 		};
 
@@ -760,15 +793,28 @@ public class ChannelManagerImplTest {
 		brokerHandler.assertChannelClosedCount(1);
 	}
 
+	private void assertChannelsRegistered(int expectedRegisteredChannels) throws Exception {
+		Field field = ChannelManagerImpl.class.getDeclaredField("stats");
+		field.setAccessible(true);
+		MqttClientStatsImpl stats = (MqttClientStatsImpl) field.get(manager);
+
+		Field channels = MqttClientStatsImpl.class.getDeclaredField("registeredChannels");
+		channels.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		IdentityHashMap<MqttChannel, MqttChannel> registeredChannels = (IdentityHashMap<MqttChannel, MqttChannel>) channels.get(stats);
+		assertEquals(expectedRegisteredChannels, registeredChannels.size());
+	}
+
 	private void doTestMessageResend() throws Exception {
 
 		manager.init();
 
+		final long now = System.currentTimeMillis();
 		clientHandler = new MockMessageHandler() {
 			@Override
 			public void channelOpened(MqttChannel channel) {
 				super.channelOpened(channel);
-				channel.send(new ConnectMessage("abc", false, 1), null);
+				channel.send(new ConnectMessage("abc", false, 1), null, now);
 			}
 		};
 
@@ -779,14 +825,14 @@ public class ChannelManagerImplTest {
 			@Override
 			public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 				super.connect(channel, message);
-				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null);
+				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null, now);
 			}
 
 			@Override
 			public void publish(MqttChannel channel, PubMessage message) throws Exception {
 
 				if (++publishCount == 3) {
-					channel.send(new PubAckMessage(message.getMessageId()), null);
+					channel.send(new PubAckMessage(message.getMessageId()), null, now);
 				}
 
 				super.publish(channel, message);
