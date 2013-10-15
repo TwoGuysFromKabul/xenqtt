@@ -53,7 +53,7 @@ public class SubAckMessageTest {
 		for (int i = 0; i < 7; i++) {
 			qoses[i] = QoS.lookup(i % 2);
 		}
-		SubAckMessage message = new SubAckMessage(ByteBuffer.wrap(RECEIVED), 9);
+		SubAckMessage message = new SubAckMessage(ByteBuffer.wrap(RECEIVED), 9, 0);
 
 		assertEquals(1, message.getMessageId());
 		assertArrayEquals(qoses, message.getGrantedQoses());
@@ -65,7 +65,7 @@ public class SubAckMessageTest {
 		for (int i = 0; i < 7; i++) {
 			qoses[i] = QoS.lookup(i % 2);
 		}
-		SubAckMessage message = new SubAckMessage(ByteBuffer.wrap(RECEIVED), 9);
+		SubAckMessage message = new SubAckMessage(ByteBuffer.wrap(RECEIVED), 9, 0);
 
 		assertEquals(1, message.getMessageId());
 		assertArrayEquals(qoses, message.getGrantedQoses());

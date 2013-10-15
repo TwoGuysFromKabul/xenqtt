@@ -26,8 +26,8 @@ public final class PubRelMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubRelMessage(ByteBuffer buffer) {
-		super(buffer, 2);
+	public PubRelMessage(ByteBuffer buffer, long receivedTimestamp) {
+		super(buffer, 2, receivedTimestamp);
 	}
 
 	/**

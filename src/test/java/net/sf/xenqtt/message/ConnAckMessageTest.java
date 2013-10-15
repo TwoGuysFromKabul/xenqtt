@@ -30,7 +30,7 @@ public class ConnAckMessageTest {
 	@Test
 	public void testCtor_Receive() {
 
-		msg = new ConnAckMessage(buf);
+		msg = new ConnAckMessage(buf, 0);
 		assertMsg();
 	}
 
@@ -52,7 +52,7 @@ public class ConnAckMessageTest {
 
 		for (int i = 0; i < ConnectReturnCode.values().length; i++) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0x20, 0x02, 0x00, (byte) i });
-			msg = new ConnAckMessage(buf);
+			msg = new ConnAckMessage(buf, 0);
 			assertEquals(ConnectReturnCode.lookup(i), msg.getReturnCode());
 		}
 	}

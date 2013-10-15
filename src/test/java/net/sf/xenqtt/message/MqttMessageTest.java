@@ -85,13 +85,14 @@ public class MqttMessageTest {
 
 	@Test
 	public void testInboundCtor() {
-		MqttMessage message = new MqttMessage(ByteBuffer.wrap(PAYLOAD), 24);
+		MqttMessage message = new MqttMessage(ByteBuffer.wrap(PAYLOAD), 24, 123);
 
 		assertEquals(MessageType.CONNECT, message.getMessageType());
 		assertEquals(24, message.getRemainingLength());
 		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
 		assertEquals(0x08, message.buffer.get(0) & 0x08);
 		assertEquals(0x01, message.buffer.get(0) & 0x01);
+		assertEquals(123, message.getReceivedTimestamp());
 
 		assertArrayEquals(PAYLOAD, message.buffer.array());
 	}
@@ -154,7 +155,7 @@ public class MqttMessageTest {
 	private static class TestMessage extends MqttMessage {
 
 		public TestMessage(ByteBuffer buffer, int remainingLength) {
-			super(buffer, remainingLength);
+			super(buffer, remainingLength, 0);
 		}
 
 		public TestMessage(MessageType messageType, boolean duplicate, QoS qos, boolean retain, int remainingLength) {

@@ -30,8 +30,8 @@ public abstract class IdentifiableMqttMessage extends MqttMessage {
 	/**
 	 * @see MqttMessage#MqttMessage(ByteBuffer, int)
 	 */
-	public IdentifiableMqttMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public IdentifiableMqttMessage(ByteBuffer buffer, int remainingLength, long receivedTimestamp) {
+		super(buffer, remainingLength, receivedTimestamp);
 	}
 
 	/**

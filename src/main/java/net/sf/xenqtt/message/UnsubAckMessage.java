@@ -25,8 +25,8 @@ public final class UnsubAckMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public UnsubAckMessage(ByteBuffer buffer) {
-		super(buffer, 2);
+	public UnsubAckMessage(ByteBuffer buffer, long receivedTimestamp) {
+		super(buffer, 2, receivedTimestamp);
 	}
 
 	/**

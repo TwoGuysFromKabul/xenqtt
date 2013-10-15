@@ -33,8 +33,8 @@ public final class ConnectMessage extends MqttMessage {
 	private final String willMessage;
 	private final int keepAliveSeconds;
 
-	public ConnectMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public ConnectMessage(ByteBuffer buffer, int remainingLength, long receivedTimestamp) {
+		super(buffer, remainingLength, receivedTimestamp);
 
 		this.protocolName = getString();
 		this.protocolVersion = buffer.get() & 0xff;

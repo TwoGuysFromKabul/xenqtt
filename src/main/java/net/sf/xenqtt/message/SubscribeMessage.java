@@ -51,8 +51,8 @@ public final class SubscribeMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public SubscribeMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public SubscribeMessage(ByteBuffer buffer, int remainingLength, long receivedTimestamp) {
+		super(buffer, remainingLength, receivedTimestamp);
 	}
 
 	/**

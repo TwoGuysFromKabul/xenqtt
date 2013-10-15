@@ -30,7 +30,7 @@ public class DisconnectMessageTest {
 	@Test
 	public void testCtor_Receive() {
 
-		msg = new DisconnectMessage(buf);
+		msg = new DisconnectMessage(buf, 0);
 		assertMsg();
 	}
 

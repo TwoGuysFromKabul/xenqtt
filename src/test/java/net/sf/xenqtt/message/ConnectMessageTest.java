@@ -167,7 +167,7 @@ public class ConnectMessageTest {
 
 	@Test
 	public void testInboundCtor() {
-		ConnectMessage message = new ConnectMessage(ByteBuffer.wrap(MSG_BYTES), 65);
+		ConnectMessage message = new ConnectMessage(ByteBuffer.wrap(MSG_BYTES), 65, 0);
 
 		assertSame(MessageType.CONNECT, message.getMessageType());
 		assertEquals("MQIsdp", message.getProtocolName());

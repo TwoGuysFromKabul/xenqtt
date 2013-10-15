@@ -26,8 +26,8 @@ public final class PubAckMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubAckMessage(ByteBuffer buffer) {
-		super(buffer, 2);
+	public PubAckMessage(ByteBuffer buffer, long receivedTimestamp) {
+		super(buffer, 2, receivedTimestamp);
 	}
 
 	/**

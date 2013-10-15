@@ -26,8 +26,8 @@ public final class PubCompMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubCompMessage(ByteBuffer buffer) {
-		super(buffer, 2);
+	public PubCompMessage(ByteBuffer buffer, long receivedTimestamp) {
+		super(buffer, 2, receivedTimestamp);
 	}
 
 	/**

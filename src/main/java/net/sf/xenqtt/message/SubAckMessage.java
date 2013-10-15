@@ -28,8 +28,8 @@ public final class SubAckMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public SubAckMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public SubAckMessage(ByteBuffer buffer, int remainingLength, long receivedTimestamp) {
+		super(buffer, remainingLength, receivedTimestamp);
 	}
 
 	/**

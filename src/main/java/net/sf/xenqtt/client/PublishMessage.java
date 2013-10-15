@@ -110,6 +110,13 @@ public class PublishMessage {
 	}
 
 	/**
+	 * @return Timestamp (from {@link System#currentTimeMillis()}) when the message was received. 0 if this is not a received message.
+	 */
+	public long getReceivedTimestamp() {
+		return pubMessage.getReceivedTimestamp();
+	}
+
+	/**
 	 * @return The topic the message was published to. When received by a client that subscribed using wildcard characters, this string will be the absolute
 	 *         topic specified by the originating publisher and not the subscription string used by the client. This will never contain wildcards.
 	 */

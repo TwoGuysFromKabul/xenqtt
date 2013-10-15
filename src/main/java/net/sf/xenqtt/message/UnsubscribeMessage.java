@@ -29,8 +29,8 @@ public final class UnsubscribeMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public UnsubscribeMessage(ByteBuffer buffer, int remainingLength) {
-		super(buffer, remainingLength);
+	public UnsubscribeMessage(ByteBuffer buffer, int remainingLength, long receivedTimestamp) {
+		super(buffer, remainingLength, receivedTimestamp);
 	}
 
 	/**

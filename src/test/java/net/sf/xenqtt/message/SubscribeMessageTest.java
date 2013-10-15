@@ -78,7 +78,7 @@ public class SubscribeMessageTest {
 	public void testInboundCtor() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
 		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE };
-		SubscribeMessage message = new SubscribeMessage(ByteBuffer.wrap(PAYLOAD), 33);
+		SubscribeMessage message = new SubscribeMessage(ByteBuffer.wrap(PAYLOAD), 33, 0);
 
 		assertSame(MessageType.SUBSCRIBE, message.getMessageType());
 		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());
@@ -97,7 +97,7 @@ public class SubscribeMessageTest {
 	public void testSetMessageId() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
 		QoS[] requestedQoses = new QoS[] { QoS.AT_LEAST_ONCE, QoS.AT_LEAST_ONCE, QoS.AT_MOST_ONCE, QoS.AT_LEAST_ONCE };
-		SubscribeMessage message = new SubscribeMessage(ByteBuffer.wrap(PAYLOAD), 33);
+		SubscribeMessage message = new SubscribeMessage(ByteBuffer.wrap(PAYLOAD), 33, 0);
 
 		assertSame(MessageType.SUBSCRIBE, message.getMessageType());
 		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());
