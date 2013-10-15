@@ -15,7 +15,10 @@
  */
 package net.sf.xenqtt.proxy;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +30,7 @@ import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.DisconnectMessage;
+import net.sf.xenqtt.message.IdentifiableMqttMessage;
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
 import net.sf.xenqtt.message.MqttMessage;
@@ -49,45 +53,80 @@ final class ProxySession implements MessageHandler {
 		PENDING, CONNECTED, DISCONNECTED
 	}
 
+	private final Map<Integer, MessageDest> messageDestByBrokerMessageId = new HashMap<Integer, MessageDest>();
+	private final Map<Integer, MessageSource> messageSourceByBrokerMessageId = new HashMap<Integer, MessageSource>();
 	private final Map<MqttChannel, ConnectMessage> connectMessageByChannelPendingAttach = new ConcurrentHashMap<MqttChannel, ConnectMessage>();
 	private final Set<MqttChannel> channelsPendingBroker = new HashSet<MqttChannel>();
 
 	private final ChannelManager channelManager = new ChannelManagerImpl(0);
+	private final String brokerUri;
 	private final String clientId;
 	private final ConnectMessage originalConnectMessage;
 
-	private ConnAckMessage originalConnAckMessage;
-
+	private final List<MqttChannel> brokerChannels = new ArrayList<MqttChannel>();
 	private MqttChannel clientChannel;
+	private ConnectReturnCode brokerConnectReturnCode;
+
 	private ConnectionState brokerConnectionState = ConnectionState.PENDING;
 
-	public ProxySession(ConnectMessage connectMessage) {
+	private int nextIdToBroker = 1;
+	private int nextBrokerChannelIndex;
 
+	private volatile boolean sessionClosed;
+
+	public ProxySession(String brokerUri, ConnectMessage connectMessage) {
+
+		this.brokerUri = brokerUri;
 		this.originalConnectMessage = connectMessage;
 		this.clientId = originalConnectMessage.getClientId();
 	}
 
 	/**
-	 * FIXME [jim] - needs javadoc
+	 * Initializes this session
 	 */
 	public void init() {
 		channelManager.init();
+		clientChannel = (MqttChannel) channelManager.newClientChannel(brokerUri, this);
 	}
 
 	/**
-	 * FIXME [jim] - needs javadoc
+	 * Shuts down this session
 	 */
 	public void shutdown() {
 		channelManager.shutdown();
 	}
 
 	/**
-	 * Called when a new client connection is received by the {@link ServerMessageHandler}
+	 * @return True if the session is closed. False otherwise. A session is closed when the connection to the broker is closed. It has nothing to do with
+	 *         {@link #shutdown()}.
 	 */
-	public void newConnection(MqttChannel channel, ConnectMessage connectMessage) {
+	public boolean isClosed() {
+
+		return sessionClosed;
+	}
+
+	/**
+	 * @return This session's client ID
+	 */
+	public String getClientId() {
+		return clientId;
+	}
+
+	/**
+	 * Called when a new client connection is received by the {@link ServerMessageHandler}
+	 * 
+	 * @return True if the connection is accepted by the session. False if the session is closed
+	 */
+	public boolean newConnection(MqttChannel channel, ConnectMessage connectMessage) {
+
+		if (sessionClosed) {
+			return false;
+		}
 
 		connectMessageByChannelPendingAttach.put(channel, connectMessage);
 		channelManager.attachChannel(channel, this);
+
+		return true;
 	}
 
 	/**
@@ -95,8 +134,14 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
-		// TODO Auto-generated method stub
 
+		if (channel == clientChannel) {
+			Log.warn("Received a %s message from the broker at %s. This should never happen. clientId=%s", message.getMessageType(),
+					channel.getRemoteAddress(), clientId);
+		} else {
+			Log.warn("Received a %s message from clustered client %s. This should never happen. clientId=%s", message.getMessageType(),
+					channel.getRemoteAddress(), clientId);
+		}
 	}
 
 	/**
@@ -104,27 +149,26 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void connAck(MqttChannel channel, ConnAckMessage message) throws Exception {
-		// TODO Auto-generated method stub
 
 		if (channel != clientChannel) {
-			Log.warn("Received a %s message from a client. This should never happen. clientId=%s", message.getMessageType(), clientId);
+			Log.warn("Received a %s message from clustered client %s. This should never happen. clientId=%s", message.getMessageType(),
+					channel.getRemoteAddress(), clientId);
 			return;
 		}
 
-		originalConnAckMessage = message;
+		brokerConnectReturnCode = message.getReturnCode();
 
-		// FIXME [jim] - copy and send the original connect messsage
-		// for(MqttChannel brokerChannel : channelsPendingBroker) {
-		// brokerChannel.send(message, blockingCommand, now)
-		// }
-		channelsPendingBroker.clear();
+		// FIXME [jim] - log when broker does not accept
 		if (message.getReturnCode() == ConnectReturnCode.ACCEPTED) {
 			brokerConnectionState = ConnectionState.CONNECTED;
-
 		} else {
 			brokerConnectionState = ConnectionState.DISCONNECTED;
 		}
 
+		for (MqttChannel brokerChannel : channelsPendingBroker) {
+			newSessionClient(brokerChannel);
+		}
+		channelsPendingBroker.clear();
 	}
 
 	/**
@@ -132,8 +176,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void publish(MqttChannel channel, PubMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		forwardMessage(channel, message);
 	}
 
 	/**
@@ -141,8 +184,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void pubAck(MqttChannel channel, PubAckMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		forwardMessage(channel, message);
 	}
 
 	/**
@@ -174,8 +216,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void subscribe(MqttChannel channel, SubscribeMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		forwardMessage(channel, message);
 	}
 
 	/**
@@ -183,8 +224,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void subAck(MqttChannel channel, SubAckMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		forwardMessage(channel, message);
 	}
 
 	/**
@@ -192,8 +232,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void unsubscribe(MqttChannel channel, UnsubscribeMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		forwardMessage(channel, message);
 	}
 
 	/**
@@ -201,8 +240,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void unsubAck(MqttChannel channel, UnsubAckMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		forwardMessage(channel, message);
 	}
 
 	/**
@@ -210,8 +248,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void disconnect(MqttChannel channel, DisconnectMessage message) throws Exception {
-		// TODO Auto-generated method stub
-
+		// ignore, disconnected clients are handled in channelClosed(...)
 	}
 
 	/**
@@ -219,8 +256,7 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelOpened(MqttChannel channel) {
-
-		this.clientChannel = channel;
+		// ignore
 	}
 
 	/**
@@ -228,8 +264,26 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelClosed(MqttChannel channel, Throwable cause) {
-		// TODO Auto-generated method stub
 
+		if (channel == clientChannel) {
+			brokerConnectionState = ConnectionState.DISCONNECTED;
+
+			for (MqttChannel brokerChannel : brokerChannels) {
+				brokerChannel.close();
+			}
+			brokerChannels.clear();
+
+			sessionClosed = true;
+
+		} else if (brokerConnectionState != ConnectionState.DISCONNECTED) {
+			brokerChannels.remove(channel);
+
+			if (brokerChannels.isEmpty()) {
+				clientChannel.send(new DisconnectMessage());
+			} else {
+				distributeMessagesForChannel(channel);
+			}
+		}
 	}
 
 	/**
@@ -237,12 +291,6 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelAttached(MqttChannel channel) {
-
-		if (brokerConnectionState == ConnectionState.DISCONNECTED) {
-			Log.warn("Attempting to connect a clustered client to a session with a closed broker connection. clientId: %s, channel: %s", clientId, channel);
-			channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.OTHER));
-			return;
-		}
 
 		ConnectMessage connectMessage = connectMessageByChannelPendingAttach.remove(channel);
 
@@ -303,8 +351,7 @@ final class ProxySession implements MessageHandler {
 			return;
 		}
 
-		Log.info("New client connection accepted into cluster with client ID: %s", clientId);
-		channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.ACCEPTED));
+		newSessionClient(channel);
 	}
 
 	/**
@@ -320,6 +367,102 @@ final class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void messageSent(MqttChannel channel, MqttMessage message) {
+		// ignore
+	}
+
+	private void newSessionClient(MqttChannel channel) {
+
+		assert brokerConnectionState != ConnectionState.PENDING;
+
+		if (brokerConnectionState == ConnectionState.DISCONNECTED) {
+			Log.warn("Attempting to connect a clustered client to a session with a closed broker connection. clientId: %s, address: %s", clientId,
+					channel.getRemoteAddress());
+			ConnectReturnCode returnCode = brokerConnectReturnCode == null ? ConnectReturnCode.OTHER : brokerConnectReturnCode;
+			channelManager.send(channel, new ConnAckMessage(returnCode));
+		} else {
+			Log.info("New client connection accepted into cluster; clientId: %s, address: %s", clientId, channel.getRemoteAddress());
+			channelManager.send(channel, new ConnAckMessage(brokerConnectReturnCode));
+			brokerChannels.add(channel);
+		}
+	}
+
+	private void forwardMessage(MqttChannel channel, IdentifiableMqttMessage message) {
+
+		if (channel == clientChannel) {
+			forwardToClient(message);
+		} else {
+			forwardToBroker(channel, message);
+		}
+	}
+
+	private void forwardToBroker(MqttChannel clientChannel, IdentifiableMqttMessage message) {
+
+		if (message.isAckable()) {
+			int clientMessageId = message.getMessageId();
+			int brokerMessageId = nextIdToBroker();
+			message.setMessageId(brokerMessageId);
+			messageSourceByBrokerMessageId.put(brokerMessageId, new MessageSource(clientMessageId, clientChannel));
+		}
+
+		if (message.isAck()) {
+			messageDestByBrokerMessageId.remove(message.getMessageId());
+		}
+
+		clientChannel.send(message);
+	}
+
+	private void forwardToClient(IdentifiableMqttMessage message) {
+
+		if (message.isAck()) {
+
+			int brokerMessageId = message.getMessageId();
+			MessageSource messageSource = messageSourceByBrokerMessageId.remove(brokerMessageId);
+			if (messageSource != null) {
+				message.setMessageId(messageSource.sourceMessageId);
+				messageSource.sourceChannel.send(message);
+			}
+
+		} else {
+			MqttChannel channel = getLeastBusyChannel();
+			if (channel != null) {
+				if (message.isAckable()) {
+					messageDestByBrokerMessageId.put(message.getMessageId(), new MessageDest(channel, message));
+				}
+				channel.send(message);
+			}
+		}
+	}
+
+	private MqttChannel getLeastBusyChannel() {
+
+		int leastBusyMessageCount = Integer.MAX_VALUE;
+		MqttChannel leastBusyChannel = null;
+
+		int index = nextBrokerChannelIndex;
+		int size = brokerChannels.size();
+		for (int count = 0; count < size; count++) {
+			int i = index++ % size;
+			MqttChannel brokerChannel = brokerChannels.get(i);
+			int msgCount = brokerChannel.inFlightMessageCount() + brokerChannel.sendQueueDepth();
+			if (msgCount < leastBusyMessageCount) {
+				leastBusyMessageCount = msgCount;
+				leastBusyChannel = brokerChannel;
+				nextBrokerChannelIndex = i + 1;
+			}
+		}
+
+		return leastBusyChannel;
+	}
+
+	private int nextIdToBroker() {
+
+		// TODO [jim] - need to deal with what happens when we have an in-flight message that is already using a message ID that we come around to again. Is
+		// this even realistic?
+		if (nextIdToBroker > 0xffff) {
+			nextIdToBroker = 1;
+		}
+
+		return nextIdToBroker++;
 	}
 
 	private boolean stringEquqls(String string1, String string2) {
@@ -333,5 +476,41 @@ final class ProxySession implements MessageHandler {
 		}
 
 		return string1.equals(string2);
+	}
+
+	private void distributeMessagesForChannel(MqttChannel channel) {
+
+		for (MessageDest dest : messageDestByBrokerMessageId.values()) {
+
+			if (dest.channel == channel) {
+				MqttChannel newChannel = getLeastBusyChannel();
+				if (newChannel != null) {
+					dest.channel = newChannel;
+					newChannel.send(dest.message);
+				}
+			}
+		}
+	}
+
+	private static class MessageSource {
+
+		private final int sourceMessageId;
+		private final MqttChannel sourceChannel;
+
+		public MessageSource(int sourceMessageId, MqttChannel sourceChannel) {
+			this.sourceMessageId = sourceMessageId;
+			this.sourceChannel = sourceChannel;
+		}
+	}
+
+	private static class MessageDest {
+
+		private final MqttMessage message;
+		private MqttChannel channel;
+
+		public MessageDest(MqttChannel channel, MqttMessage message) {
+			this.channel = channel;
+			this.message = message;
+		}
 	}
 }
