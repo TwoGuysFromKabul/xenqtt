@@ -17,13 +17,61 @@ package net.sf.xenqtt.proxy;
 
 import static org.junit.Assert.*;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import net.sf.xenqtt.AppContext;
+
 import org.junit.Test;
 
 public class ProxyApplicationTest {
 
-	@Test
-	public void test() {
-		fail("Not yet implemented");
+	Map<String, String> args = new HashMap<String, String>();
+	List<String> flags = new ArrayList<String>();
+	AppContext context = new AppContext(flags, args);
+	ProxyApplication app = new ProxyApplication();
+
+	@Test(expected = IllegalStateException.class)
+	public void testStart_NoBrokerArg() {
+
+		app.start(context);
 	}
 
+	@Test
+	public void testStart_NoPortArg() throws Exception {
+
+		args.put("-b", "tcp://127.0.0.1:1234");
+		context = new AppContext(flags, args);
+		app.start(context);
+
+		assertEquals(1883, getBroker().getPort());
+		app.stop();
+	}
+
+	@Test
+	public void testStart_WithPortArg() throws Exception {
+
+		args.put("-b", "tcp://127.0.0.1:1234");
+		args.put("-p", "19283");
+		context = new AppContext(flags, args);
+		app.start(context);
+
+		assertEquals(19283, getBroker().getPort());
+		app.stop();
+	}
+
+	@Test
+	public void testStop_NotStarted() throws Exception {
+
+		app.stop();
+	}
+
+	private ProxyBroker getBroker() throws Exception {
+		Field field = ProxyApplication.class.getDeclaredField("broker");
+		field.setAccessible(true);
+		return (ProxyBroker) field.get(app);
+	}
 }

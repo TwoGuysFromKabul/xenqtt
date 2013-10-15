@@ -22,7 +22,7 @@ import net.sf.xenqtt.XenqttApplication;
  * A {@link XenqttApplication} is that acts as an MQTT proxy to allow a cluster of servers to act as a single MQTT proxy. All connections to this proxy that
  * have the same client ID will share a connection to a broker and appear as a single client to it.
  */
-public class ProxyApplication implements XenqttApplication {
+public final class ProxyApplication implements XenqttApplication {
 
 	private static String USAGE_TEXT = "-b brokerUri [-p port]" //
 			+ "\n\tb brokerUri : The URI of the broker to connect to. For example: tcp://q.m2m.io:1883. This is required." //
@@ -41,6 +41,7 @@ public class ProxyApplication implements XenqttApplication {
 		int port = arguments.getArgAsInt("p", 1883);
 
 		broker = new ProxyBroker(brokerUri, port);
+		broker.init();
 	}
 
 	/**
