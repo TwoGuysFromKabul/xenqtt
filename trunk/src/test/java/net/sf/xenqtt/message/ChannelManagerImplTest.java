@@ -425,7 +425,6 @@ public class ChannelManagerImplTest {
 		manager.init();
 
 		brokerHandler = mock(MockMessageHandler.class);
-		final long now = System.currentTimeMillis();
 		doAnswer(new Answer<Void>() {
 
 			@Override
@@ -433,7 +432,7 @@ public class ChannelManagerImplTest {
 
 				MqttChannel channel = (MqttChannel) invocation.getArguments()[0];
 				SubscribeMessage msg = (SubscribeMessage) invocation.getArguments()[1];
-				channel.send(new SubAckMessage(msg.getMessageId(), msg.getRequestedQoSes()), null, now);
+				channel.send(new SubAckMessage(msg.getMessageId(), msg.getRequestedQoSes()), null);
 				return null;
 			}
 		}).when(brokerHandler).subscribe(isA(MqttChannel.class), isA(SubscribeMessage.class));
@@ -716,12 +715,11 @@ public class ChannelManagerImplTest {
 
 		manager.init();
 
-		final long now = System.currentTimeMillis();
 		clientHandler = new MockMessageHandler() {
 			@Override
 			public void channelOpened(MqttChannel channel) {
 				super.channelOpened(channel);
-				channel.send(new ConnectMessage("abc", false, 1), null, now);
+				channel.send(new ConnectMessage("abc", false, 1), null);
 			}
 		};
 
@@ -729,7 +727,7 @@ public class ChannelManagerImplTest {
 			@Override
 			public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 				super.connect(channel, message);
-				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null, now);
+				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null);
 			}
 		};
 
@@ -766,12 +764,11 @@ public class ChannelManagerImplTest {
 
 		manager.init();
 
-		final long now = System.currentTimeMillis();
 		clientHandler = new MockMessageHandler() {
 			@Override
 			public void channelOpened(MqttChannel channel) {
 				super.channelOpened(channel);
-				channel.send(new ConnectMessage("abc", false, 1), null, now);
+				channel.send(new ConnectMessage("abc", false, 1), null);
 			}
 		};
 
@@ -782,14 +779,14 @@ public class ChannelManagerImplTest {
 			@Override
 			public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 				super.connect(channel, message);
-				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null, now);
+				channel.send(new ConnAckMessage(ConnectReturnCode.ACCEPTED), null);
 			}
 
 			@Override
 			public void publish(MqttChannel channel, PubMessage message) throws Exception {
 
 				if (++publishCount == 3) {
-					channel.send(new PubAckMessage(message.getMessageId()), null, now);
+					channel.send(new PubAckMessage(message.getMessageId()), null);
 				}
 
 				super.publish(channel, message);

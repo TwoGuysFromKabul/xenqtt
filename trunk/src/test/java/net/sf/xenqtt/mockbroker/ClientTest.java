@@ -54,17 +54,17 @@ public class ClientTest {
 		PubAckMessage message = new PubAckMessage(1);
 		assertTrue(client.send(message));
 		assertEquals(1, message.getMessageId());
-		verify(channel).send(same(message), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message), isNull(BlockingCommand.class));
 
 		message = new PubAckMessage(2);
 		assertTrue(client.send(message));
 		assertEquals(2, message.getMessageId());
-		verify(channel).send(same(message), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message), isNull(BlockingCommand.class));
 
 		message = new PubAckMessage(3);
 		assertTrue(client.send(message));
 		assertEquals(3, message.getMessageId());
-		verify(channel).send(same(message), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message), isNull(BlockingCommand.class));
 
 		List<BrokerEvent> events = this.events.getEvents("clientId");
 		assertEquals(3, events.size());
@@ -80,17 +80,17 @@ public class ClientTest {
 		PubMessage message = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 0, new byte[] { 1, 2, 3 });
 		assertTrue(client.send(message));
 		assertEquals(0, message.getMessageId());
-		verify(channel).send(same(message), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message), isNull(BlockingCommand.class));
 
 		message = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 0, new byte[] { 1, 2, 3 });
 		assertTrue(client.send(message));
 		assertEquals(0, message.getMessageId());
-		verify(channel).send(same(message), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message), isNull(BlockingCommand.class));
 
 		message = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 0, new byte[] { 1, 2, 3 });
 		assertTrue(client.send(message));
 		assertEquals(0, message.getMessageId());
-		verify(channel).send(same(message), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message), isNull(BlockingCommand.class));
 
 		List<BrokerEvent> events = this.events.getEvents("clientId");
 		assertEquals(3, events.size());
@@ -106,17 +106,17 @@ public class ClientTest {
 		PubMessage message1 = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 0, new byte[] { 1, 2, 3 });
 		assertTrue(client.send(message1));
 		assertEquals(1, message1.getMessageId());
-		verify(channel).send(same(message1), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message1), isNull(BlockingCommand.class));
 
 		PubMessage message2 = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 0, new byte[] { 1, 2, 3 });
 		assertTrue(client.send(message2));
 		assertEquals(2, message2.getMessageId());
-		verify(channel).send(same(message2), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message2), isNull(BlockingCommand.class));
 
 		PubMessage message3 = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 0, new byte[] { 1, 2, 3 });
 		assertFalse(client.send(message3));
 		assertEquals(0, message3.getMessageId());
-		verify(channel, never()).send(same(message3), isNull(BlockingCommand.class), anyLong());
+		verify(channel, never()).send(same(message3), isNull(BlockingCommand.class));
 
 		List<BrokerEvent> events = this.events.getEvents("clientId");
 		assertEquals(2, events.size());
@@ -126,20 +126,20 @@ public class ClientTest {
 		this.events.clearEvents();
 
 		client.messageReceived(new PubAckMessage(5));
-		verify(channel, never()).send(same(message3), isNull(BlockingCommand.class), anyLong());
+		verify(channel, never()).send(same(message3), isNull(BlockingCommand.class));
 		PubMessage message4 = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 0, new byte[] { 1, 2, 3 });
 		assertFalse(client.send(message4));
 		assertEquals(0, message3.getMessageId());
-		verify(channel, never()).send(same(message4), isNull(BlockingCommand.class), anyLong());
+		verify(channel, never()).send(same(message4), isNull(BlockingCommand.class));
 
 		client.messageReceived(new PubAckMessage(2));
 		assertEquals(3, message3.getMessageId());
-		verify(channel).send(same(message3), isNull(BlockingCommand.class), anyLong());
-		verify(channel, never()).send(same(message4), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message3), isNull(BlockingCommand.class));
+		verify(channel, never()).send(same(message4), isNull(BlockingCommand.class));
 
 		client.messageReceived(new PubAckMessage(1));
 		assertEquals(4, message4.getMessageId());
-		verify(channel).send(same(message4), isNull(BlockingCommand.class), anyLong());
+		verify(channel).send(same(message4), isNull(BlockingCommand.class));
 
 		client.messageReceived(new PubAckMessage(1));
 
