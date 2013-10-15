@@ -47,7 +47,7 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
 /**
  * Each instance of this class controls one proxy session. A session consists of one connection to a broker and connections to all the clients in a cluster.
  */
-final class ProxySession implements MessageHandler {
+class ProxySession implements MessageHandler {
 
 	private enum ConnectionState {
 		PENDING, CONNECTED, DISCONNECTED

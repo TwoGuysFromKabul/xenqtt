@@ -39,7 +39,7 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
 /**
  * {@link SimpleBroker} extension that handles creating/managing {@link ProxySession sessions}.
  */
-final class ProxyBroker extends SimpleBroker implements MessageHandler {
+class ProxyBroker extends SimpleBroker implements MessageHandler {
 
 	private final String brokerUri;
 
@@ -85,7 +85,7 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 		String clientId = message.getClientId();
 		ProxySession session = proxySessionByClientId.get(clientId);
 		if (session == null) {
-			session = new ProxySession(brokerUri, message);
+			session = newProxySession(brokerUri, message);
 			session.init();
 			proxySessionByClientId.put(clientId, session);
 		}
@@ -100,6 +100,15 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 		}
 
 		shutdownClosedSessions();
+	}
+
+	/**
+	 * Unit tests override to inject mock {@link ProxySession sessions}
+	 * 
+	 * @return A new {@link ProxySession} instance
+	 */
+	ProxySession newProxySession(String brokerUri, ConnectMessage message) {
+		return new ProxySession(brokerUri, message);
 	}
 
 	private void shutdownClosedSessions() {
