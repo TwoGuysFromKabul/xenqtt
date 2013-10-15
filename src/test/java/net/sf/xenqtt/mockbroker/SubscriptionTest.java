@@ -60,7 +60,7 @@ public class SubscriptionTest {
 
 		subscription.connected(client);
 		PubMessage expected = new PubMessage(QoS.AT_LEAST_ONCE, false, "grand/foo/bar", 1, new byte[] { 97, 98, 99 });
-		verify(channel).send(expected, null, now);
+		verify(channel).send(expected, null, Long.MIN_VALUE);
 		assertEquals(1, events.getEvents().size());
 	}
 
@@ -84,7 +84,7 @@ public class SubscriptionTest {
 		clientById.put("clientId", client);
 		subscription.publish(message, clientById);
 
-		verify(channel).send(message, null, now);
+		verify(channel).send(message, null, Long.MIN_VALUE);
 		assertEquals(0, getMessageQueueSize());
 	}
 
@@ -105,7 +105,7 @@ public class SubscriptionTest {
 		subscription.publish(message, clientById);
 
 		ArgumentCaptor<PubMessage> messageCaptor = ArgumentCaptor.forClass(PubMessage.class);
-		verify(channel).send(messageCaptor.capture(), any(BlockingCommand.class), now);
+		verify(channel).send(messageCaptor.capture(), any(BlockingCommand.class), eq(Long.MIN_VALUE));
 		assertEquals(0, getMessageQueueSize());
 		assertEquals(0, messageCaptor.getValue().getMessageId());
 		assertSame(MessageType.PUBLISH, messageCaptor.getValue().getMessageType());
@@ -130,7 +130,7 @@ public class SubscriptionTest {
 		subscription.publish(message, clientById);
 
 		PubMessage expected = new PubMessage(QoS.AT_LEAST_ONCE, false, "grand/foo/bar", 1, new byte[] { 97, 98, 99 });
-		verify(channel).send(expected, null, now);
+		verify(channel).send(expected, null, Long.MIN_VALUE);
 		assertEquals(1, getMessageQueueSize());
 	}
 
