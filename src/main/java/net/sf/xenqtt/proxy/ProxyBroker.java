@@ -16,6 +16,7 @@
 package net.sf.xenqtt.proxy;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import net.sf.xenqtt.SimpleBroker;
@@ -41,7 +42,7 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 
 	// FIXME [jim] - once we have created a channel manager for a clustered client how do we know when all the channels are closed?
 	// maybe add a way to get the number of channels in the manager then check periodically, like every time a client connects, and shut down and remove the
-	// ones that have no channels?
+	// ones that have no channels? Maybe that can be tracked in the session?
 	private final Map<String, ProxySession> proxySessionByClientId = new HashMap<String, ProxySession>();
 
 	/**
@@ -63,6 +64,19 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.SimpleBroker#shutdown(long)
+	 */
+	@Override
+	public boolean shutdown(long millis) {
+
+		for (ProxySession session : proxySessionByClientId.values()) {
+			session.shutdown();
+		}
+
+		return super.shutdown(millis);
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MessageHandler#connect(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.ConnectMessage)
 	 */
 	@Override
@@ -71,14 +85,22 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 		String clientId = message.getClientId();
 		ProxySession session = proxySessionByClientId.get(clientId);
 		if (session == null) {
-			session = new ProxySession(message);
+			session = new ProxySession(brokerUri, message);
 			// FIXME [jim] - need to shut down at some point
 			session.init();
 			proxySessionByClientId.put(clientId, session);
 		}
 
 		manager.detachChannel(channel);
-		session.newConnection(channel, message);
+
+		if (!session.newConnection(channel, message)) {
+			proxySessionByClientId.remove(clientId);
+			session.shutdown();
+			connect(channel, message);
+			return;
+		}
+
+		shutdownClosedSessions();
 	}
 
 	/**
@@ -203,5 +225,18 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 	 */
 	@Override
 	public void messageSent(MqttChannel channel, MqttMessage message) {
+		// ignore
+	}
+
+	private void shutdownClosedSessions() {
+
+		Iterator<ProxySession> iter = proxySessionByClientId.values().iterator();
+		while (iter.hasNext()) {
+			ProxySession session = iter.next();
+			if (session.isClosed()) {
+				session.shutdown();
+				iter.remove();
+			}
+		}
 	}
 }

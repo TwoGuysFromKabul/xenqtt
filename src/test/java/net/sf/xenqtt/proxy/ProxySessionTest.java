@@ -19,11 +19,10 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-public class ProxyApplicationTest {
+public class ProxySessionTest {
 
 	@Test
 	public void test() {
-		// FIXME [jim] - implement
 		fail("Not yet implemented");
 	}
 
