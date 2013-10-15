@@ -23,7 +23,6 @@ public class ProxyApplicationTest {
 
 	@Test
 	public void test() {
-		// FIXME [jim] - implement
 		fail("Not yet implemented");
 	}
 

@@ -40,9 +40,6 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 
 	private final String brokerUri;
 
-	// FIXME [jim] - once we have created a channel manager for a clustered client how do we know when all the channels are closed?
-	// maybe add a way to get the number of channels in the manager then check periodically, like every time a client connects, and shut down and remove the
-	// ones that have no channels? Maybe that can be tracked in the session?
 	private final Map<String, ProxySession> proxySessionByClientId = new HashMap<String, ProxySession>();
 
 	/**
@@ -86,7 +83,6 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 		ProxySession session = proxySessionByClientId.get(clientId);
 		if (session == null) {
 			session = new ProxySession(brokerUri, message);
-			// FIXME [jim] - need to shut down at some point
 			session.init();
 			proxySessionByClientId.put(clientId, session);
 		}

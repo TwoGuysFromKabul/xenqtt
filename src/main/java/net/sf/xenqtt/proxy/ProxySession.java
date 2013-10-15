@@ -158,10 +158,10 @@ final class ProxySession implements MessageHandler {
 
 		brokerConnectReturnCode = message.getReturnCode();
 
-		// FIXME [jim] - log when broker does not accept
-		if (message.getReturnCode() == ConnectReturnCode.ACCEPTED) {
+		if (brokerConnectReturnCode == ConnectReturnCode.ACCEPTED) {
 			brokerConnectionState = ConnectionState.CONNECTED;
 		} else {
+			Log.info("Broker %s rejected connect attempt with return code %s", brokerUri, brokerConnectReturnCode);
 			brokerConnectionState = ConnectionState.DISCONNECTED;
 		}
 
