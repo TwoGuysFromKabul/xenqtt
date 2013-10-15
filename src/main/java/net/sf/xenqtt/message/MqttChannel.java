@@ -91,12 +91,10 @@ public interface MqttChannel extends MqttChannelRef {
 	 *            <li>else processing is complete when the message is written to the socket.</li>
 	 *            <li>If any exception occurs or the channel is closed all in flight messages are complete</li>
 	 *            </ul>
-	 * @param now
-	 *            The current timestamp in milliseconds. 0 will keep this message from being included in any send latency stats.
 	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
-	boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand, long now);
+	boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand);
 
 	/**
 	 * Writes as much data as possible. This should be called when a {@link SelectionKey}s {@link SelectionKey#OP_WRITE} op is ready.

@@ -84,7 +84,7 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 		}
 
 		if (pingTime == Long.MAX_VALUE) {
-			send(new PingReqMessage(), null, now);
+			send(new PingReqMessage(), null);
 			pingTime = now;
 		}
 

@@ -485,7 +485,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 		@Override
 		public void doExecute(long now) {
-			channel.send(message, this, now);
+			channel.send(message, this);
 		}
 	}
 
@@ -540,7 +540,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 			List<MqttMessage> unsentMessages = oldChannel.getUnsentMessages();
 			for (MqttMessage message : unsentMessages) {
 				message.blockingCommand.setFailureCause(null);
-				newChannel.send(message, message.blockingCommand, now);
+				newChannel.send(message, message.blockingCommand);
 			}
 			oldChannel.delegate = newChannel.delegate;
 		}

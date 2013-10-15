@@ -204,8 +204,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		BlockingCommand<MqttMessage> command1 = mock(BlockingCommand.class);
 		BlockingCommand<MqttMessage> command2 = mock(BlockingCommand.class);
-		assertTrue(clientChannel.send(new UnsubscribeMessage(1, new String[] { "foo" }), command1, now));
-		assertTrue(clientChannel.send(new UnsubscribeMessage(2, new String[] { "foo" }), command2, now));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(1, new String[] { "foo" }), command1));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(2, new String[] { "foo" }), command2));
 
 		readWrite(0, 2);
 		assertEquals(2, clientChannel.getUnsentMessages().size());
@@ -286,8 +286,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
-		assertTrue(clientChannel.send(new UnsubscribeMessage(1, new String[] { "foo" }), null, now));
-		assertTrue(clientChannel.send(new UnsubscribeMessage(2, new String[] { "foo" }), null, now));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(1, new String[] { "foo" }), null));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(2, new String[] { "foo" }), null));
 
 		readWrite(0, 2);
 
@@ -296,8 +296,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		field.setAccessible(true);
 		field.set(clientChannel, new UnsubscribeMessage(3, new String[] { "foo" }));
 
-		assertTrue(clientChannel.send(new UnsubscribeMessage(4, new String[] { "foo" }), null, now));
-		assertTrue(clientChannel.send(new UnsubscribeMessage(5, new String[] { "foo" }), null, now));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(4, new String[] { "foo" }), null));
+		assertTrue(clientChannel.send(new UnsubscribeMessage(5, new String[] { "foo" }), null));
 
 		List<MqttMessage> unsent = clientChannel.getUnsentMessages();
 
@@ -424,7 +424,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
-		assertTrue(clientChannel.send(msg, null, now));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 
 		assertEquals(25000, clientChannel.houseKeeping(now + 1000));
@@ -443,7 +443,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubMessage msg = new PubMessage(QoS.AT_MOST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
-		assertTrue(clientChannel.send(msg, null, now));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 		assertFalse(brokerHandler.message(0).isDuplicate());
@@ -459,7 +459,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 12, new byte[] { 1, 2, 3 });
 
-		assertTrue(clientChannel.send(msg, null, now));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 		assertFalse(brokerHandler.message(0).isDuplicate());
@@ -477,7 +477,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		assertTrue(brokerHandler.message(0).isDuplicate());
 		assertEquals(1, clientChannel.inFlightMessageCount());
 
-		assertTrue(brokerChannel.send(new PubAckMessage(12), null, now));
+		assertTrue(brokerChannel.send(new PubAckMessage(12), null));
 		readWrite(1, 0);
 		assertEquals(0, clientChannel.inFlightMessageCount());
 		assertEquals(0, brokerChannel.inFlightMessageCount());
@@ -513,7 +513,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		establishConnection();
 		clientChannel.close();
 
-		assertFalse(clientChannel.send(new PingReqMessage(), null, now));
+		assertFalse(clientChannel.send(new PingReqMessage(), null));
 	}
 
 	@Test
@@ -569,7 +569,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		DisconnectMessage discMsg = new DisconnectMessage();
 
-		assertTrue(clientChannel.send(discMsg, null, now));
+		assertTrue(clientChannel.send(discMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(discMsg);
 
@@ -589,11 +589,11 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
 
-		assertTrue(clientChannel.send(connMsg, null, now));
+		assertTrue(clientChannel.send(connMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		assertTrue(brokerChannel.send(ackMsg, null, now));
+		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
@@ -616,13 +616,13 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS);
 
-		assertTrue(clientChannel.send(connMsg, blockingCommand, now));
+		assertTrue(clientChannel.send(connMsg, blockingCommand));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
 		verifyZeroInteractions(blockingCommand);
 
-		assertTrue(brokerChannel.send(ackMsg, null, now));
+		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
@@ -648,11 +648,11 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		assertTrue(clientChannel.send(connMsg, null, now));
+		assertTrue(clientChannel.send(connMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
-		assertTrue(brokerChannel.send(ackMsg, null, now));
+		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
@@ -681,13 +681,13 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		ConnectMessage connMsg = new ConnectMessage("abc", false, 123);
 		ConnAckMessage ackMsg = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
 
-		assertTrue(clientChannel.send(connMsg, blockingCommand, now));
+		assertTrue(clientChannel.send(connMsg, blockingCommand));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(connMsg);
 
 		verifyZeroInteractions(blockingCommand);
 
-		assertTrue(brokerChannel.send(ackMsg, null, now));
+		assertTrue(brokerChannel.send(ackMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(ackMsg);
 
@@ -719,11 +719,11 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingReqMessage pingReqMsg = new PingReqMessage();
 		PingRespMessage pingRespMsg = new PingRespMessage();
 
-		assertTrue(clientChannel.send(pingReqMsg, null, now));
+		assertTrue(clientChannel.send(pingReqMsg, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(pingReqMsg);
 
-		assertTrue(brokerChannel.send(pingRespMsg, null, now));
+		assertTrue(brokerChannel.send(pingRespMsg, null));
 		readWrite(1, 0);
 		clientHandler.assertMessages(pingRespMsg);
 
@@ -741,8 +741,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingReqMessage pingReqMsg = new PingReqMessage();
 		PubAckMessage msg2 = new PubAckMessage(1);
 
-		assertTrue(clientChannel.send(pingReqMsg, null, now));
-		assertTrue(clientChannel.send(msg2, null, now));
+		assertTrue(clientChannel.send(pingReqMsg, null));
+		assertTrue(clientChannel.send(msg2, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg2);
 
@@ -759,8 +759,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingRespMessage pingRespMsg = new PingRespMessage();
 		PubAckMessage msg2 = new PubAckMessage(1);
 
-		assertTrue(clientChannel.send(pingRespMsg, null, now));
-		assertTrue(clientChannel.send(msg2, null, now));
+		assertTrue(clientChannel.send(pingRespMsg, null));
+		assertTrue(clientChannel.send(msg2, null));
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg2);
 
@@ -773,7 +773,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		PingReqMessage msg = new PingReqMessage();
 
 		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 10000);
-		assertFalse(clientChannel.send(msg, null, now));
+		assertFalse(clientChannel.send(msg, null));
 
 		establishConnection();
 
@@ -928,8 +928,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		UnsubAckMessage msg1 = new UnsubAckMessage(1);
 		PingReqMessage msg2 = new PingReqMessage();
 
-		assertTrue(clientChannel.send(msg1, null, now));
-		assertTrue(clientChannel.send(msg2, null, now));
+		assertTrue(clientChannel.send(msg1, null));
+		assertTrue(clientChannel.send(msg2, null));
 
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg2);
@@ -977,7 +977,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		brokerChannel.close();
 
 		for (int i = 0; i < 1000; i++) {
-			clientChannel.send(new PingReqMessage(), null, now);
+			clientChannel.send(new PingReqMessage(), null);
 		}
 
 		assertFalse(clientChannel.write(now));
@@ -994,7 +994,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PingReqMessage msg = new PingReqMessage();
 
-		assertTrue(clientChannel.send(msg, null, now));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 
 		closeConnection();
@@ -1007,7 +1007,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		PubAckMessage msg = new PubAckMessage(123);
 
-		assertTrue(clientChannel.send(msg, null, now));
+		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 
 		closeConnection();
@@ -1047,7 +1047,7 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 			PubMessage msg = new PubMessage(QoS.AT_LEAST_ONCE, false, "abc", 123, payload);
 
-			assertTrue(clientChannel.send(msg, null, now));
+			assertTrue(clientChannel.send(msg, null));
 			messagesSent.add(msg);
 		}
 
@@ -1061,12 +1061,12 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	private void doTestReadWriteSend_NonBlocking(MqttMessage msg, MqttMessage ack) throws Exception {
 		establishConnection();
 
-		clientChannel.send(msg, null, now);
+		clientChannel.send(msg, null);
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 
 		if (ack != null) {
-			brokerChannel.send(ack, null, now);
+			brokerChannel.send(ack, null);
 			readWrite(1, 0);
 			clientHandler.assertMessages(ack);
 		}
@@ -1078,14 +1078,14 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
-		clientChannel.send(msg, blockingCommand, now);
+		clientChannel.send(msg, blockingCommand);
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 
 		if (ack != null) {
 			verifyZeroInteractions(blockingCommand);
 
-			brokerChannel.send(ack, null, now);
+			brokerChannel.send(ack, null);
 			readWrite(1, 0);
 			clientHandler.assertMessages(ack);
 			verify(blockingCommand).setResult(ack);

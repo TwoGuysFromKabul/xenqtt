@@ -222,14 +222,14 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public final boolean send(MqttMessage message) {
-		return send(message, null, 0L);
+		return send(message, null);
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand, long)
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand)
 	 */
 	@Override
-	public final boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand, long now) {
+	public final boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand) {
 
 		if (message.getMessageType() == MessageType.CONNECT) {
 			connAckReceivedCommand = blockingCommand;
@@ -237,7 +237,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			message.blockingCommand = blockingCommand;
 		}
 
-		return doSend(message, now);
+		return doSend(message);
 	}
 
 	/**
@@ -466,7 +466,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		handler.channelOpened(this);
 	}
 
-	private boolean doSend(MqttMessage message, long now) {
+	private boolean doSend(MqttMessage message) {
 
 		try {
 			message.buffer.rewind();
@@ -703,7 +703,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 			for (IdentifiableMqttMessage msg : messagesToResend) {
 				msg.setDuplicateFlag();
-				doSend(msg, now);
+				doSend(msg);
 			}
 
 			messagesToResend.clear();
