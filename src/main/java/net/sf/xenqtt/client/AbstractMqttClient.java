@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import net.sf.xenqtt.ConfigurableThreadFactory;
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
@@ -346,7 +347,8 @@ abstract class AbstractMqttClient implements MqttClient {
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
 		this.debugListener = config.getClientDebugListener();
-		this.executorService = executor == null ? Executors.newFixedThreadPool(messageHandlerThreadPoolSize) : null;
+		this.executorService = executor == null ? Executors
+				.newFixedThreadPool(messageHandlerThreadPoolSize, new ConfigurableThreadFactory("MqttClient", false)) : null;
 		this.executor = executor == null ? executorService : executor;
 		this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 		this.messageHandler = new AsyncMessageHandler();

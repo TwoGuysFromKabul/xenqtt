@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import net.sf.xenqtt.ConfigurableThreadFactory;
 import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ChannelManager;
@@ -181,7 +182,8 @@ public final class MqttClientFactory implements AsyncClientFactory, SyncClientFa
 		this.config = config.clone();
 		this.synchronous = synchronous;
 		this.brokerUri = brokerUri;
-		this.executorService = executor == null ? Executors.newFixedThreadPool(messageHandlerThreadPoolSize) : null;
+		this.executorService = executor == null ? Executors
+				.newFixedThreadPool(messageHandlerThreadPoolSize, new ConfigurableThreadFactory("MqttClient", false)) : null;
 		this.executor = executor == null ? executorService : executor;
 		this.reconnectionExecutor = Executors.newSingleThreadScheduledExecutor();
 		int blockingTimeoutSeconds = synchronous ? config.getBlockingTimeoutSeconds() : -1;
