@@ -289,7 +289,8 @@ public interface ChannelManager {
 
 	/**
 	 * Detaches the specified channel from this manager's control. This is used in conjunction with {@link #attachChannel(MqttChannelRef)} to move handling of
-	 * the channel's messages from one manager to another. This is always a synchronous operation.
+	 * the channel's messages from one manager to another. This is always a synchronous operation. It is safe to call this from the {@link ChannelManagerImpl}
+	 * IO thread.
 	 * 
 	 * @param channel
 	 *            The channel to detach

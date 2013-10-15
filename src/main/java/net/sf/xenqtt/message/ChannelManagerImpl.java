@@ -247,7 +247,12 @@ public final class ChannelManagerImpl implements ChannelManager {
 	public void detachChannel(MqttChannelRef channel) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException,
 			MqttInvocationException, MqttInvocationError {
 
-		addCommand(new DetachChannelCommand(channel)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+		DetachChannelCommand command = new DetachChannelCommand(channel);
+		if (Thread.currentThread() == ioThread) {
+			command.execute(0);
+		} else {
+			addCommand(command).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+		}
 	}
 
 	/**
