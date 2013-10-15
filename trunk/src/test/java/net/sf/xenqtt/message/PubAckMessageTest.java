@@ -30,7 +30,7 @@ public class PubAckMessageTest {
 	@Test
 	public void testCtor_Receive() {
 
-		msg = new PubAckMessage(buf);
+		msg = new PubAckMessage(buf, 0);
 		assertMsg();
 	}
 
@@ -52,7 +52,7 @@ public class PubAckMessageTest {
 
 		for (int i = 0; i < 0xffff; i++) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0x40, 0x02, (byte) (i >> 8), (byte) (i & 0xff) });
-			msg = new PubAckMessage(buf);
+			msg = new PubAckMessage(buf, 0);
 			assertEquals(i, msg.getMessageId());
 		}
 	}

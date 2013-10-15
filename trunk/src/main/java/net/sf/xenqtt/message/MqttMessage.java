@@ -57,6 +57,8 @@ public class MqttMessage {
 
 	private MessageType messageType;
 
+	private long receivedTimestamp;
+
 	/**
 	 * Creates a copy of the copyFrom message.
 	 */
@@ -65,6 +67,7 @@ public class MqttMessage {
 		this.fixedHeaderEndOffset = copyFrom.fixedHeaderEndOffset;
 		this.messageType = copyFrom.messageType;
 		this.remainingLength = copyFrom.remainingLength;
+		this.receivedTimestamp = copyFrom.receivedTimestamp;
 	}
 
 	/**
@@ -75,11 +78,14 @@ public class MqttMessage {
 	 * @param buffer
 	 *            Byte buffer the contains this message. The buffer should already be populated and flipped. This buffer is used directly by this class; it is
 	 *            not copied.
+	 * @param receivedTimestamp
+	 *            Timestamp (from {@link System#currentTimeMillis()}) when the message was received.
 	 */
-	MqttMessage(ByteBuffer buffer, int remainingLength) {
+	MqttMessage(ByteBuffer buffer, int remainingLength, long receivedTimestamp) {
 		this.buffer = buffer;
 
 		this.remainingLength = remainingLength;
+		this.receivedTimestamp = receivedTimestamp;
 		fixedHeaderEndOffset = getRemainingLengthSize() + 1;
 		buffer.position(fixedHeaderEndOffset);
 	}
@@ -154,6 +160,13 @@ public class MqttMessage {
 		}
 
 		return new String(hex, UTF8);
+	}
+
+	/**
+	 * @return Timestamp (from {@link System#currentTimeMillis()}) when the message was received. 0 if this is not a received message.
+	 */
+	public long getReceivedTimestamp() {
+		return receivedTimestamp;
 	}
 
 	/**

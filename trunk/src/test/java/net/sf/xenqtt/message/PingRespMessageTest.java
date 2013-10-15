@@ -30,7 +30,7 @@ public class PingRespMessageTest {
 	@Test
 	public void testCtor_Receive() {
 
-		msg = new PingRespMessage(buf);
+		msg = new PingRespMessage(buf, 0);
 		assertMsg();
 	}
 

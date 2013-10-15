@@ -49,7 +49,7 @@ public class UnsubscribeMessageTest {
 	@Test
 	public void testInboundCtor() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
-		UnsubscribeMessage message = new UnsubscribeMessage(ByteBuffer.wrap(PAYLOAD), 29);
+		UnsubscribeMessage message = new UnsubscribeMessage(ByteBuffer.wrap(PAYLOAD), 29, 0);
 
 		assertSame(MessageType.UNSUBSCRIBE, message.getMessageType());
 		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());
@@ -66,7 +66,7 @@ public class UnsubscribeMessageTest {
 	@Test
 	public void testSetMessageId() {
 		String[] topics = new String[] { "alpha", "beta", "delta", "gamma" };
-		UnsubscribeMessage message = new UnsubscribeMessage(ByteBuffer.wrap(PAYLOAD), 29);
+		UnsubscribeMessage message = new UnsubscribeMessage(ByteBuffer.wrap(PAYLOAD), 29, 0);
 
 		assertSame(MessageType.UNSUBSCRIBE, message.getMessageType());
 		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());

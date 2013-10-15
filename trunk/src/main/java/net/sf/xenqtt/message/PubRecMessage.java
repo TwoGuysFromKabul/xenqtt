@@ -28,8 +28,8 @@ public final class PubRecMessage extends IdentifiableMqttMessage {
 	/**
 	 * Used to construct a received message.
 	 */
-	public PubRecMessage(ByteBuffer buffer) {
-		super(buffer, 2);
+	public PubRecMessage(ByteBuffer buffer, long receivedTimestamp) {
+		super(buffer, 2, receivedTimestamp);
 	}
 
 	/**

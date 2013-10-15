@@ -742,13 +742,13 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			MessageType messageType = MessageType.lookup((buffer.get(0) & 0xf0) >> 4);
 			switch (messageType) {
 			case CONNECT:
-				ConnectMessage connectMessage = new ConnectMessage(buffer, remainingLength);
+				ConnectMessage connectMessage = new ConnectMessage(buffer, remainingLength, now);
 				msg = connectMessage;
 				pingIntervalMillis = connectMessage.getKeepAliveSeconds() * 1000;
 				handler.connect(this, connectMessage);
 				break;
 			case CONNACK:
-				ConnAckMessage connAckMessage = new ConnAckMessage(buffer);
+				ConnAckMessage connAckMessage = new ConnAckMessage(buffer, now);
 				commandComplete(connAckReceivedCommand, connAckMessage);
 				connAckReceivedCommand = null;
 				msg = connAckMessage;
@@ -759,68 +759,68 @@ abstract class AbstractMqttChannel implements MqttChannel {
 				handler.connAck(this, connAckMessage);
 				break;
 			case PUBLISH:
-				PubMessage publishMessage = new PubMessage(buffer, remainingLength);
+				PubMessage publishMessage = new PubMessage(buffer, remainingLength, now);
 				msg = publishMessage;
 				handler.publish(this, publishMessage);
 				break;
 			case PUBACK:
-				PubAckMessage pubAckMessage = new PubAckMessage(buffer);
+				PubAckMessage pubAckMessage = new PubAckMessage(buffer, now);
 				msg = pubAckMessage;
 				ackReceived(pubAckMessage, now);
 				handler.pubAck(this, pubAckMessage);
 				break;
 			case PUBREC:
-				PubRecMessage pubRecMessage = new PubRecMessage(buffer);
+				PubRecMessage pubRecMessage = new PubRecMessage(buffer, now);
 				msg = pubRecMessage;
 				ackReceived(pubRecMessage, now);
 				handler.pubRec(this, pubRecMessage);
 				break;
 			case PUBREL:
-				PubRelMessage pubRelMessage = new PubRelMessage(buffer);
+				PubRelMessage pubRelMessage = new PubRelMessage(buffer, now);
 				msg = pubRelMessage;
 				handler.pubRel(this, pubRelMessage);
 				break;
 			case PUBCOMP:
-				PubCompMessage pubCompMessage = new PubCompMessage(buffer);
+				PubCompMessage pubCompMessage = new PubCompMessage(buffer, now);
 				msg = pubCompMessage;
 				ackReceived(pubCompMessage, now);
 				handler.pubComp(this, pubCompMessage);
 				break;
 			case SUBSCRIBE:
-				SubscribeMessage subscribeMessage = new SubscribeMessage(buffer, remainingLength);
+				SubscribeMessage subscribeMessage = new SubscribeMessage(buffer, remainingLength, now);
 				msg = subscribeMessage;
 				handler.subscribe(this, subscribeMessage);
 				break;
 			case SUBACK:
-				SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength);
+				SubAckMessage subAckMessage = new SubAckMessage(buffer, remainingLength, now);
 				msg = subAckMessage;
 				ackReceived(subAckMessage, now);
 				handler.subAck(this, subAckMessage);
 				break;
 			case UNSUBSCRIBE:
-				UnsubscribeMessage unsubscribeMessage = new UnsubscribeMessage(buffer, remainingLength);
+				UnsubscribeMessage unsubscribeMessage = new UnsubscribeMessage(buffer, remainingLength, now);
 				msg = unsubscribeMessage;
 				handler.unsubscribe(this, unsubscribeMessage);
 				break;
 			case UNSUBACK:
-				UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer);
+				UnsubAckMessage unsubAckMessage = new UnsubAckMessage(buffer, now);
 				msg = unsubAckMessage;
 				ackReceived(unsubAckMessage, now);
 				handler.unsubAck(this, unsubAckMessage);
 				break;
 			case PINGREQ:
-				PingReqMessage pingReqMessage = new PingReqMessage(buffer);
+				PingReqMessage pingReqMessage = new PingReqMessage(buffer, now);
 				msg = pingReqMessage;
 				pingReq(now, pingReqMessage);
 				break;
 			case PINGRESP:
-				PingRespMessage pingRespMessage = new PingRespMessage(buffer);
+				PingRespMessage pingRespMessage = new PingRespMessage(buffer, now);
 				msg = pingRespMessage;
 				pingResp(now, pingRespMessage);
 				break;
 			case DISCONNECT:
 				result = false;
-				DisconnectMessage disconnectMessage = new DisconnectMessage(buffer);
+				DisconnectMessage disconnectMessage = new DisconnectMessage(buffer, now);
 				msg = disconnectMessage;
 				handler.disconnect(this, disconnectMessage);
 				break;

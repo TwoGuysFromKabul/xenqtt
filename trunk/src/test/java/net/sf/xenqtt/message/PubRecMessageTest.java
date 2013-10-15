@@ -30,7 +30,7 @@ public class PubRecMessageTest {
 	@Test
 	public void testCtor_Receive() {
 
-		msg = new PubRecMessage(buf);
+		msg = new PubRecMessage(buf, 0);
 		assertMsg();
 	}
 
@@ -52,7 +52,7 @@ public class PubRecMessageTest {
 
 		for (int i = 0; i < 0xffff; i++) {
 			buf = ByteBuffer.wrap(new byte[] { (byte) 0x50, 0x02, (byte) (i >> 8), (byte) (i & 0xff) });
-			msg = new PubRecMessage(buf);
+			msg = new PubRecMessage(buf, 0);
 			assertEquals(i, msg.getMessageId());
 		}
 	}

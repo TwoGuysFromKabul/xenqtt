@@ -111,7 +111,7 @@ public class PubMessageTest {
 
 	@Test
 	public void testInboundCtor_Qos1() {
-		PubMessage message = new PubMessage(ByteBuffer.wrap(qos1Bytes), 90);
+		PubMessage message = new PubMessage(ByteBuffer.wrap(qos1Bytes), 90, 0);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -126,7 +126,7 @@ public class PubMessageTest {
 
 	@Test
 	public void testSetMessageId_Qos1() {
-		PubMessage message = new PubMessage(ByteBuffer.wrap(qos1Bytes), 90);
+		PubMessage message = new PubMessage(ByteBuffer.wrap(qos1Bytes), 90, 0);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -221,7 +221,7 @@ public class PubMessageTest {
 
 	@Test
 	public void testInboundCtor_Qos0() {
-		PubMessage message = new PubMessage(ByteBuffer.wrap(qos0Bytes), 90);
+		PubMessage message = new PubMessage(ByteBuffer.wrap(qos0Bytes), 90, 0);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
 
@@ -237,7 +237,7 @@ public class PubMessageTest {
 	@Test(expected = UnsupportedOperationException.class)
 	public void testSetMessageId_Qos0() {
 
-		PubMessage message = new PubMessage(ByteBuffer.wrap(qos0Bytes), 90);
+		PubMessage message = new PubMessage(ByteBuffer.wrap(qos0Bytes), 90, 0);
 		message.setMessageId(7);
 	}
 }
