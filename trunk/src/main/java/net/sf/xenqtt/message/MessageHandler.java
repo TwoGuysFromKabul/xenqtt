@@ -117,4 +117,14 @@ public interface MessageHandler {
 	 *            The channel that was detached
 	 */
 	void channelDetached(MqttChannel channel);
+
+	/**
+	 * Called when a {@link MqttMessage message} is sent from the client
+	 * 
+	 * @param channel
+	 *            The {@link MqttChannel channel} on which the message was sent
+	 * @param message
+	 *            The {@link MqttMessage message} that was sent
+	 */
+	void messageSent(MqttChannel channel, MqttMessage message);
 }

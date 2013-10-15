@@ -29,6 +29,7 @@ import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.DisconnectMessage;
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
+import net.sf.xenqtt.message.MqttMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubCompMessage;
 import net.sf.xenqtt.message.PubMessage;
@@ -312,6 +313,13 @@ final class ProxySession implements MessageHandler {
 	@Override
 	public void channelDetached(MqttChannel channel) {
 		// this should never happen
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#messageSent(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
+	 */
+	@Override
+	public void messageSent(MqttChannel channel, MqttMessage message) {
 	}
 
 	private boolean stringEquqls(String string1, String string2) {

@@ -18,6 +18,7 @@ package net.sf.xenqtt.message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -395,7 +396,25 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	public final String getRemoteAddress() {
 
 		Socket socket = channel.socket();
-		return socket.isBound() ? socket.getRemoteSocketAddress().toString() : "";
+		return socket.isBound() ? socket.getRemoteSocketAddress().toString() : "N/A";
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#getLocalAddress()
+	 */
+	@Override
+	public String getLocalAddress() {
+		Socket socket = channel.socket();
+		if (!channel.isOpen()) {
+			return "N/A";
+		}
+
+		SocketAddress address = socket.getLocalSocketAddress();
+		if (address == null) {
+			return "N/A";
+		}
+
+		return address.toString();
 	}
 
 	/**
@@ -407,14 +426,8 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		if (channel == null) {
 			return "This channel has not been property constructed: " + super.toString();
 		}
-		Socket socket = channel.socket();
-		if (!socket.isBound()) {
-			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:N/A]";
-		}
-		if (!channel.isOpen()) {
-			return getClass().getSimpleName() + "[localAddress:N/A,remoteAddress:" + socket.getRemoteSocketAddress() + "]";
-		}
-		return getClass().getSimpleName() + "[localAddress:" + socket.getLocalSocketAddress() + ",remoteAddress:" + socket.getRemoteSocketAddress() + "]";
+
+		return getClass().getSimpleName() + "[localAddress:" + getLocalAddress() + ",remoteAddress:" + getRemoteAddress() + "]";
 	}
 
 	/**
@@ -502,6 +515,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			Log.debug("%s sent %s", this, sendMessageInProgress);
+			handler.messageSent(this, sendMessageInProgress);
 
 			if (!sendMessageInProgress.isDuplicate()) {
 				sendMessageInProgress.originalSendTime = now;
