@@ -24,6 +24,7 @@ import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.DisconnectMessage;
 import net.sf.xenqtt.message.MessageHandler;
 import net.sf.xenqtt.message.MqttChannel;
+import net.sf.xenqtt.message.MqttMessage;
 import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubCompMessage;
 import net.sf.xenqtt.message.PubMessage;
@@ -195,5 +196,12 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 	@Override
 	public void channelDetached(MqttChannel channel) {
 		// ignore
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#messageSent(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
+	 */
+	@Override
+	public void messageSent(MqttChannel channel, MqttMessage message) {
 	}
 }

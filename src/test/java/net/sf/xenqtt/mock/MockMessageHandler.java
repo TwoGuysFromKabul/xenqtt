@@ -192,6 +192,13 @@ public class MockMessageHandler implements MessageHandler {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MessageHandler#messageSent(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
+	 */
+	@Override
+	public void messageSent(MqttChannel channel, MqttMessage message) {
+	}
+
+	/**
 	 * Called by test channels when a {@link PingReqMessage} is received so it can be handled by this mock like other messages.
 	 */
 	public void pingReq(MqttChannel channel, PingReqMessage message) throws Exception {

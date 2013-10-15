@@ -195,6 +195,14 @@ final class DelegatingMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#getLocalAddress()
+	 */
+	@Override
+	public String getLocalAddress() {
+		return delegate.getLocalAddress();
+	}
+
+	/**
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override

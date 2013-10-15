@@ -176,4 +176,9 @@ public interface MqttChannel extends MqttChannelRef {
 	 * @return The channel's remote address
 	 */
 	String getRemoteAddress();
+
+	/**
+	 * @return The channel's local address
+	 */
+	String getLocalAddress();
 }

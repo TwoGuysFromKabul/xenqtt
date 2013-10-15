@@ -15,8 +15,6 @@
  */
 package net.sf.xenqtt.client;
 
-import java.net.InetAddress;
-
 import net.sf.xenqtt.message.MqttMessage;
 
 /**
@@ -36,7 +34,7 @@ public interface MqttClientDebugListener {
 	 * @param remoteAddress
 	 *            Remote address of the MQTT connection
 	 */
-	void connectionOpened(MqttClient client, InetAddress localAddress, InetAddress remoteAddress);
+	void connectionOpened(MqttClient client, String localAddress, String remoteAddress);
 
 	/**
 	 * Called when a connection is closed. Closed in this case means the socket connection was closed.
@@ -48,7 +46,7 @@ public interface MqttClientDebugListener {
 	 * @param remoteAddress
 	 *            Remote address of the MQTT connection
 	 */
-	void connectionClosed(MqttClient client, InetAddress localAddress, InetAddress remoteAddress);
+	void connectionClosed(MqttClient client, String localAddress, String remoteAddress);
 
 	/**
 	 * Called when a message is received
@@ -62,7 +60,7 @@ public interface MqttClientDebugListener {
 	 * @param message
 	 *            The message that was received
 	 */
-	void messageReceived(MqttClient client, InetAddress localAddress, InetAddress remoteAddress, MqttMessage message);
+	void messageReceived(MqttClient client, String localAddress, String remoteAddress, MqttMessage message);
 
 	/**
 	 * Called when a message is sent
@@ -76,5 +74,5 @@ public interface MqttClientDebugListener {
 	 * @param message
 	 *            The message that was sent
 	 */
-	void messageSent(MqttClient client, InetAddress localAddress, InetAddress remoteAddress, MqttMessage message);
+	void messageSent(MqttClient client, String localAddress, String remoteAddress, MqttMessage message);
 }

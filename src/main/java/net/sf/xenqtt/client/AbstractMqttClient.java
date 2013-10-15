@@ -492,6 +492,8 @@ abstract class AbstractMqttClient implements MqttClient {
 					}
 				});
 			}
+
+			debugMessageReceivedIfApplicable(chan, message);
 		}
 
 		/**
@@ -511,20 +513,7 @@ abstract class AbstractMqttClient implements MqttClient {
 				}
 			});
 
-			if (debugListener != null) {
-				executor.execute(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							// TODO [jeremy] - Need the local and remote addresses.
-							debugListener.messageReceived(client, null, null, message);
-						} catch (Exception ex) {
-							Log.error(ex, "Failed to provide a debug hook for %s: %s", channel, message);
-						}
-					}
-
-				});
-			}
+			debugMessageReceivedIfApplicable(channel, message);
 		}
 
 		/**
@@ -547,6 +536,8 @@ abstract class AbstractMqttClient implements MqttClient {
 					}
 				});
 			}
+
+			debugMessageReceivedIfApplicable(channel, message);
 		}
 
 		/**
@@ -605,6 +596,8 @@ abstract class AbstractMqttClient implements MqttClient {
 					}
 				});
 			}
+
+			debugMessageReceivedIfApplicable(channel, message);
 		}
 
 		/**
@@ -635,6 +628,8 @@ abstract class AbstractMqttClient implements MqttClient {
 					}
 				});
 			}
+
+			debugMessageReceivedIfApplicable(channel, message);
 		}
 
 		/**
@@ -670,8 +665,7 @@ abstract class AbstractMqttClient implements MqttClient {
 						@Override
 						public void run() {
 							try {
-								// TODO [jeremy] - Get the local and remote addresses.
-								debugListener.connectionOpened(client, null, null);
+								debugListener.connectionOpened(client, channel.getLocalAddress(), channel.getRemoteAddress());
 							} catch (Exception ex) {
 								Log.error(ex, "Failed to update the debug listener for %s", channel);
 							}
@@ -707,8 +701,7 @@ abstract class AbstractMqttClient implements MqttClient {
 					@Override
 					public void run() {
 						try {
-							// TODO [jeremy] - Need the local and remote addresses.
-							debugListener.connectionOpened(client, null, null);
+							debugListener.connectionOpened(client, channel.getLocalAddress(), channel.getRemoteAddress());
 						} catch (Exception ex) {
 							Log.error(ex, "Unable to notify the debug listener of channel closed.");
 						}
@@ -731,6 +724,41 @@ abstract class AbstractMqttClient implements MqttClient {
 		@Override
 		public void channelDetached(MqttChannel channel) {
 			// this should never be called for a client
+		}
+
+		/**
+		 * @see net.sf.xenqtt.message.MessageHandler#messageSent(net.sf.xenqtt.message.MqttChannel, net.sf.xenqtt.message.MqttMessage)
+		 */
+		@Override
+		public void messageSent(final MqttChannel channel, final MqttMessage message) {
+			if (debugListener != null) {
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							debugListener.messageSent(client, channel.getLocalAddress(), channel.getRemoteAddress(), message);
+						} catch (Exception ex) {
+							Log.error(ex, "Unable to debug a message that was sent.");
+						}
+					}
+				});
+			}
+		}
+
+		private void debugMessageReceivedIfApplicable(final MqttChannel channel, final MqttMessage message) {
+			if (debugListener != null) {
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							debugListener.messageReceived(client, channel.getLocalAddress(), channel.getRemoteAddress(), message);
+						} catch (Exception ex) {
+							Log.error(ex, "Failed to provide a debug hook for %s: %s", channel, message);
+						}
+					}
+
+				});
+			}
 		}
 	}
 
