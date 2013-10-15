@@ -36,6 +36,9 @@ import net.sf.xenqtt.message.SubscribeMessage;
 import net.sf.xenqtt.message.UnsubAckMessage;
 import net.sf.xenqtt.message.UnsubscribeMessage;
 
+/**
+ * {@link SimpleBroker} extension that handles creating/managing {@link ProxySession sessions}.
+ */
 final class ProxyBroker extends SimpleBroker implements MessageHandler {
 
 	private final String brokerUri;
@@ -97,6 +100,18 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 		}
 
 		shutdownClosedSessions();
+	}
+
+	private void shutdownClosedSessions() {
+
+		Iterator<ProxySession> iter = proxySessionByClientId.values().iterator();
+		while (iter.hasNext()) {
+			ProxySession session = iter.next();
+			if (session.isClosed()) {
+				session.shutdown();
+				iter.remove();
+			}
+		}
 	}
 
 	/**
@@ -222,17 +237,5 @@ final class ProxyBroker extends SimpleBroker implements MessageHandler {
 	@Override
 	public void messageSent(MqttChannel channel, MqttMessage message) {
 		// ignore
-	}
-
-	private void shutdownClosedSessions() {
-
-		Iterator<ProxySession> iter = proxySessionByClientId.values().iterator();
-		while (iter.hasNext()) {
-			ProxySession session = iter.next();
-			if (session.isClosed()) {
-				session.shutdown();
-				iter.remove();
-			}
-		}
 	}
 }
