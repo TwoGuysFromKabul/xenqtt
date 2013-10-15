@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.sf.xenqtt.AppContext;
+import net.sf.xenqtt.ConfigurableThreadFactory;
 import net.sf.xenqtt.Log;
 import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.client.AsyncMqttClient;
