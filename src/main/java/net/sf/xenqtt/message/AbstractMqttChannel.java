@@ -218,10 +218,18 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
+	 */
+	@Override
+	public final boolean send(MqttMessage message) {
+		return send(message, null, 0L);
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand, long)
 	 */
 	@Override
-	public boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand, long now) {
+	public final boolean send(MqttMessage message, BlockingCommand<MqttMessage> blockingCommand, long now) {
 
 		if (message.getMessageType() == MessageType.CONNECT) {
 			connAckReceivedCommand = blockingCommand;
@@ -345,7 +353,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#cancelBlockingCommands()
 	 */
 	@Override
-	public void cancelBlockingCommands() {
+	public final void cancelBlockingCommands() {
 
 		cancelCommand(connectionCompleteCommand);
 		cancelCommand(connAckReceivedCommand);
@@ -367,7 +375,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#getUnsentMessages()
 	 */
 	@Override
-	public List<MqttMessage> getUnsentMessages() {
+	public final List<MqttMessage> getUnsentMessages() {
 
 		List<MqttMessage> unsentMessages = new ArrayList<MqttMessage>(messagesToResend.size() + inFlightMessageCount() + sendQueueDepth());
 		unsentMessages.addAll(messagesToResend);
@@ -384,7 +392,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see net.sf.xenqtt.message.MqttChannel#getRemoteAddress()
 	 */
 	@Override
-	public String getRemoteAddress() {
+	public final String getRemoteAddress() {
 
 		Socket socket = channel.socket();
 		return socket.isBound() ? socket.getRemoteSocketAddress().toString() : "";
@@ -394,7 +402,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
-	public String toString() {
+	public final String toString() {
 
 		if (channel == null) {
 			return "This channel has not been property constructed: " + super.toString();

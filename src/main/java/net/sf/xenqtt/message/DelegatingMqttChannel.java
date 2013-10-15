@@ -70,6 +70,14 @@ final class DelegatingMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
+	 */
+	@Override
+	public boolean send(MqttMessage message) {
+		return delegate.send(message);
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage, net.sf.xenqtt.message.BlockingCommand, long)
 	 */
 	@Override

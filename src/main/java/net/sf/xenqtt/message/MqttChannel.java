@@ -67,6 +67,19 @@ public interface MqttChannel extends MqttChannelRef {
 	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
 	 * not {@link ConnectReturnCode#ACCEPTED} is sent the channel is closed automatically.
 	 * 
+	 * This is the same as calling {@link #send(MqttMessage, BlockingCommand, long)} with a null {@link BlockingCommand} and 0 timestamp.
+	 * 
+	 * @param message
+	 *            The message to send
+	 * 
+	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
+	 */
+	boolean send(MqttMessage message);
+
+	/**
+	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
+	 * not {@link ConnectReturnCode#ACCEPTED} is sent the channel is closed automatically.
+	 * 
 	 * @param message
 	 *            The message to send
 	 * @param blockingCommand
@@ -79,7 +92,7 @@ public interface MqttChannel extends MqttChannelRef {
 	 *            <li>If any exception occurs or the channel is closed all in flight messages are complete</li>
 	 *            </ul>
 	 * @param now
-	 *            The current timestamp in milliseconds
+	 *            The current timestamp in milliseconds. 0 will keep this message from being included in any send latency stats.
 	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */
