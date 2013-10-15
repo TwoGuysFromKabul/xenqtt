@@ -120,7 +120,7 @@ public class SyncMqttClientIT {
 			client = new SyncMqttClient("tcp://foo:1883", listener, 5, config);
 			fail("expected exception");
 		} catch (MqttInvocationException e) {
-			thrown = e.getRootCause().getCause();
+			thrown = e.getRootCause();
 			assertEquals(UnresolvedAddressException.class, thrown.getClass());
 		}
 
