@@ -355,10 +355,20 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		}
 	}
 
+	@Test(expected = IllegalStateException.class)
+	public void testRegister_ChannelAlreadyRegistered() throws Exception {
+
+		establishConnection();
+
+		clientChannel.register(null, clientHandler);
+	}
+
 	@Test
 	public void testRegister_Fails() throws Exception {
 
 		establishConnection();
+
+		clientChannel.deregister();
 
 		assertFalse(clientChannel.register(null, clientHandler));
 		clientHandler.assertChannelAttachedCount(0);
@@ -373,6 +383,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		assertEquals(0, newSelector.keys().size());
 
 		clientHandler = new MockMessageHandler();
+		clientChannel.deregister();
+
 		assertTrue(clientChannel.register(newSelector, clientHandler));
 		assertEquals(1, newSelector.keys().size());
 		clientHandler.assertChannelAttachedCount(1);
