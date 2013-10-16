@@ -1,12 +1,18 @@
 USER=$1
 if [ -z "$USER" ]; then
-    echo Usage: ./deploy-release.sh username version
+    echo Usage: ./deploy-release.sh username version api-key
     exit 1
 fi
 
 VERSION=$2
 if [ -z "$VERSION" ]; then
-    echo Usage: ./deploy-release.sh username version
+    echo Usage: ./deploy-release.sh username version api-key
+    exit 1
+fi
+
+API_KEY=$3
+if [ -z "$API_KEY" ]; then
+    echo Usage: ./deploy-release.sh username version api-key
     exit 1
 fi
 
@@ -27,4 +33,8 @@ DOCDIR=target/deploy-docs/$VERSION
 mkdir $DOCDIR
 cp -a target/site/apidocs/* $DOCDIR
 rsync -avP -e ssh  --exclude=.svn --exclude=.htaccess $DOCDIR $USER,xenqtt@web.sf.net:/home/project-web/xenqtt/htdocs/apidocs
+echo
+
+echo Configuring default download file...
+curl -H "Accept: application/json" -X PUT -d "default=windows&default=mac&default=linux&default=bsd&default=solaris&default=others" -d "api_key=$API_KEY" https://sourceforge.net/projects/xenqtt/files/$VERSION/xenqtt-$VERSION.jar
 echo
