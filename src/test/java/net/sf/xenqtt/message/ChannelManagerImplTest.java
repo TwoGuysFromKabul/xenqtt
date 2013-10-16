@@ -606,7 +606,6 @@ public class ChannelManagerImplTest {
 		manager.close(clientChannel);
 		clientHandler.assertChannelClosedCount(1);
 		clientHandler.assertLastChannelClosedCause((Throwable) null);
-		brokerHandler.assertChannelClosedCount(0);
 
 		manager.close(brokerChannel);
 		clientHandler.assertChannelClosedCount(1);
