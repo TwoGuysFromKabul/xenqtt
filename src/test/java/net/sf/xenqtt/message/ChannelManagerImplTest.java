@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInvocationException;
+import net.sf.xenqtt.client.MessageStats;
 import net.sf.xenqtt.mock.MockMessageHandler;
 import net.sf.xenqtt.mock.MockServer;
 
@@ -397,6 +398,30 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
 		brokerHandler.assertMessages(new PubAckMessage(1));
+
+		assertEquals(1, manager.getStats(false).getMessagesSent());
+	}
+
+	@Test
+	public void testGetStats_Reset() throws Exception {
+
+		manager = new ChannelManagerImpl(2);
+		manager.init();
+
+		CountDownLatch trigger = new CountDownLatch(1);
+		brokerHandler.onMessage(MessageType.PUBACK, trigger);
+
+		clientChannel = manager.newClientChannel("localhost", server.getPort(), clientHandler);
+		brokerChannel = manager.newBrokerChannel(server.nextClient(1000), brokerHandler);
+
+		assertNull(manager.send(clientChannel, new PubAckMessage(1)));
+
+		assertTrue(trigger.await(1, TimeUnit.SECONDS));
+
+		brokerHandler.assertMessages(new PubAckMessage(1));
+
+		assertEquals(1, manager.getStats(true).getMessagesSent());
+		assertEquals(0, manager.getStats(false).getMessagesSent());
 	}
 
 	@Test
@@ -416,6 +441,8 @@ public class ChannelManagerImplTest {
 		assertTrue(trigger.await(1, TimeUnit.SECONDS));
 
 		brokerHandler.assertMessages(new PubAckMessage(1));
+
+		assertEquals(1, manager.getStats(false).getMessagesSent());
 	}
 
 	@Test
@@ -443,6 +470,9 @@ public class ChannelManagerImplTest {
 		SubAckMessage message = manager.send(clientChannel, new SubscribeMessage(1, new String[] { "foo" }, new QoS[] { QoS.AT_LEAST_ONCE }));
 		assertEquals(1, message.getMessageId());
 		assertArrayEquals(new QoS[] { QoS.AT_LEAST_ONCE }, message.getGrantedQoses());
+
+		MessageStats stats = manager.getStats(false);
+		assertEquals(2, stats.getMessagesSent()); // One for the sub and the other for the ack.
 	}
 
 	@Test
@@ -827,6 +857,8 @@ public class ChannelManagerImplTest {
 
 		clientHandler.assertChannelClosedCount(1);
 		brokerHandler.assertChannelClosedCount(1);
+
+		assertEquals(2, manager.getStats(false).getMessagesResent());
 	}
 
 }

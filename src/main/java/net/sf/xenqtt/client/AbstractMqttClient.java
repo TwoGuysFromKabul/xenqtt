@@ -658,24 +658,23 @@ abstract class AbstractMqttClient implements MqttClient {
 						} catch (Exception e) {
 							Log.error(e, "Failed to process channelOpened for %s: cause=", channel);
 						}
-
 					}
 				});
-
-				if (debugListener != null) {
-					executor.execute(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								debugListener.connectionOpened(client, channel.getLocalAddress(), channel.getRemoteAddress());
-							} catch (Exception ex) {
-								Log.error(ex, "Failed to update the debug listener for %s", channel);
-							}
-						}
-					});
-				}
 			} else {
 				firstConnectPending = false;
+			}
+
+			if (debugListener != null) {
+				executor.execute(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							debugListener.connectionOpened(client, channel.getLocalAddress(), channel.getRemoteAddress());
+						} catch (Exception ex) {
+							Log.error(ex, "Failed to update the debug listener for %s", channel);
+						}
+					}
+				});
 			}
 		}
 
@@ -689,6 +688,14 @@ abstract class AbstractMqttClient implements MqttClient {
 
 				@Override
 				public void run() {
+					if (debugListener != null) {
+						try {
+							debugListener.connectionClosed(client, channel.getLocalAddress(), channel.getRemoteAddress());
+						} catch (Exception ex) {
+							Log.error(ex, "Unable to notify the debug listener of channel closed.");
+						}
+					}
+
 					try {
 						tryReconnect(cause);
 					} catch (Exception e) {
@@ -697,19 +704,6 @@ abstract class AbstractMqttClient implements MqttClient {
 
 				}
 			});
-
-			if (debugListener != null) {
-				executor.execute(new Runnable() {
-					@Override
-					public void run() {
-						try {
-							debugListener.connectionOpened(client, channel.getLocalAddress(), channel.getRemoteAddress());
-						} catch (Exception ex) {
-							Log.error(ex, "Unable to notify the debug listener of channel closed.");
-						}
-					}
-				});
-			}
 		}
 
 		/**

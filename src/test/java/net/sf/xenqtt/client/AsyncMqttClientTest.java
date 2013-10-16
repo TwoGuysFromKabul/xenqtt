@@ -15,6 +15,8 @@
  */
 package net.sf.xenqtt.client;
 
+import static org.junit.Assert.*;
+
 import java.util.concurrent.Executors;
 
 import net.sf.xenqtt.message.ConnectReturnCode;
@@ -74,6 +76,14 @@ public class AsyncMqttClientTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_NoExecutor_MessageHandlerThreadPoolSizeLessThanOne() throws Exception {
 		new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), 0, config);
+	}
+
+	@Test
+	public void testGetStats() {
+		MessageStats stats = new AsyncMqttClient("tcp://q.m2m.io:1883", new TestAsyncClientListener(), 1, config).getStats(false);
+		assertNotNull(stats);
+		assertEquals(0, stats.getMessagesQueuedToSend());
+		assertEquals(0, stats.getMessagesInFlight());
 	}
 
 	private static final class TestAsyncClientListener implements AsyncClientListener {
