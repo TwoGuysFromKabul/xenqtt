@@ -307,27 +307,27 @@ class ProxySession implements MessageHandler {
 
 		if (connectMessage == null) {
 			Log.warn("Channel attached with no connect message. This is most likely a bug. clientId: %s, channel: %s", clientId, channel);
-			channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.OTHER));
+			channel.send(new ConnAckMessage(ConnectReturnCode.OTHER));
 			return;
 		}
 
 		if (connectMessage.isCleanSession()) {
 			Log.warn("Proxied connections cannot have the clean session flag set in the connect message; clientId: %s", clientId);
-			channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.OTHER));
+			channel.send(new ConnAckMessage(ConnectReturnCode.OTHER));
 			return;
 		}
 
 		if (originalConnectMessage.getProtocolVersion() != connectMessage.getProtocolVersion()) {
 			Log.warn("Connect message protocol version does not match; clientId: %s, expected: %d, actual: %d", clientId,
 					originalConnectMessage.getProtocolVersion(), connectMessage.getProtocolVersion());
-			channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.UNACCEPTABLE_PROTOCOL_VERSION));
+			channel.send(new ConnAckMessage(ConnectReturnCode.UNACCEPTABLE_PROTOCOL_VERSION));
 			return;
 		}
 
 		if (!stringEquqls(originalConnectMessage.getProtocolName(), connectMessage.getProtocolName())) {
 			Log.warn("Connect message protocol name does not match; clientId: %s, expected: %d, actual: %d", clientId,
 					originalConnectMessage.getProtocolName(), connectMessage.getProtocolName());
-			channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.OTHER));
+			channel.send(new ConnAckMessage(ConnectReturnCode.OTHER));
 			return;
 		}
 
@@ -337,7 +337,7 @@ class ProxySession implements MessageHandler {
 				|| !stringEquqls(originalConnectMessage.getPassword(), connectMessage.getPassword())) {
 			Log.warn("Connect message username/password does not match; clientId: %s, expected: %s/%s, actual: %s/%s", clientId,
 					originalConnectMessage.getUserName(), originalConnectMessage.getPassword(), connectMessage.getUserName(), connectMessage.getPassword());
-			channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS));
+			channel.send(new ConnAckMessage(ConnectReturnCode.BAD_CREDENTIALS));
 			return;
 		}
 
@@ -352,7 +352,7 @@ class ProxySession implements MessageHandler {
 					connectMessage.getClientId(), originalConnectMessage.getWillTopic(), originalConnectMessage.getWillQoS(),
 					originalConnectMessage.isWillRetain(), originalConnectMessage.getWillMessage(), connectMessage.getWillTopic(), connectMessage.getWillQoS(),
 					connectMessage.isWillRetain(), connectMessage.getWillMessage());
-			channelManager.send(channel, new ConnAckMessage(ConnectReturnCode.OTHER));
+			channel.send(new ConnAckMessage(ConnectReturnCode.OTHER));
 			return;
 		}
 
@@ -389,10 +389,10 @@ class ProxySession implements MessageHandler {
 			Log.warn("Attempting to connect a clustered client to a session with a closed broker connection. clientId: %s, address: %s", clientId,
 					channel.getRemoteAddress());
 			ConnectReturnCode returnCode = brokerConnectReturnCode == null ? ConnectReturnCode.OTHER : brokerConnectReturnCode;
-			channelManager.send(channel, new ConnAckMessage(returnCode));
+			channel.send(new ConnAckMessage(returnCode));
 		} else {
 			Log.info("New client connection accepted into cluster; clientId: %s, address: %s", clientId, channel.getRemoteAddress());
-			channelManager.send(channel, new ConnAckMessage(brokerConnectReturnCode));
+			channel.send(new ConnAckMessage(brokerConnectReturnCode));
 			brokerChannels.add(channel);
 		}
 	}
