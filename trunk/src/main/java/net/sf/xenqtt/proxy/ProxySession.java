@@ -63,8 +63,8 @@ class ProxySession implements MessageHandler {
 	private final String clientId;
 	private final ConnectMessage originalConnectMessage;
 
-	private final List<MqttChannel> brokerChannels = new ArrayList<MqttChannel>();
-	private MqttChannel clientChannel;
+	private final List<MqttChannel> channelsToClients = new ArrayList<MqttChannel>();
+	private MqttChannel channelToBroker;
 	private ConnectReturnCode brokerConnectReturnCode;
 
 	private ConnectionState brokerConnectionState = ConnectionState.PENDING;
@@ -145,7 +145,7 @@ class ProxySession implements MessageHandler {
 	@Override
 	public void connect(MqttChannel channel, ConnectMessage message) throws Exception {
 
-		if (channel == clientChannel) {
+		if (channel == channelToBroker) {
 			Log.warn("Received a %s message from the broker at %s. This should never happen. clientId=%s", message.getMessageType(),
 					channel.getRemoteAddress(), clientId);
 		} else {
@@ -160,7 +160,7 @@ class ProxySession implements MessageHandler {
 	@Override
 	public void connAck(MqttChannel channel, ConnAckMessage message) throws Exception {
 
-		if (channel != clientChannel) {
+		if (channel != channelToBroker) {
 			Log.warn("Received a %s message from clustered client %s. This should never happen. clientId=%s", message.getMessageType(),
 					channel.getRemoteAddress(), clientId);
 			return;
@@ -175,8 +175,8 @@ class ProxySession implements MessageHandler {
 			brokerConnectionState = ConnectionState.DISCONNECTED;
 		}
 
-		for (MqttChannel brokerChannel : channelsPendingBroker) {
-			newSessionClient(brokerChannel);
+		for (MqttChannel channelToClient : channelsPendingBroker) {
+			newSessionClient(channelToClient);
 		}
 		channelsPendingBroker.clear();
 	}
@@ -266,8 +266,8 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelOpened(MqttChannel channel) {
-		clientChannel = channel;
-		clientChannel.send(originalConnectMessage);
+		channelToBroker = channel;
+		channelToBroker.send(originalConnectMessage);
 	}
 
 	/**
@@ -276,21 +276,21 @@ class ProxySession implements MessageHandler {
 	@Override
 	public void channelClosed(MqttChannel channel, Throwable cause) {
 
-		if (channel == clientChannel) {
+		if (channel == channelToBroker) {
 			brokerConnectionState = ConnectionState.DISCONNECTED;
 
-			for (MqttChannel brokerChannel : brokerChannels) {
-				brokerChannel.close();
+			for (MqttChannel channelToClient : channelsToClients) {
+				channelToClient.close();
 			}
-			brokerChannels.clear();
+			channelsToClients.clear();
 
 			sessionClosed = true;
 
 		} else if (brokerConnectionState != ConnectionState.DISCONNECTED) {
-			brokerChannels.remove(channel);
+			channelsToClients.remove(channel);
 
-			if (brokerChannels.isEmpty()) {
-				clientChannel.send(new DisconnectMessage());
+			if (channelsToClients.isEmpty()) {
+				channelToBroker.send(new DisconnectMessage());
 			} else {
 				distributeMessagesForChannel(channel);
 			}
@@ -393,33 +393,33 @@ class ProxySession implements MessageHandler {
 		} else {
 			Log.info("New client connection accepted into cluster; clientId: %s, address: %s", clientId, channel.getRemoteAddress());
 			channel.send(new ConnAckMessage(brokerConnectReturnCode));
-			brokerChannels.add(channel);
+			channelsToClients.add(channel);
 		}
 	}
 
 	private void forwardMessage(MqttChannel channel, IdentifiableMqttMessage message) {
 
-		if (channel == clientChannel) {
+		if (channel == channelToBroker) {
 			forwardToClient(message);
 		} else {
 			forwardToBroker(channel, message);
 		}
 	}
 
-	private void forwardToBroker(MqttChannel clientChannel, IdentifiableMqttMessage message) {
+	private void forwardToBroker(MqttChannel channelToClient, IdentifiableMqttMessage message) {
 
 		if (message.isAckable()) {
 			int clientMessageId = message.getMessageId();
 			int brokerMessageId = nextIdToBroker();
 			message.setMessageId(brokerMessageId);
-			messageSourceByBrokerMessageId.put(brokerMessageId, new MessageSource(clientMessageId, clientChannel));
+			messageSourceByBrokerMessageId.put(brokerMessageId, new MessageSource(clientMessageId, channelToClient));
 		}
 
 		if (message.isAck()) {
 			messageDestByBrokerMessageId.remove(message.getMessageId());
 		}
 
-		clientChannel.send(message);
+		channelToClient.send(message);
 	}
 
 	private void forwardToClient(IdentifiableMqttMessage message) {
@@ -450,14 +450,14 @@ class ProxySession implements MessageHandler {
 		MqttChannel leastBusyChannel = null;
 
 		int index = nextBrokerChannelIndex;
-		int size = brokerChannels.size();
+		int size = channelsToClients.size();
 		for (int count = 0; count < size; count++) {
 			int i = index++ % size;
-			MqttChannel brokerChannel = brokerChannels.get(i);
-			int msgCount = brokerChannel.inFlightMessageCount() + brokerChannel.sendQueueDepth();
+			MqttChannel channelToClient = channelsToClients.get(i);
+			int msgCount = channelToClient.inFlightMessageCount() + channelToClient.sendQueueDepth();
 			if (msgCount < leastBusyMessageCount) {
 				leastBusyMessageCount = msgCount;
-				leastBusyChannel = brokerChannel;
+				leastBusyChannel = channelToClient;
 				nextBrokerChannelIndex = i + 1;
 			}
 		}
