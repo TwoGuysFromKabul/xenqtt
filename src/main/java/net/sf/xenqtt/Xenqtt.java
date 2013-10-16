@@ -21,15 +21,17 @@ import java.util.concurrent.CountDownLatch;
 import net.sf.xenqtt.ArgumentExtractor.Arguments;
 import net.sf.xenqtt.ArgumentExtractor.Mode;
 import net.sf.xenqtt.mockbroker.MockBrokerApplication;
+import net.sf.xenqtt.proxy.ProxyApplication;
 
 /**
  * The entry point into the application when either the proxy or the gateway are run.
  */
 public final class Xenqtt {
 
-	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class, TestClientApplication.class };
-	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] mockbroker|help [args.or.flags]"
-			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\thelp - Display information on xenqtt and how it can be used"
+	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class, TestClientApplication.class, ProxyApplication.class };
+	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] mockbroker|proxy|help [args.or.flags]"
+			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\tproxy - Run the clustered proxy for supporting multiple "
+			+ "applications as a single client\n\thelp - Display information on xenqtt and how it can be used"
 			+ "\n\n\t-v: Increase logging verbosity. v = info, vv = debug";
 
 	static volatile LoggingLevels loggingLevels = new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);

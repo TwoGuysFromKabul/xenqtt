@@ -42,6 +42,14 @@ supported). In addition to full protocol support the mock broker also provides h
 to customize the behavior of various operations. These include publishing, subscribing, and so
 forth.
 
+Xenqtt Proxy:
+
+The proxy allows for clustering one or more applications and treating them as a single client. The
+proxy manages traffic between the clients and an MQTT broker and exposes all the applications as a
+single client to the broker. In this way clustered systems that want to receive data once and only
+once can connect through the proxy and the proxy will deliver messages to just one client rather
+than all of them.
+
 Logging
 
 Xenqtt uses Java logging (commonly called JUL) by default. It does respect a client's choice of the
