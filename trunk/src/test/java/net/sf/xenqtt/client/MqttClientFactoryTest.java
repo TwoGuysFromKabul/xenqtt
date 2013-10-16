@@ -74,6 +74,14 @@ public class MqttClientFactoryTest {
 		factory.newAsyncClient(new TestAsyncClientListener());
 	}
 
+	@Test
+	public void testGetStats() {
+		MessageStats stats = factory.getStats(false);
+		assertNotNull(stats);
+		assertEquals(0, stats.getMessagesQueuedToSend());
+		assertEquals(0, stats.getMessagesInFlight());
+	}
+
 	private static final class TestMqttClientListener implements MqttClientListener {
 
 		/**

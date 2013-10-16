@@ -21,7 +21,9 @@ import static org.mockito.Mockito.*;
 
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import net.sf.xenqtt.MqttCommandCancelledException;
@@ -30,15 +32,24 @@ import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
+import net.sf.xenqtt.client.MqttClientDebugListener;
 import net.sf.xenqtt.client.MqttClientListener;
 import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.ReconnectionStrategy;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.client.SyncMqttClient;
+import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
+import net.sf.xenqtt.message.DisconnectMessage;
+import net.sf.xenqtt.message.MqttMessage;
+import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.message.SubAckMessage;
+import net.sf.xenqtt.message.SubscribeMessage;
+import net.sf.xenqtt.message.UnsubAckMessage;
+import net.sf.xenqtt.message.UnsubscribeMessage;
 import net.sf.xenqtt.mockbroker.Client;
 import net.sf.xenqtt.mockbroker.MockBroker;
 import net.sf.xenqtt.mockbroker.MockBrokerHandler;
@@ -56,7 +67,11 @@ import org.mockito.stubbing.Answer;
 
 public class SyncMqttClientIT {
 
-	MqttClientConfig config = new MqttClientConfig().setConnectTimeoutSeconds(0).setMessageResendIntervalSeconds(5).setBlockingTimeoutSeconds(10);
+	MqttClientDebugListener clientDebugListener = mock(MqttClientDebugListener.class);
+	List<Class<? extends MqttMessage>> sentMessages = Collections.synchronizedList(new ArrayList<Class<? extends MqttMessage>>());
+	List<Class<? extends MqttMessage>> receivedMessages = Collections.synchronizedList(new ArrayList<Class<? extends MqttMessage>>());
+	MqttClientConfig config = new MqttClientConfig().setConnectTimeoutSeconds(0).setMessageResendIntervalSeconds(5).setBlockingTimeoutSeconds(10)
+			.setClientDebugListener(clientDebugListener);
 
 	String badCredentialsUri = "tcp://q.m2m.io:1883";
 	String validBrokerUri = "tcp://test.mosquitto.org:1883";
@@ -64,7 +79,7 @@ public class SyncMqttClientIT {
 	@Mock MockBrokerHandler mockHandler;
 	@Mock MqttClientListener listener;
 	@Mock ReconnectionStrategy reconnectionStrategy;
-	@Captor ArgumentCaptor<PublishMessage> messageCaptor;;
+	@Captor ArgumentCaptor<PublishMessage> messageCaptor;
 
 	MockBroker mockBroker;
 	SyncMqttClient client;
@@ -75,6 +90,27 @@ public class SyncMqttClientIT {
 		MockitoAnnotations.initMocks(this);
 		config.setReconnectionStrategy(reconnectionStrategy);
 		when(reconnectionStrategy.clone()).thenReturn(reconnectionStrategy);
+
+		doAnswer(new Answer<Void>() {
+
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				sentMessages.add(((MqttMessage) invocation.getArguments()[3]).getClass());
+
+				return null;
+			}
+
+		}).when(clientDebugListener).messageSent(any(MqttClient.class), anyString(), anyString(), any(MqttMessage.class));
+		doAnswer(new Answer<Void>() {
+
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				receivedMessages.add(((MqttMessage) invocation.getArguments()[3]).getClass());
+
+				return null;
+			}
+
+		}).when(clientDebugListener).messageReceived(any(MqttClient.class), anyString(), anyString(), any(MqttMessage.class));
 	}
 
 	@After
@@ -173,6 +209,8 @@ public class SyncMqttClientIT {
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 		verify(reconnectionStrategy).clone();
 
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class });
+
 		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
 
@@ -184,6 +222,7 @@ public class SyncMqttClientIT {
 
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 		verify(reconnectionStrategy).clone();
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class }, new Class<?>[] { ConnAckMessage.class });
 
 		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
@@ -201,6 +240,7 @@ public class SyncMqttClientIT {
 
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class });
 	}
 
 	@Test
@@ -231,6 +271,9 @@ public class SyncMqttClientIT {
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
 
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, SubscribeMessage.class, ConnectMessage.class, PubAckMessage.class,
+				DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class, SubAckMessage.class, ConnAckMessage.class, PubMessage.class });
+
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
@@ -253,6 +296,9 @@ public class SyncMqttClientIT {
 		verify(listener2, never()).publishReceived(same(client2), any(PublishMessage.class));
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
+
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, ConnectMessage.class, SubscribeMessage.class, DisconnectMessage.class },
+				new Class<?>[] { ConnAckMessage.class, ConnAckMessage.class, SubAckMessage.class });
 
 		verifyNoMoreInteractions(listener, listener2);
 	}
@@ -290,6 +336,10 @@ public class SyncMqttClientIT {
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
 
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, ConnectMessage.class, SubscribeMessage.class, PubAckMessage.class,
+				PubMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class, ConnAckMessage.class, SubAckMessage.class,
+				PubMessage.class, PubAckMessage.class });
+
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
@@ -324,6 +374,10 @@ public class SyncMqttClientIT {
 
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
+
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, ConnectMessage.class, SubscribeMessage.class, PubAckMessage.class,
+				PubMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class, ConnAckMessage.class, SubAckMessage.class,
+				PubMessage.class, PubAckMessage.class });
 
 		verifyNoMoreInteractions(listener, listener2);
 	}
@@ -362,6 +416,9 @@ public class SyncMqttClientIT {
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
 
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, SubscribeMessage.class, ConnectMessage.class, PubAckMessage.class,
+				DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class, SubAckMessage.class, ConnAckMessage.class, PubMessage.class });
+
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
@@ -385,6 +442,9 @@ public class SyncMqttClientIT {
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, SubscribeMessage.class, UnsubscribeMessage.class, DisconnectMessage.class },
+				new Class<?>[] { ConnAckMessage.class, SubAckMessage.class, UnsubAckMessage.class });
+
 		verifyNoMoreInteractions(listener);
 	}
 
@@ -407,6 +467,9 @@ public class SyncMqttClientIT {
 		// disconnect
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, SubscribeMessage.class, UnsubscribeMessage.class, DisconnectMessage.class },
+				new Class<?>[] { ConnAckMessage.class, SubAckMessage.class, UnsubAckMessage.class });
 
 		verifyNoMoreInteractions(listener);
 	}
@@ -443,6 +506,32 @@ public class SyncMqttClientIT {
 
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
+
+		Class<?>[] expectedSentMessages = new Class<?>[25];
+		expectedSentMessages[0] = ConnectMessage.class;
+		expectedSentMessages[1] = SubscribeMessage.class;
+		expectedSentMessages[2] = ConnectMessage.class;
+		for (int i = 3; i < 13; i++) {
+			expectedSentMessages[i] = PubMessage.class;
+		}
+		for (int i = 13; i < 23; i++) {
+			expectedSentMessages[i] = PubAckMessage.class;
+		}
+		expectedSentMessages[23] = DisconnectMessage.class;
+		expectedSentMessages[24] = DisconnectMessage.class;
+
+		Class<?>[] expectedReceivedMessages = new Class<?>[23];
+		expectedReceivedMessages[0] = ConnAckMessage.class;
+		expectedReceivedMessages[1] = SubAckMessage.class;
+		expectedReceivedMessages[2] = ConnAckMessage.class;
+		for (int i = 3; i < 13; i++) {
+			expectedReceivedMessages[i] = PubMessage.class;
+		}
+		for (int i = 13; i < 23; i++) {
+			expectedReceivedMessages[i] = PubAckMessage.class;
+		}
+
+		verifyOpenExchangeCloseCadence(expectedSentMessages, expectedReceivedMessages);
 
 		verifyNoMoreInteractions(listener, listener2);
 	}
@@ -481,6 +570,10 @@ public class SyncMqttClientIT {
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
 
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, PubMessage.class, DisconnectMessage.class, ConnectMessage.class,
+				SubscribeMessage.class, PubAckMessage.class, PubMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class,
+				PubAckMessage.class, ConnAckMessage.class, SubAckMessage.class, PubMessage.class, PubAckMessage.class });
+
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
@@ -517,6 +610,26 @@ public class SyncMqttClientIT {
 
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
+
+		Class<?>[] expectedSentMessages = new Class<?>[15];
+		expectedSentMessages[0] = ConnectMessage.class;
+		expectedSentMessages[1] = SubscribeMessage.class;
+		expectedSentMessages[2] = ConnectMessage.class;
+		for (int i = 0; i < 10; i++) {
+			expectedSentMessages[i + 3] = PubMessage.class;
+		}
+		expectedSentMessages[13] = DisconnectMessage.class;
+		expectedSentMessages[14] = DisconnectMessage.class;
+
+		Class<?>[] expectedReceivedMessages = new Class<?>[13];
+		expectedReceivedMessages[0] = ConnAckMessage.class;
+		expectedReceivedMessages[1] = SubAckMessage.class;
+		expectedReceivedMessages[2] = ConnAckMessage.class;
+		for (int i = 3; i < 13; i++) {
+			expectedReceivedMessages[i] = PubMessage.class;
+		}
+
+		verifyOpenExchangeCloseCadence(expectedSentMessages, expectedReceivedMessages);
 
 		verifyNoMoreInteractions(listener, listener2);
 	}
@@ -558,6 +671,10 @@ public class SyncMqttClientIT {
 		client2.disconnect();
 		verify(listener2, timeout(5000)).disconnected(same(client2), any(Throwable.class), eq(false));
 
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, SubscribeMessage.class, ConnectMessage.class, PubMessage.class,
+				PubAckMessage.class, DisconnectMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class, SubAckMessage.class,
+				ConnAckMessage.class, PubMessage.class, PubMessage.class, PubAckMessage.class });
+
 		verifyNoMoreInteractions(listener, listener2);
 	}
 
@@ -569,6 +686,7 @@ public class SyncMqttClientIT {
 		assertFalse(client.isClosed());
 		client.close();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class }, new Class<?>[] { ConnAckMessage.class });
 		assertTrue(client.isClosed());
 	}
 
@@ -582,6 +700,8 @@ public class SyncMqttClientIT {
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 		assertTrue(client.isClosed());
+
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class });
 	}
 
 	@Test
@@ -609,6 +729,8 @@ public class SyncMqttClientIT {
 
 		verify(listener, timeout(1500)).disconnected(eq(client), isA(MqttTimeoutException.class), eq(false));
 		assertTrue(System.currentTimeMillis() - start > 500);
+
+		verifyOpenExchangeCloseCadence(new Class<?>[] { ConnectMessage.class }, new Class<?>[] {});
 
 		verifyNoMoreInteractions(listener);
 	}
@@ -658,6 +780,9 @@ public class SyncMqttClientIT {
 		// disconnect the client
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(client, null, false);
+
+		verifyOpenExchangeCloseCadence(2, 2, new Class<?>[] { ConnectMessage.class, PubMessage.class, ConnectMessage.class, PubMessage.class,
+				DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class, ConnAckMessage.class, PubAckMessage.class });
 	}
 
 	@Test
@@ -700,6 +825,10 @@ public class SyncMqttClientIT {
 		// disconnect the client
 		client.disconnect();
 		verify(listener, timeout(5000)).disconnected(client, null, false);
+
+		verifyOpenExchangeCloseCadence(3, 3, new Class<?>[] { ConnectMessage.class, PubMessage.class, ConnectMessage.class, PubMessage.class,
+				ConnectMessage.class, PubMessage.class, DisconnectMessage.class }, new Class<?>[] { ConnAckMessage.class, ConnAckMessage.class,
+				ConnAckMessage.class, PubAckMessage.class });
 	}
 
 	@Test
@@ -744,6 +873,37 @@ public class SyncMqttClientIT {
 		verify(reconnectionStrategy, times(4)).connectionLost(isA(MqttClient.class), isNull(Throwable.class));
 		verify(listener, times(3)).disconnected(client, null, true);
 		verify(listener, timeout(5000)).disconnected(client, null, false);
+		verifyOpenExchangeCloseCadence(4, 4, new Class<?>[] { ConnectMessage.class, PubMessage.class, ConnectMessage.class, PubMessage.class,
+				ConnectMessage.class, PubMessage.class, ConnectMessage.class, PubMessage.class }, new Class<?>[] { ConnAckMessage.class, ConnAckMessage.class,
+				ConnAckMessage.class, ConnAckMessage.class });
 		assertTrue(client.isClosed());
 	}
+
+	private void verifyOpenExchangeCloseCadence(Class<?>[] expectedSentMessages, Class<?>[] expectedReceivedMessages) {
+		verifyOpenExchangeCloseCadence(1, 1, expectedSentMessages, expectedReceivedMessages);
+	}
+
+	private void verifyOpenExchangeCloseCadence(int expectedConnectionOpenCount, int expectedConnectionClosedCount, Class<?>[] expectedSentMessages,
+			Class<?>[] expectedReceivedMessages) {
+		verify(clientDebugListener, timeout(5000).times(expectedConnectionOpenCount)).connectionOpened(eq(client), anyString(), anyString());
+
+		if (expectedSentMessages != null) {
+			assertEquals(expectedSentMessages.length, sentMessages.size());
+			for (Class<?> clazz : expectedSentMessages) {
+				sentMessages.remove(clazz);
+			}
+			assertTrue(sentMessages.isEmpty());
+		}
+
+		if (expectedReceivedMessages != null) {
+			assertEquals(expectedReceivedMessages.length, receivedMessages.size());
+			for (Class<?> clazz : expectedReceivedMessages) {
+				receivedMessages.remove(clazz);
+			}
+			assertTrue("Remaining: " + receivedMessages, receivedMessages.isEmpty());
+		}
+
+		verify(clientDebugListener, timeout(5000).times(expectedConnectionClosedCount)).connectionClosed(eq(client), anyString(), anyString());
+	}
+
 }

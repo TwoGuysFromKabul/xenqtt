@@ -45,6 +45,8 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 
 	long now = System.currentTimeMillis();
 
+	MessageStatsImpl stats = new MessageStatsImpl(null);
+
 	@Before
 	public void setup() throws Exception {
 
@@ -228,7 +230,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		long pingIntervalMillis;
 
 		public TestChannel(SocketChannel channel, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis) throws IOException {
-			super(channel, handler, selector, messageResendIntervalMillis, new MessageStatsImpl(null));
+			super(channel, handler, selector, messageResendIntervalMillis, stats);
 			this.messageHandler = handler;
 		}
 
@@ -238,7 +240,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 
 		public TestChannel(String host, int port, MockMessageHandler handler, Selector selector, long messageResendIntervalMillis,
 				BlockingCommand<?> connectionCompleteCommand) throws IOException {
-			super(host, port, handler, selector, messageResendIntervalMillis, connectionCompleteCommand, new MessageStatsImpl(null));
+			super(host, port, handler, selector, messageResendIntervalMillis, connectionCompleteCommand, stats);
 			this.messageHandler = handler;
 		}
 

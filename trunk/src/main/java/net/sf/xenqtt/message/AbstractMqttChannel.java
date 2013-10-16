@@ -396,7 +396,12 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	public final String getRemoteAddress() {
 
 		Socket socket = channel.socket();
-		return socket.isBound() ? socket.getRemoteSocketAddress().toString() : "N/A";
+		SocketAddress address = socket.isBound() ? socket.getRemoteSocketAddress() : null;
+		if (address == null) {
+			return "N/A";
+		}
+
+		return address.toString();
 	}
 
 	/**
@@ -862,7 +867,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 		IdentifiableMqttMessage ackedMessage = inFlightMessages.remove(ackMessage.getMessageId());
 		if (ackedMessage != null) {
-			if (ackedMessage instanceof PubAckMessage) {
+			if (ackedMessage instanceof PubMessage) {
 				stats.messageAcked(now - ackMessage.originalSendTime);
 			}
 			commandComplete(ackedMessage.blockingCommand, ackMessage);

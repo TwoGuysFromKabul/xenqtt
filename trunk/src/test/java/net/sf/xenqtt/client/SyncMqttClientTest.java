@@ -15,6 +15,8 @@
  */
 package net.sf.xenqtt.client;
 
+import static org.junit.Assert.*;
+
 import java.util.concurrent.Executors;
 
 import org.junit.Test;
@@ -72,6 +74,14 @@ public class SyncMqttClientTest {
 	@Test(expected = IllegalArgumentException.class)
 	public void testCtor_Executor_NullExecutor() throws Exception {
 		new SyncMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), null, config);
+	}
+
+	@Test
+	public void testGetStats() {
+		MessageStats stats = new SyncMqttClient("tcp://q.m2m.io:1883", new TestMqttClientListener(), 1, config).getStats(false);
+		assertNotNull(stats);
+		assertEquals(0, stats.getMessagesQueuedToSend());
+		assertEquals(0, stats.getMessagesInFlight());
 	}
 
 	private static final class TestMqttClientListener implements MqttClientListener {

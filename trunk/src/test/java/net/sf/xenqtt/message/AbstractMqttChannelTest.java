@@ -997,6 +997,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
 
+		assertEquals(1, stats.getMessagesSent());
+
 		closeConnection();
 	}
 
@@ -1009,6 +1011,8 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		assertTrue(clientChannel.send(msg, null));
 		readWrite(0, 1);
+
+		assertEquals(1, stats.getMessagesSent());
 
 		closeConnection();
 	}
@@ -1055,21 +1059,34 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		brokerHandler.assertMessages(messagesSent);
 
+		assertEquals(messagesSent.size(), stats.getMessagesSent());
+
 		closeConnection();
 	}
 
 	private void doTestReadWriteSend_NonBlocking(MqttMessage msg, MqttMessage ack) throws Exception {
 		establishConnection();
 
+		int messagesSent = 1;
 		clientChannel.send(msg, null);
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 
 		if (ack != null) {
+			messagesSent++;
 			brokerChannel.send(ack, null);
 			readWrite(1, 0);
 			clientHandler.assertMessages(ack);
+			if (ack instanceof PubAckMessage) {
+				assertTrue(stats.getMinAckLatencyMillis() > 0);
+				assertTrue(stats.getMaxAckLatencyMillis() > 0);
+				assertTrue(stats.getAverageAckLatencyMillis() > 0.0);
+				assertTrue(stats.getMinAckLatencyMillis() <= stats.getAverageAckLatencyMillis());
+				assertTrue(stats.getAverageAckLatencyMillis() <= stats.getMaxAckLatencyMillis());
+			}
 		}
+
+		assertEquals(messagesSent, stats.getMessagesSent());
 
 		closeConnection();
 	}
@@ -1078,20 +1095,31 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 
 		establishConnection();
 
+		int messagesSent = 1;
 		clientChannel.send(msg, blockingCommand);
 		readWrite(0, 1);
 		brokerHandler.assertMessages(msg);
 
 		if (ack != null) {
+			messagesSent++;
 			verifyZeroInteractions(blockingCommand);
 
 			brokerChannel.send(ack, null);
 			readWrite(1, 0);
 			clientHandler.assertMessages(ack);
 			verify(blockingCommand).setResult(ack);
+			if (ack instanceof PubAckMessage) {
+				assertTrue(stats.getMinAckLatencyMillis() > 0);
+				assertTrue(stats.getMaxAckLatencyMillis() > 0);
+				assertTrue(stats.getAverageAckLatencyMillis() > 0.0);
+				assertTrue(stats.getMinAckLatencyMillis() <= stats.getAverageAckLatencyMillis());
+				assertTrue(stats.getAverageAckLatencyMillis() <= stats.getMaxAckLatencyMillis());
+			}
 		}
 
 		verify(blockingCommand).complete();
+
+		assertEquals(messagesSent, stats.getMessagesSent());
 
 		closeConnection();
 	}

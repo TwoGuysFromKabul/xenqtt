@@ -189,11 +189,12 @@ public final class MqttClientConfig implements Cloneable {
 
 	/**
 	 * @param clientDebugListener
-	 *            The {@link MqttClientDebugListener listener} that will receive events for this client. Null to have no listener. This can have a significant
-	 *            performance impact and should only be used when debugging.
+	 *            The {@link MqttClientDebugListener listener} that will receive events for this client. {@code null} to have no listener. This can have a
+	 *            significant performance impact and should only be used when debugging.
 	 */
-	public void setClientDebugListener(MqttClientDebugListener clientDebugListener) {
+	public MqttClientConfig setClientDebugListener(MqttClientDebugListener clientDebugListener) {
 		this.clientDebugListener = clientDebugListener;
+		return this;
 	}
 
 	/**
