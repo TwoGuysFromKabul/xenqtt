@@ -419,7 +419,7 @@ class ProxySession implements MessageHandler {
 			messageDestByBrokerMessageId.remove(message.getMessageId());
 		}
 
-		channelToClient.send(message);
+		channelToBroker.send(message);
 	}
 
 	private void forwardToClient(IdentifiableMqttMessage message) {
@@ -434,17 +434,17 @@ class ProxySession implements MessageHandler {
 			}
 
 		} else {
-			MqttChannel channel = getLeastBusyChannel();
-			if (channel != null) {
+			MqttChannel channelToClient = getLeastBusyChannelToClient();
+			if (channelToClient != null) {
 				if (message.isAckable()) {
-					messageDestByBrokerMessageId.put(message.getMessageId(), new MessageDest(channel, message));
+					messageDestByBrokerMessageId.put(message.getMessageId(), new MessageDest(channelToClient, message));
 				}
-				channel.send(message);
+				channelToClient.send(message);
 			}
 		}
 	}
 
-	private MqttChannel getLeastBusyChannel() {
+	private MqttChannel getLeastBusyChannelToClient() {
 
 		int leastBusyMessageCount = Integer.MAX_VALUE;
 		MqttChannel leastBusyChannel = null;
@@ -494,7 +494,7 @@ class ProxySession implements MessageHandler {
 		for (MessageDest dest : messageDestByBrokerMessageId.values()) {
 
 			if (dest.channel == channel) {
-				MqttChannel newChannel = getLeastBusyChannel();
+				MqttChannel newChannel = getLeastBusyChannelToClient();
 				if (newChannel != null) {
 					dest.channel = newChannel;
 					newChannel.send(dest.message);
