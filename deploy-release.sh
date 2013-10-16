@@ -22,8 +22,8 @@ mkdir target/deploy-jars
 JARDIR=target/deploy-jars/$VERSION
 mkdir $JARDIR
 cp target/xenqtt-$VERSION*.jar $JARDIR
-cp README.txt $JARDIR
 rsync -avP -e ssh  --delete-excluded --exclude=.svn $JARDIR $USER,xenqtt@frs.sf.net:/home/frs/project/xenqtt
+scp README.txt $USER@frs.sf.net:/home/frs/project/xenqtt
 echo
 
 echo Deploying javadoc...
