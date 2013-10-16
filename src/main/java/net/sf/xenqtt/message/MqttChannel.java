@@ -37,8 +37,8 @@ public interface MqttChannel extends MqttChannelRef {
 	void deregister();
 
 	/**
-	 * Registers this channel with the specified selector. The {@link SelectionKey} for the previously registered selector, if any, is canceled. The current
-	 * {@link MessageHandler} is replaced with the specified one.
+	 * Registers this channel with the specified selector. This channel must not already be registered with another selector. The current {@link MessageHandler}
+	 * is replaced with the specified one.
 	 * 
 	 * @return A return value of true does NOT necessarily mean this channel is open but false does mean it is closed (or the connect hasn't finished yet).
 	 */

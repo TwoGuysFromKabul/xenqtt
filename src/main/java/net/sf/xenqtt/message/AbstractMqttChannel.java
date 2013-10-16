@@ -157,10 +157,14 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public final boolean register(Selector selector, MessageHandler handler) {
 
+		if (selectionKey != null && selectionKey.isValid()) {
+			throw new IllegalStateException("You cannot register this channel with a selector because it is already registered with a selector.");
+		}
+
 		try {
+
 			int ops = sendMessageInProgress == null ? SelectionKey.OP_READ : SelectionKey.OP_READ | SelectionKey.OP_WRITE;
 
-			selectionKey.cancel();
 			selectionKey = channel.register(selector, ops, this);
 			this.handler = handler;
 			handler.channelAttached(this);
