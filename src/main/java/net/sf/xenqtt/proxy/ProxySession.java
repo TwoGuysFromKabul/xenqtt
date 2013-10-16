@@ -95,6 +95,7 @@ class ProxySession implements MessageHandler {
 	 */
 	public void init() {
 		channelManager.init();
+		channelManager.newClientChannel(brokerUri, this);
 	}
 
 	/**
@@ -265,10 +266,8 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelOpened(MqttChannel channel) {
-
-		if (channel == clientChannel) {
-			clientChannel.send(originalConnectMessage);
-		}
+		clientChannel = channel;
+		clientChannel.send(originalConnectMessage);
 	}
 
 	/**
@@ -303,10 +302,6 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelAttached(MqttChannel channel) {
-
-		if (clientChannel == null) {
-			clientChannel = (MqttChannel) channelManager.newClientChannel(brokerUri, this);
-		}
 
 		ConnectMessage connectMessage = connectMessageByChannelPendingAttach.remove(channel);
 
