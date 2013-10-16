@@ -58,7 +58,7 @@ class ProxySession implements MessageHandler {
 	private final Map<MqttChannel, ConnectMessage> connectMessageByChannelPendingAttach = new ConcurrentHashMap<MqttChannel, ConnectMessage>();
 	private final Set<MqttChannel> channelsPendingBroker = new HashSet<MqttChannel>();
 
-	private final ChannelManager channelManager = new ChannelManagerImpl(0);
+	private final ChannelManager channelManager;
 	private final String brokerUri;
 	private final String clientId;
 	private final ConnectMessage originalConnectMessage;
@@ -76,8 +76,17 @@ class ProxySession implements MessageHandler {
 
 	public ProxySession(String brokerUri, ConnectMessage connectMessage) {
 
+		this(brokerUri, connectMessage, new ChannelManagerImpl(0));
+	}
+
+	/**
+	 * For unit testing only
+	 */
+	ProxySession(String brokerUri, ConnectMessage connectMessage, ChannelManager channelManager) {
+
 		this.brokerUri = brokerUri;
 		this.originalConnectMessage = connectMessage;
+		this.channelManager = channelManager;
 		this.clientId = originalConnectMessage.getClientId();
 	}
 
@@ -86,19 +95,19 @@ class ProxySession implements MessageHandler {
 	 */
 	public void init() {
 		channelManager.init();
-		clientChannel = (MqttChannel) channelManager.newClientChannel(brokerUri, this);
 	}
 
 	/**
-	 * Shuts down this session
+	 * Shuts down this session. Closes all connections.
 	 */
 	public void shutdown() {
 		channelManager.shutdown();
+		sessionClosed = true;
 	}
 
 	/**
-	 * @return True if the session is closed. False otherwise. A session is closed when the connection to the broker is closed. It has nothing to do with
-	 *         {@link #shutdown()}.
+	 * @return True if the session is closed. False otherwise. A session is closed when the connection to the broker is closed or when {@link #shutdown()} is
+	 *         called.
 	 */
 	public boolean isClosed() {
 
@@ -256,7 +265,10 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelOpened(MqttChannel channel) {
-		// ignore
+
+		if (channel == clientChannel) {
+			clientChannel.send(originalConnectMessage);
+		}
 	}
 
 	/**
@@ -291,6 +303,10 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void channelAttached(MqttChannel channel) {
+
+		if (clientChannel == null) {
+			clientChannel = (MqttChannel) channelManager.newClientChannel(brokerUri, this);
+		}
 
 		ConnectMessage connectMessage = connectMessageByChannelPendingAttach.remove(channel);
 
