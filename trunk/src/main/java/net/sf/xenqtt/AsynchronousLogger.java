@@ -26,6 +26,14 @@ final class AsynchronousLogger implements Logger {
 	private final LoggingLevels levels;
 	private final LoggingManager manager;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param levels
+	 *            The {@link LoggingLevels logging levels} to use in this {@link AsynchronousLogger logger}
+	 * @param delegate
+	 *            The {@link LoggingDelegate delegate} that all requests for logging will be routed to
+	 */
 	AsynchronousLogger(LoggingLevels levels, LoggingDelegate delegate) {
 		this.levels = levels;
 		manager = new LoggingManager(delegate);

@@ -24,7 +24,6 @@ import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttMessage;
 
-// TODO [jim] - update javadoc
 /**
  * Mock MQTT broker used to test MQTT clients and applications. If debug level logging is enabled all broker events will be logged.
  */
@@ -37,6 +36,7 @@ public final class MockBroker extends SimpleBroker {
 
 	/**
 	 * Creates a broker with the following config:
+	 * 
 	 * <ul>
 	 * <li>no {@link MockBrokerHandler}</li>
 	 * <li>15 second message resend interval</li>
@@ -52,6 +52,7 @@ public final class MockBroker extends SimpleBroker {
 
 	/**
 	 * Creates a broker with the specified {@link MockBrokerHandler handler} and the following config:
+	 * 
 	 * <ul>
 	 * <li>15 second message resend interval</li>
 	 * <li>Any available port. Use {@link #getPort()} to get the port.</li>
@@ -65,6 +66,8 @@ public final class MockBroker extends SimpleBroker {
 	}
 
 	/**
+	 * Create a new instance of this class.
+	 * 
 	 * @param brokerHandler
 	 *            Called when events happen. Can be {@code null} if you don't need to do any custom message handling.
 	 * @param messageResendIntervalSeconds

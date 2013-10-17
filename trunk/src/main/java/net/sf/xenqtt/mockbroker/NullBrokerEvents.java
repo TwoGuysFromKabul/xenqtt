@@ -31,6 +31,9 @@ final class NullBrokerEvents implements BrokerEvents {
 	private final String shortStringFormat;
 	private final String longStringFormat;
 
+	/**
+	 * Create a new instance of this class.
+	 */
 	NullBrokerEvents() {
 		int maxLen = 0;
 		for (BrokerEventType type : BrokerEventType.values()) {

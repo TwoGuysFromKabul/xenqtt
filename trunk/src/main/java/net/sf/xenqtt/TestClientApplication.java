@@ -31,6 +31,9 @@ final class TestClientApplication implements XenqttApplication {
 
 	private XenqttTestClient testClient;
 
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#start(net.sf.xenqtt.AppContext)
+	 */
 	@Override
 	public void start(AppContext arguments) {
 		testClient = new XenqttTestClient(arguments);

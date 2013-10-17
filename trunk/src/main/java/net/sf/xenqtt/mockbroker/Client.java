@@ -42,6 +42,16 @@ public final class Client {
 	private final MqttChannel channel;
 	private final BrokerEvents events;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param channel
+	 *            The {@link MqttChannel channel} associated with this client
+	 * @param events
+	 *            The {@link BrokerEvents events} being tracked for the mock broker
+	 * @param maxInFlightMessages
+	 *            The maximum number of in-flight messages allowed
+	 */
 	Client(MqttChannel channel, BrokerEvents events, int maxInFlightMessages) {
 		this.channel = channel;
 		this.events = events;

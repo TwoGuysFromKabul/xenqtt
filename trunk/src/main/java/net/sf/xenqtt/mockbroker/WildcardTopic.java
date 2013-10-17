@@ -30,6 +30,12 @@ final class WildcardTopic extends AbstractTopic {
 
 	final Map<String, QoS> qosByClientId = new HashMap<String, QoS>();
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param topicName
+	 *            The name of the topic (e.g. {@code p/mop/123/65})
+	 */
 	WildcardTopic(String topicName) {
 		super(topicName, true);
 	}

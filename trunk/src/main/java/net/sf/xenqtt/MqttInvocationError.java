@@ -26,6 +26,14 @@ public final class MqttInvocationError extends Error {
 
 	private final Error rootCause;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param message
+	 *            A textual message describing the situation leading to the throwing of this {@link MqttInvocationError error}
+	 * @param rootCause
+	 *            The actual {@link Error error} that was thrown
+	 */
 	public MqttInvocationError(String message, Error rootCause) {
 		super(message);
 		this.rootCause = rootCause;

@@ -29,6 +29,12 @@ final class DelegatingMqttChannel implements MqttChannel {
 	 */
 	MqttChannel delegate;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param delegate
+	 *            The {@link MqttChannel channel} that will serve as the delegate
+	 */
 	DelegatingMqttChannel(MqttChannel delegate) {
 		this.delegate = delegate;
 	}

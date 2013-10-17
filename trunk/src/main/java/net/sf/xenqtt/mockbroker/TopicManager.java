@@ -39,6 +39,12 @@ final class TopicManager {
 	private final Map<String, StandardTopic> standardTopicByName = new HashMap<String, StandardTopic>();
 	private final Map<String, Client> clientById;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param clientById
+	 *            A {@link Map map} of {@link Client client}s by client ID
+	 */
 	public TopicManager(Map<String, Client> clientById) {
 		this.clientById = clientById;
 	}

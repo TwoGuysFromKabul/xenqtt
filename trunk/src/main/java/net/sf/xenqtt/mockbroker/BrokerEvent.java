@@ -27,6 +27,16 @@ public final class BrokerEvent {
 	private final BrokerEventType eventType;
 	private final MqttMessage message;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param eventType
+	 *            The {@link BrokerEventType type} of the event
+	 * @param client
+	 *            The {@link Client client} with which the event is associated
+	 * @param message
+	 *            The {@link MqttMessage message} associated to the event
+	 */
 	BrokerEvent(BrokerEventType eventType, Client client, MqttMessage message) {
 		this.eventType = eventType;
 		this.client = client;

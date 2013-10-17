@@ -19,6 +19,31 @@ import java.util.Set;
 
 import net.sf.xenqtt.Log;
 
+/**
+ * <p>
+ * A {@link MutableMessageStats} implementation that manages stats taken during the execution of an MQTT client. The stats presently supported by this class
+ * are:
+ * </p>
+ * 
+ * <ul>
+ * <li>The messages queued for sending</li>
+ * <li>The messages that are in-flight</li>
+ * <li>The number of messages that were sent, including resends</li>
+ * <li>The number of messages received, including duplicates</li>
+ * <li>The min, max, and average ACK latency of a message sent to the broker</li>
+ * </ul>
+ * 
+ * <p>
+ * When querying for stats a snapshot, created from this class, must be taken. Snapshots are taken via the {@link #clone()} method. In addition, if the stats
+ * need to be reset following the taking of a snapshot the {@link #reset()} method can be invoked. This will reset all but the following stats (which are not
+ * resettable):
+ * </p>
+ * 
+ * <ul>
+ * <li>The messages queued for sending</li>
+ * <li>The messages that are in-flight</li>
+ * </ul>
+ */
 final class MessageStatsImpl implements MutableMessageStats {
 
 	private final Set<MqttChannel> registeredChannels;
@@ -28,6 +53,12 @@ final class MessageStatsImpl implements MutableMessageStats {
 	private final MessageStat messagesReceived;
 	private final LatencyStatImpl ackLatency;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param registeredChannels
+	 *            The current {@link Set set} of registered {@link MqttChannel channels}. This set is managed directly by the channel manager on the IO thread
+	 */
 	MessageStatsImpl(Set<MqttChannel> registeredChannels) {
 		this.registeredChannels = registeredChannels;
 		messagesQueuedToSend = 0;

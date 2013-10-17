@@ -75,6 +75,14 @@ class ProxySession implements MessageHandler {
 
 	private volatile boolean sessionClosed;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param brokerUri
+	 *            The URI of the broker the proxy should connect to
+	 * @param connectMessage
+	 *            The {@link ConnectMessage connect message} the proxy will use for the broker
+	 */
 	public ProxySession(String brokerUri, ConnectMessage connectMessage) {
 
 		this(brokerUri, connectMessage, new ChannelManagerImpl(0));
