@@ -20,6 +20,7 @@ import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ConnAckMessage;
@@ -463,9 +464,237 @@ public class ProxySessionTest {
 	}
 
 	@Test
-	public void testChannelAttached() throws Exception {
+	public void testChannelAttached_NoPendingConnectForChannel() throws Exception {
 
-		fail("not implemented");
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_CleanSessionIsTrue() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", true, 10000);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_ProtocolVersionDoesNotMatch() throws Exception {
+
+		byte[] messageBytes = new byte[] { 0x10, 0x15, 0x00, 0x06, 0x4d, 0x51, 0x49, 0x73, 0x64, 0x70, 0x03, 0x00, 0x27, 0x10, 0x00, 0x07, 0x63, 0x6c, 0x69,
+				0x65, 0x6e, 0x74, 0x31 };
+
+		messageBytes[10] = 4;
+		connectMessage = new ConnectMessage(ByteBuffer.wrap(messageBytes), 0x15, 0);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.UNACCEPTABLE_PROTOCOL_VERSION, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_ProtocolNameDoesNotMatch() throws Exception {
+
+		byte[] messageBytes = new byte[] { 0x10, 0x15, 0x00, 0x06, 0x4d, 0x51, 0x49, 0x73, 0x64, 0x70, 0x03, 0x00, 0x27, 0x10, 0x00, 0x07, 0x63, 0x6c, 0x69,
+				0x65, 0x6e, 0x74, 0x31 };
+
+		messageBytes[9] = 0x71;
+		connectMessage = new ConnectMessage(ByteBuffer.wrap(messageBytes), 0x15, 0);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_UserNameFlagDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "user", null);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.BAD_CREDENTIALS, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_PasswordFlagDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "user", null);
+		session = new ProxySession(brokerUri, connectMessage, manager);
+		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "user", "pass");
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.BAD_CREDENTIALS, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_UserNameDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "user", "pass");
+		session = new ProxySession(brokerUri, connectMessage, manager);
+		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "otheruser", "pass");
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.BAD_CREDENTIALS, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_PasswordDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "user", "otherpass");
+		session = new ProxySession(brokerUri, connectMessage, manager);
+		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "user", "pass");
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.BAD_CREDENTIALS, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_WillMessageFlagDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_WillRetainFlagDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
+		session = new ProxySession(brokerUri, connectMessage, manager);
+		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, true);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_WillTopicDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
+		session = new ProxySession(brokerUri, connectMessage, manager);
+		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "othertopic", "msg", QoS.AT_LEAST_ONCE, false);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_WillMessageDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
+		session = new ProxySession(brokerUri, connectMessage, manager);
+		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "othermsg", QoS.AT_LEAST_ONCE, false);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_WillQosDoesNotMatch() throws Exception {
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
+		session = new ProxySession(brokerUri, connectMessage, manager);
+		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
+
+		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_MOST_ONCE, false);
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.OTHER, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_ConnectionToBrokerPending() throws Exception {
+
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verifyZeroInteractions(channelToClient1);
+	}
+
+	@Test
+	public void testChannelAttached_ConnectionToBrokerEstablished() throws Exception {
+
+		session.channelOpened(channelToBroker);
+		ConnAckMessage message = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
+		session.connAck(channelToBroker, message);
+
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(message, messageCaptor.getValue());
+	}
+
+	@Test
+	public void testChannelAttached_ConnectionToBrokerDisconnected() throws Exception {
+
+		session.channelOpened(channelToBroker);
+		ConnAckMessage message = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
+		session.connAck(channelToBroker, message);
+
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+
+		session.channelClosed(channelToBroker, null);
+
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(ConnectReturnCode.SERVER_UNAVAILABLE, ((ConnAckMessage) messageCaptor.getValue()).getReturnCode());
+	}
+
+	@Test
+	public void testChannelAttached_ConnectionToBrokerConnectionNotAccepted() throws Exception {
+
+		session.channelOpened(channelToBroker);
+		ConnAckMessage message = new ConnAckMessage(ConnectReturnCode.IDENTIFIER_REJECTED);
+		session.connAck(channelToBroker, message);
+
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+
+		session.channelClosed(channelToBroker, null);
+
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(message, messageCaptor.getValue());
 	}
 
 	private void connectClientAndBroker() throws Exception {

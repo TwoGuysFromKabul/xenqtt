@@ -335,7 +335,7 @@ class ProxySession implements MessageHandler {
 		}
 
 		if (!stringEquqls(originalConnectMessage.getProtocolName(), connectMessage.getProtocolName())) {
-			Log.warn("Connect message protocol name does not match; clientId: %s, expected: %d, actual: %d", clientId,
+			Log.warn("Connect message protocol name does not match; clientId: %s, expected: %s, actual: %s", clientId,
 					originalConnectMessage.getProtocolName(), connectMessage.getProtocolName());
 			channel.send(new ConnAckMessage(ConnectReturnCode.OTHER));
 			return;
@@ -399,6 +399,9 @@ class ProxySession implements MessageHandler {
 			Log.warn("Attempting to connect a clustered client to a session with a closed broker connection. clientId: %s, address: %s", clientId,
 					channel.getRemoteAddress());
 			ConnectReturnCode returnCode = brokerConnectReturnCode == null ? ConnectReturnCode.OTHER : brokerConnectReturnCode;
+			if (returnCode == ConnectReturnCode.ACCEPTED) {
+				returnCode = ConnectReturnCode.SERVER_UNAVAILABLE;
+			}
 			channel.send(new ConnAckMessage(returnCode));
 		} else {
 			Log.info("New client connection accepted into cluster; clientId: %s, address: %s", clientId, channel.getRemoteAddress());
