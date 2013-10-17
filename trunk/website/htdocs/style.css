@@ -138,6 +138,10 @@ ul h4 {
 	box-shadow: 0px 5px 0px 0px rgba(0,0,0,0.15);
 }
 
+#header img {
+	float: right;
+}
+
 #footer {
 	text-align: center;
 	padding: 20px 0 80px 0;
