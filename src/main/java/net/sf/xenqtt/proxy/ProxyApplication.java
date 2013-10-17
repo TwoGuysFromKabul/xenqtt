@@ -62,4 +62,11 @@ public final class ProxyApplication implements XenqttApplication {
 	public String getUsageText() {
 		return USAGE_TEXT;
 	}
+
+	/**
+	 * @return The URI to connect to the proxy. Not valid until after {@link #start(AppContext)} is called.
+	 */
+	public String getProxyURI() {
+		return broker.getURI();
+	}
 }
