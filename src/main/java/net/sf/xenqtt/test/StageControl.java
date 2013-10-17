@@ -30,15 +30,15 @@ final class StageControl {
 	private final CountDownLatch receiveLatch;
 	private final CountDownLatch durationLatch;
 
-	StageControl(boolean awaitConnect, int messagesToPublish, int messagesToReceive) {
-		connectedLatch = new CountDownLatch(awaitConnect ? 1 : 0);
+	StageControl(int connectionsToAwait, int messagesToPublish, int messagesToReceive) {
+		connectedLatch = new CountDownLatch(connectionsToAwait);
 		publishLatch = new CountDownLatch(messagesToPublish);
 		receiveLatch = new CountDownLatch(messagesToReceive);
 		durationLatch = new CountDownLatch(0);
 	}
 
-	StageControl(boolean awaitConnect, final long testDuration) {
-		connectedLatch = new CountDownLatch(awaitConnect ? 1 : 0);
+	StageControl(int connectionsToAwait, final long testDuration) {
+		connectedLatch = new CountDownLatch(connectionsToAwait);
 		publishLatch = new CountDownLatch(0);
 		receiveLatch = new CountDownLatch(0);
 		durationLatch = new CountDownLatch(1);
