@@ -41,16 +41,20 @@ final class XenqttTestClientStats {
 
 	// Fields synchronized by publishLock.
 	private long messagesPublished;
+	private long intervalMessagesPublished;
 	private double publishDuration;
 	private List<Integer> publishedMessageIds;
+	private long lastPublishThroughputSnapshotTime;
 
 	private final Lock subscribeLock = new ReentrantLock();
 
 	// Fields synchronized by subscribeLock
 	private long messagesReceived;
+	private long intervalMessagesReceived;
 	private long duplicateMessagesReceived;
 	private double messageLatency;
 	private List<Integer> receivedMessageIds;
+	private long lastReceivedThroughputSnapshotTime;
 
 	private final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
@@ -88,6 +92,7 @@ final class XenqttTestClientStats {
 		try {
 			long then = getOriginalPublishTime(message);
 			messagesPublished++;
+			intervalMessagesPublished++;
 			publishDuration += (System.currentTimeMillis() - then);
 			publishedMessageIds.add(getMessageId(message.getPayload()));
 		} finally {
@@ -100,6 +105,7 @@ final class XenqttTestClientStats {
 		lock.lock();
 		try {
 			messagesReceived++;
+			intervalMessagesReceived++;
 			if (message.isDuplicate()) {
 				duplicateMessagesReceived++;
 				return;
@@ -117,7 +123,7 @@ final class XenqttTestClientStats {
 	private long getOriginalPublishTime(PublishMessage message) {
 		byte[] payload = message.getPayload();
 		long originalPublishTime = 0L;
-		if (payload.length >= 8) {
+		if (payload.length >= 12) {
 			originalPublishTime |= (((long) payload[0] & 0xff) << 56);
 			originalPublishTime |= (((long) payload[1] & 0xff) << 48);
 			originalPublishTime |= (((long) payload[2] & 0xff) << 40);
@@ -214,22 +220,38 @@ final class XenqttTestClientStats {
 	}
 
 	double getPublishThroughput() {
-		double now = System.currentTimeMillis();
+		long now = System.currentTimeMillis();
 		Lock lock = publishLock;
 		lock.lock();
 		try {
-			return messagesPublished / (now - testStart) * 1000.0D;
+			if (lastPublishThroughputSnapshotTime == 0) {
+				lastPublishThroughputSnapshotTime = testStart;
+			}
+
+			double throughput = ((double) intervalMessagesPublished) / (now - lastPublishThroughputSnapshotTime) * 1000.0D;
+			lastPublishThroughputSnapshotTime = now;
+			intervalMessagesPublished = 0;
+
+			return throughput;
 		} finally {
 			lock.unlock();
 		}
 	}
 
 	double getMessagesReceivedThroughput() {
-		double now = System.currentTimeMillis();
+		long now = System.currentTimeMillis();
 		Lock lock = subscribeLock;
 		lock.lock();
 		try {
-			return messagesReceived / (now - testStart) * 1000.0D;
+			if (lastReceivedThroughputSnapshotTime == 0) {
+				lastReceivedThroughputSnapshotTime = testStart;
+			}
+
+			double throughput = ((double) intervalMessagesReceived) / (now - lastReceivedThroughputSnapshotTime) * 1000.0D;
+			lastReceivedThroughputSnapshotTime = now;
+			intervalMessagesReceived = 0;
+
+			return throughput;
 		} finally {
 			lock.unlock();
 		}

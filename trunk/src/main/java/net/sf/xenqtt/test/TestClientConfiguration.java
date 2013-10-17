@@ -49,7 +49,10 @@ public final class TestClientConfiguration {
 	final String topicToSubscribeTo;
 	final String topicToPublishTo;
 	final int publishers;
+	final boolean clusteredPublisher;
 	final int messagesToPublish;
+	final int subscribers;
+	final boolean clusteredSubscriber;
 	final int messagesToReceive;
 	final QoS qos;
 	final long duration;
@@ -73,7 +76,10 @@ public final class TestClientConfiguration {
 		topicToSubscribeTo = properties.getProperty("client.subscribeTopic");
 		topicToPublishTo = properties.getProperty("client.publishTopic");
 		publishers = Integer.parseInt(properties.getProperty("client.publishers", "0"));
+		clusteredPublisher = Boolean.parseBoolean(properties.getProperty("client.clusteredPublisher", "false"));
 		messagesToPublish = Integer.parseInt(properties.getProperty("client.messagesToPublish", "0"));
+		subscribers = Integer.parseInt(properties.getProperty("client.subscribers", "0"));
+		clusteredSubscriber = Boolean.parseBoolean(properties.getProperty("client.clusteredSubscriber", "false"));
 		messagesToReceive = Integer.parseInt(properties.getProperty("client.messagesToReceive", "0"));
 		qos = QoS.lookup(Integer.parseInt(properties.getProperty("client.qos", "0")));
 		duration = getDurationMillis(properties.getProperty("client.testDuration", "0"));
@@ -149,6 +155,10 @@ public final class TestClientConfiguration {
 
 		if (messagesToReceive == 0 && messagesToPublish == 0 && duration == 0) {
 			throw new IllegalStateException("Test duration undefined. There are no message send/receive limits and no duration.");
+		}
+
+		if (publishers == 0 && subscribers == 0) {
+			throw new IllegalStateException("No publishers or subscribers were specified. Unable to exchange any data.");
 		}
 	}
 
