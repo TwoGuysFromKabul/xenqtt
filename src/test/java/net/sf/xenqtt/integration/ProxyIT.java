@@ -200,6 +200,8 @@ public class ProxyIT {
 			PubAckMessage pubAckAtBroker = (PubAckMessage) mqttMsgCaptor.getValue();
 
 			assertEquals(pubMessageAtBroker.getMessageId(), pubAckAtBroker.getMessageId());
+
+			verify(listener).published(same(client2), same(sentMsg));
 		}
 	}
 
@@ -243,6 +245,8 @@ public class ProxyIT {
 			PubAckMessage pubAckAtBroker = (PubAckMessage) mqttMsgCaptor.getValue();
 
 			assertEquals(pubMessageAtBroker.getMessageId(), pubAckAtBroker.getMessageId());
+
+			verify(listener).published(same(client3), same(sentMsg));
 		}
 	}
 
@@ -286,6 +290,87 @@ public class ProxyIT {
 			PubAckMessage pubAckAtBroker = (PubAckMessage) mqttMsgCaptor.getValue();
 
 			assertEquals(pubMessageAtBroker.getMessageId(), pubAckAtBroker.getMessageId());
+
+			verify(listener).published(same(client3), same(sentMsg));
+		}
+	}
+
+	@Test
+	public void testSinglePublisher() throws Exception {
+
+		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client1.connect("client1", false);
+		verify(listener, timeout(5000)).connected(client1, ConnectReturnCode.ACCEPTED);
+
+		client2 = new AsyncMqttClient(broker.getURI(), listener, 1);
+		client2.connect("client2", false);
+		verify(listener, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
+
+		client2.subscribe(new Subscription[] { new Subscription("topic1", QoS.AT_LEAST_ONCE) });
+		verify(listener, timeout(5000)).subscribed(same(client2), any(Subscription[].class), any(Subscription[].class), eq(true));
+
+		for (int i = 0; i < 10; i++) {
+			reset(listener, handler);
+
+			PublishMessage sentMsg = new PublishMessage("topic1", QoS.AT_LEAST_ONCE, new byte[] { 1, 2, 3 });
+			client1.publish(sentMsg);
+
+			verify(handler, timeout(5000)).publish(any(Client.class), (PubMessage) mqttMsgCaptor.capture());
+			PubMessage pubMessageAtBroker = (PubMessage) mqttMsgCaptor.getValue();
+
+			verify(listener, timeout(5000)).publishReceived(same(client2), pubMsgCaptor.capture());
+
+			PublishMessage rcvdMsg = pubMsgCaptor.getValue();
+			rcvdMsg.ack();
+
+			verify(handler, timeout(5000)).pubAck(any(Client.class), (PubAckMessage) mqttMsgCaptor.capture());
+			PubAckMessage pubAckAtBroker = (PubAckMessage) mqttMsgCaptor.getValue();
+
+			assertEquals(pubMessageAtBroker.getMessageId(), pubAckAtBroker.getMessageId());
+
+			verify(listener).published(same(client1), same(sentMsg));
+		}
+	}
+
+	@Test
+	public void testMultiplePublishers_SingleCluster() throws Exception {
+
+		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client1.connect("client1", false);
+		verify(listener, timeout(5000)).connected(client1, ConnectReturnCode.ACCEPTED);
+
+		client2 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client2.connect("client1", false);
+		verify(listener, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
+
+		client3 = new AsyncMqttClient(broker.getURI(), listener, 1);
+		client3.connect("client3", false);
+		verify(listener, timeout(5000)).connected(client3, ConnectReturnCode.ACCEPTED);
+
+		client3.subscribe(new Subscription[] { new Subscription("topic1", QoS.AT_LEAST_ONCE) });
+		verify(listener, timeout(5000)).subscribed(same(client3), any(Subscription[].class), any(Subscription[].class), eq(true));
+
+		for (int i = 0; i < 10; i++) {
+			reset(listener, handler);
+
+			PublishMessage sentMsg = new PublishMessage("topic1", QoS.AT_LEAST_ONCE, new byte[] { 1, 2, 3 });
+			MqttClient client = i % 2 == 0 ? client1 : client2;
+			client.publish(sentMsg);
+
+			verify(handler, timeout(5000)).publish(any(Client.class), (PubMessage) mqttMsgCaptor.capture());
+			PubMessage pubMessageAtBroker = (PubMessage) mqttMsgCaptor.getValue();
+
+			verify(listener, timeout(5000)).publishReceived(same(client3), pubMsgCaptor.capture());
+
+			PublishMessage rcvdMsg = pubMsgCaptor.getValue();
+			rcvdMsg.ack();
+
+			verify(handler, timeout(5000)).pubAck(any(Client.class), (PubAckMessage) mqttMsgCaptor.capture());
+			PubAckMessage pubAckAtBroker = (PubAckMessage) mqttMsgCaptor.getValue();
+
+			assertEquals(pubMessageAtBroker.getMessageId(), pubAckAtBroker.getMessageId());
+
+			verify(listener).published(same(client), same(sentMsg));
 		}
 	}
 }
