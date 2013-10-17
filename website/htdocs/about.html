@@ -75,9 +75,13 @@ Released   : 20121119
 							<li class="last">Existing Java client APIs we tested did not perform well at enterprise level message volumes.</li>
 						</ul>
 						<p>
-						XenQTT addresses these gaps by providing a proxy for multi-client management with integration to an MQTT system and a gateway that
-						facilitates the translation of HTTP messages into MQTT and vice-versa. Additionally, XenQTT provides a fully-featured MQTT client that
-						applications can use to communicate via the MQTT protcool. This helps to make XenQTT a one-stop shop for all your MQTT needs.
+						XenQTT addresses the first issue with a proxy application that allows a cluster of client application instances to be load balanced and
+						seen as a single client to any MQTT broker. XenQTT provides a highly scalable MQTT client to address the second issue.
+						</p>
+						<p>
+						The goal of the XenQTT project is to be a one stop shop for all things MQTT. An HTTP gateway is in the works. A scalable broker, AMQP 
+						gateway, and other projects are being considered. If you have ideas please 
+						<a href="http://sourceforge.net/p/xenqtt/tickets">open a ticket</a> and let us know.
 						</p>
 						<p>
 						XenQTT is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License Version 2.0</a>
