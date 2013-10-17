@@ -48,15 +48,15 @@ Released   : 20121119
 			<div id="header">
 				<img src="images/happy-minion.png" />
 				<div id="logo">
-					<h1><a href="index.html">Xenqtt</a></h1>
+					<h1><a href="index.html">XenQTT</a></h1>
 				</div>
 				<div id="menu">
 					<ul>
 						<li class="first"><a href="index.html">Home</a></li>
 						<li><a href="features.html">Features</a></li>
-						<li><a href="documentation.html">Documentation</a></li>
-						<li><a href="http://sourceforge.net/projects/xenqtt/files" target="_blank">Downloads</a></li>
-						<li><a href="http://sourceforge.net/p/xenqtt/tickets" target="_blank">Tickets</a></li>
+						<li><a href="usage.html">Usage</a></li>
+						<li><a href="http://sourceforge.net/projects/XenQTT/files">Downloads</a></li>
+						<li><a href="http://sourceforge.net/p/XenQTT/tickets">Tickets</a></li>
 						<li class="last"><a href="about.html">About</a></li>
 					</ul>
 					<br class="clearfix" />
@@ -65,20 +65,22 @@ Released   : 20121119
 			<div id="page">
 				<div id="content">
 					<div class="post post-last">
-						<h2>About Xenqtt</h2>
+						<h2>About XenQTT</h2>
 						<p>
-						The Xenqtt initiative was started because we realized that there were certain gaps in how enterprise architectures and legacy systems
-						could integrate with an M2M ecosystem communicating via MQTT. These gaps were:
+						The XenQTT initiative was started because we realized that there were certain gaps in how enterprise architectures and legacy systems
+						could integrate via MQTT:
 						</p>
 						<ul class="list">
-							<li class="first">Clustered applications cannot act as a single MQTT client. This could lead to scaling issues or duplicate message
-							delivery</li>
-							<li class="last">Applications using HTTP exclusively had no way to participate in this new ecosystem</li>
+							<li class="first">Clustered applications cannot act as a single MQTT client. This makes horizontal scaling difficult.</li>
+							<li class="last">Existing Java client APIs we tested did not perform well at enterprise level message volumes.</li>
 						</ul>
 						<p>
-						Xenqtt addresses these gaps by providing a proxy for multi-client management with integration to an MQTT system and a gateway that
-						facilitates the translation of HTTP messages into MQTT and vice-versa. Additionally, Xenqtt provides a fully-featured MQTT client that
-						applications can use to communicate via the MQTT protcool. This helps to make Xenqtt a one-stop shop for all your MQTT needs.
+						XenQTT addresses these gaps by providing a proxy for multi-client management with integration to an MQTT system and a gateway that
+						facilitates the translation of HTTP messages into MQTT and vice-versa. Additionally, XenQTT provides a fully-featured MQTT client that
+						applications can use to communicate via the MQTT protcool. This helps to make XenQTT a one-stop shop for all your MQTT needs.
+						</p>
+						<p>
+						XenQTT is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License Version 2.0</a>
 						</p>
 					</div>
 				</div>

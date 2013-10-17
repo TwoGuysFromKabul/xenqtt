@@ -48,15 +48,15 @@ Released   : 20121119
 			<div id="header">
 				<img src="images/happy-minion.png" />
 				<div id="logo">
-					<h1><a href="index.html">Xenqtt</a></h1>
+					<h1><a href="index.html">XenQTT</a></h1>
 				</div>
 				<div id="menu">
 					<ul>
 						<li class="first"><a href="index.html">Home</a></li>
 						<li><a href="features.html">Features</a></li>
-						<li><a href="documentation.html">Documentation</a></li>
-						<li><a href="http://sourceforge.net/projects/xenqtt/files" target="_blank">Downloads</a></li>
-						<li><a href="http://sourceforge.net/p/xenqtt/tickets" target="_blank">Tickets</a></li>
+						<li><a href="usage.html">Usage</a></li>
+						<li><a href="http://sourceforge.net/projects/XenQTT/files">Downloads</a></li>
+						<li><a href="http://sourceforge.net/p/XenQTT/tickets">Tickets</a></li>
 						<li class="last"><a href="about.html">About</a></li>
 					</ul>
 					<br class="clearfix" />
@@ -65,121 +65,70 @@ Released   : 20121119
 			<div id="page">
 				<div id="content">
 					<div class="post">
-						<h2>Xenqtt Features</h2>
+						<h2>XenQTT Features</h2>
 						<p>
-						Xenqtt comes with several features that make life interacting with an MQTT-enabled system much easier:
-						</p>
+						XenQTT includes multiple APIs and applications:
 						<ul class="list">
-							<li class="first">A fully-featured MQTT client</li>
-							<li>A gateway application for HTTP interfaces into an MQTT system</li>
-							<li>A proxy application that allows a cluster of 1..n clients to act as a single MQTT client, transparently</li>
-							<li class="last">A mock MQTT broker that provides broker functionality. It is configurable and as such is useful in testing and debugging</li>
+							<li class="first"><a href="#client">Java MQTT client API</a></li>
+							<li><a href="#proxy">Clustering proxy</a></li>
+							<li class="last"><a href="#mockbroker">Mock MQTT Broker</a></li>
 						</ul>
-						<p>
-						The following sections provide greater detail on each of these features.
 						</p>
 					</div>
-					<div class="post">
-						<h3>MQTT Client</h3>
+					<div class="post" id="client">
+						<h3>Java MQTT Client API</h3>
 						<h4>Overview</h4>
 						<p>
-						The Xenqtt library comes with a fully-featured MQTT client. This client allows applications to connect to and interact with an MQTT
-						broker. The client supports two distinct modes of operation:
+						The XenQTT library comes with a fully-featured Java MQTT client API. This client allows applications to connect to and interact with an 
+						MQTT broker. The client can be used either synchronously or asynchronously.
 						</p>
-						<ul class="list">
-						<li class="first">Blocking (synchronous)</li>
-						<li class="last">Non-blocking (asynchronous)</li>
-						</ul>
 						<p>
-						In synchronous mode all MQTT interactions, save for the receipt of messages from subscribed topics of course, block until they complete.
-						This blocking time includes time waiting for various ACKs to messages. For example, the <code>connect</code> method will not return
-						until the CONNECT has been sent and the CONNACK has been received.
+						In synchronous mode all client initiated MQTT interactions block until they complete. For example, the <code>connect</code> method will 
+						not return until the CONNECT has been sent to the broker and the CONNACK has been received.
 						</p>
 						<p>
 						The asynchronous client employs a non-blocking strategy for all messages sent to the broker. A system of callbacks are employed to keep
-						the client informed of various events that arise during the dispatch of messages. The callbacks available to the client are:
+						the client informed of various events that arise during the dispatch of messages. The callbacks available to the client are defined in 
+						the <code>AsyncClientListener</code> interface.
 						</p>
-						<table cellspacing="0" cellpadding="0" border="0" class="table">
-							<tr>
-								<td class="tableHeader">Callback</td>
-								<td class="tableHeader-last">Description</td>
-							</tr>
-							<tr>
-								<td class="tableData"><code>connected</code></td>
-								<td class="tableData-last">Invoked after the CONNACK is received from the broker</td>
-							</tr>
-							<tr>
-								<td class="tableData"><code>disconnected</code></td>
-								<td class="tableData-last">Invoked after the client disconnects from the broker</td>
-							</tr>
-							<tr>
-								<td class="tableData"><code>published</code></td>
-								<td class="tableData-last">Invoked after the PUBACK is received from the broker</td>
-							</tr>
-							<tr>
-								<td class="tableData"><code>subscribed</code></td>
-								<td class="tableData-last">Invoked after the SUBACK is received from the broker</td>
-							</tr>
-							<tr>
-								<td class="tableData"><code>unsubscribed</code></td>
-								<td class="tableData-last">Invoked after the UNSUBACK is received from the broker</td>
-							</tr>
-						</table>
+						<p>
+						Both synchronous and asynchronous clients receive publish messages and disconnect notifications via the MqttClientListener interface.
+						</p>
 						<h4>Notes and Caveats</h4>
 						<p>
-						At the current time only QoS 0 (at most once) and QoS 1 (at least once) are fully supported in the client. It is the intention of the
-						Xenqtt team to add QoS 2 (exactly once) support at a later time.
+						At the current time only QoS 0 (at most once) and QoS 1 (at least once) are supported in the client. It is the intention of the
+						XenQTT team to add QoS 2 (exactly once) support at a later time.
 						</p>
 					</div>
-					<div class="post">
-						<h3>Gateway</h3>
+					<div class="post" id="proxy">
+						<h3>Clustering Proxy</h3>
 						<p>
-						The Gateway is an application that allows for HTTP-based communication with an MQTT system. Clients can connect, publish, subscribe,
-						receive messages published to topics subscribed to, and disconnect all over HTTP. The Gateway facilitates the conversion from HTTP to
-						MQTT for messages from the client application and MQTT to HTTP for messages back.
+						The Proxy allows <code>1..n</code> MQTT client applications to interact with a single MQTT broker as a single client. The proxy treats
+						all clients that share the same client ID as a cluster. From the clients' perspective they are all talking with the broker. From the
+						broker's perspective it is interfacing with just a single client. The Proxy makes all of this transparent to both end points.
 						</p>
 						<p>
-						The Gateway is currently under construction. Once its APIs and requirements are better known they will be updated here. In addition, any
-						relevant and useful code samples and examples for the Gateway will be published to this website as they become available.
-						</p>
-					</div>
-					<div class="post">
-						<h3>Proxy</h3>
-						<p>
-						The Proxy allows <code>1..n</code> MQTT-enabled applications to interact with an MQTT broker as a single client. The proxy groups
-						together clients that share the same client ID and manages connection, keepalive, publishing, subscribing, unsubscribing, and
-						disconnecting all on behalf of the clustered application. From the client perspective they are all talking with the broker. From the
-						broker's perspective it is interfacing with just a single client. The Proxy makes all of this work transparently to both ends.
+						The Proxy is very useful for applications that are deployed in a cluster. Such deployments are often used to meet scaling
+						and/or performance goals. Because of the nature of MQTT, if each clustered application instance connected directly to the broker they would
+						either kick each other off until the last one to connect was the only one connected or they would all connect. Either scenario is bad: one client connected
+						may not be able to handle scaling and performance needs and is a single point of failure while every client getting every message is not
+						usually the desired behavior.
 						</p>
 						<p>
-						The Proxy is very useful for applications that are deployed in a clustered fashion. Such deployments are often used to meet scaling
-						and/or performance goals. Because of the nature of MQTT if each clustered application registered with the broker individually they would
-						either kick each other off until the last one registering wins or they would all connect. Either scenario is bad: one client connected
-						may not be able to handle scaling and performance needs while every client getting the message might disrupt the application itself. The
-						Proxy solves this problem by managing traffic from both the clients and the broker. It ensures that only one subscribe happens on behalf
-						of the clients. It ensures messages published to topics subscribed to are routed to just one client. In this way it behaves much as a
-						load balancer would - it distributes traffic to clients that can handle them. It knows which clients are active and can handle resends
-						and similar housekeeping activies.
-						</p>
-						<p>
-						The Proxy is currently under construction. Once its APIs and requirements are better known they will be updated here. In addition, any
-						relevant and useful code samples and examples for the Proxy will be published to this website as they become available.
+						The Proxy solves this problem by managing traffic between the clients and the broker. It ensures messages published to the clients
+						are routed to just one client. It acts as a load balancer, distributing messages across the clients in the cluster.
 						</p>
 					</div>
-					<div class="post post-last">
-						<h3>Mock Broker</h3>
+					<div class="post post-last" id="mockbroker">
+						<h3>Mock MQTT Broker</h3>
 						<p>
-						The mock broker provides an MQTT broker that clients can connect to and interact with. The mock broker provides functionality that makes
-						it especially useful in the following scenarios:
+						The mock broker is an MQTT broker that clients can connect to and interact with. The mock broker is useful for testing and
+						debugging MQTT client applications. It can be run as a stand alone application for functional and limited load testing or in-memory 
+						for unit and integration testing. The mock broker has a Java API to support unit and integration testing.
 						</p>
-						<ul class="list">
-						<li class="first">Testing clients and other MQTT interactions</li>
-						<li class="last">Debugging existing clients and applications</li>
-						</ul>
 						<p>
 						The mock broker is a fully functional MQTT broker. It supports up to QoS 1; however, it does not provide any persistence and as such
-						should not be used as a production-level MQTT broker. It's strength is in helping applications with testing and troubleshooting of MQTT
-						applications, clients, and integrations.
+						should not be used as a production-level MQTT broker. It's strength is in helping testing and debugging MQTT client applications.
 						</p>
 					</div>
 				</div>

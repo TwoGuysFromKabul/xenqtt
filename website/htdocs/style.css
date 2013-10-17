@@ -30,12 +30,13 @@ Released   : 20121119
 }
 
 a {
-	color: #FF3867;
+	color: olive;
 	text-decoration: underline;
 }
 
 a:hover {
 	text-decoration: none;
+	background: rgba(0,0,0,0.1);
 }
 
 body {
@@ -239,17 +240,22 @@ ul h4 {
 }
 
 #page ul {
-	list-style: none;
+	list-style:  none;
+	background-color: #f7f7f7; 
 }
 
 #page ul li {
-	padding: 10px 0 10px 0;
-	border-top: dotted 1px #c7cfcf;
+	padding-left: 20px;
 }
 
 #page ul li.first {
-	border-top: 0;
+	border-top: dotted 1px #c7cfcf;
 	padding-top: 0;
+}
+
+#page ul li.last {
+	border-bottom: dotted 1px #c7cfcf;
+	padding-bottom: 0;
 }
 
 #search input.form-submit {
