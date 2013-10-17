@@ -23,6 +23,14 @@ final class SynchronousLogger implements Logger {
 	private final LoggingLevels levels;
 	private final LoggingDelegate delegate;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param levels
+	 *            The {@link LoggingLevels logging levels} to use in this {@link SynchronousLogger logger}
+	 * @param delegate
+	 *            The {@link LoggingDelegate delegate} that all requests for logging will be routed to
+	 */
 	SynchronousLogger(LoggingLevels levels, LoggingDelegate delegate) {
 		this.levels = levels;
 		this.delegate = delegate;

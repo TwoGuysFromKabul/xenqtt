@@ -26,6 +26,14 @@ public final class MqttInvocationException extends MqttException {
 
 	private final Exception rootCause;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param message
+	 *            A textual message describing the situation that led to the throwing of this {@link MqttInvocationException exception}
+	 * @param rootCause
+	 *            The {@link Exception exception} that was originally thrown
+	 */
 	public MqttInvocationException(String message, Exception rootCause) {
 		super(message);
 		this.rootCause = rootCause;

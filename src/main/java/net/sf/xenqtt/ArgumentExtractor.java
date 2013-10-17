@@ -49,6 +49,16 @@ final class ArgumentExtractor {
 	private ArgumentExtractor() {
 	}
 
+	/**
+	 * Extract the {@link Arguments arguments} specified by the user from the command-line arguments.
+	 * 
+	 * @param latch
+	 *            The shutdown latch to include in the arguments
+	 * @param args
+	 *            The command-line arguments specified by the user
+	 * 
+	 * @return The arguments that will be used to bootstrap the application
+	 */
 	static Arguments extractArguments(CountDownLatch latch, String... args) {
 		if (args == null || args.length == 0) {
 			return null;

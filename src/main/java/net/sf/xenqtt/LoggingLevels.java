@@ -121,6 +121,14 @@ public final class LoggingLevels {
 		return flags;
 	}
 
+	/**
+	 * Determine if an event is loggable.
+	 * 
+	 * @param flag
+	 *            The level flag to use in determining if an event is loggable
+	 * 
+	 * @return {@code true} if the event is loggable, {@code false} if it is not
+	 */
 	public boolean isLoggable(int flag) {
 		return (flags & flag) != 0;
 	}

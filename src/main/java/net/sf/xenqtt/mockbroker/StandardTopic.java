@@ -35,6 +35,14 @@ final class StandardTopic extends AbstractTopic {
 
 	PubMessage retainedMessage;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param topicName
+	 *            The name of the topic (e.g. {@code p/mop/123/65})
+	 * @param isWildcard
+	 *            Whether or not the topic is a wildcard topic (e.g. {@code p/mop/#})
+	 */
 	StandardTopic(String topicName, Collection<WildcardTopic> wildcardTopics) {
 		super(topicName, false);
 

@@ -34,6 +34,9 @@ public class MockBrokerApplication implements XenqttApplication {
 
 	private MockBroker broker;
 
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#start(net.sf.xenqtt.AppContext)
+	 */
 	@Override
 	public void start(AppContext arguments) {
 

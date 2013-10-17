@@ -55,6 +55,20 @@ final class BrokerMessageHandler implements MessageHandler {
 	private final boolean allowAnonymousAccess;
 	private final int maxInFlightMessages;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param brokerHandler
+	 *            The {@link MockBrokerHandler broker handler} to use in this {@link BrokerMessageHandler message handler}
+	 * @param events
+	 *            The {@link BrokerEvents events} associated with the broker
+	 * @param credentials
+	 *            The credentials to use in this broker message handler
+	 * @param allowAnonymousAccess
+	 *            Whether or not anonymous access is allowed ({@code true}) or not ({@code false})
+	 * @param maxInFlightMessages
+	 *            The maximum number of in-flight messages that are allowed
+	 */
 	BrokerMessageHandler(MockBrokerHandler brokerHandler, BrokerEvents events, ConcurrentHashMap<String, String> credentials, boolean allowAnonymousAccess,
 			int maxInFlightMessages) {
 		this.credentials = credentials;

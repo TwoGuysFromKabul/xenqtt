@@ -33,6 +33,16 @@ public final class ConnectMessage extends MqttMessage {
 	private final String willMessage;
 	private final int keepAliveSeconds;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param buffer
+	 *            The buffer that contains the contents of the message
+	 * @param remainingLength
+	 *            The remaining length of the message
+	 * @param receivedTimestamp
+	 *            The time at which the message was received
+	 */
 	public ConnectMessage(ByteBuffer buffer, int remainingLength, long receivedTimestamp) {
 		super(buffer, remainingLength, receivedTimestamp);
 

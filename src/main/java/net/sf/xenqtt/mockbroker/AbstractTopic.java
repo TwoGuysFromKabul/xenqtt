@@ -28,6 +28,14 @@ abstract class AbstractTopic {
 	private final boolean endsWithPound;
 	private final boolean isWildcard;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param topicName
+	 *            The name of the topic (e.g. {@code p/mop/123/65})
+	 * @param isWildcard
+	 *            Whether or not the topic is a wildcard topic (e.g. {@code p/mop/#})
+	 */
 	AbstractTopic(String topicName, boolean isWildcard) {
 		this.topicName = topicName;
 		this.isWildcard = isWildcard;

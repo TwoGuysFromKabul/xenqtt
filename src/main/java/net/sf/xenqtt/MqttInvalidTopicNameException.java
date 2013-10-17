@@ -22,6 +22,12 @@ public class MqttInvalidTopicNameException extends MqttException {
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param message
+	 *            A textual message describing the events surrounding the throwing of this exception
+	 */
 	public MqttInvalidTopicNameException(String message) {
 		super(message);
 	}

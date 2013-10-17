@@ -29,6 +29,12 @@ public final class MqttQosNotGrantedException extends MqttException {
 
 	private final Subscription[] grantedSubscriptions;
 
+	/**
+	 * Create a new instance of this class.
+	 * 
+	 * @param grantedSubscriptions
+	 *            The subscriptions for which the {@link QoS QOS} was not granted
+	 */
 	public MqttQosNotGrantedException(Subscription[] grantedSubscriptions) {
 		this.grantedSubscriptions = grantedSubscriptions;
 	}
