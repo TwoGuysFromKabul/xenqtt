@@ -112,6 +112,29 @@ public class ProxyIT {
 	}
 
 	@Test
+	public void testConnect_ConnectionRejectedByProxy_CleanSessionIsTrue() {
+
+		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client1.connect("client1", true);
+		verify(listener, timeout(5000)).connected(client1, ConnectReturnCode.OTHER);
+		verify(listener, timeout(5000)).disconnected(client1, null, false);
+		verify(handler, timeout(5000)).channelClosed(any(Client.class), any(Throwable.class));
+	}
+
+	@Test
+	public void testConnect_ConnectionRejectedByProxy_ConnectMessageDoesNotMatch() {
+
+		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client1.connect("client1", false);
+		verify(listener, timeout(5000)).connected(client1, ConnectReturnCode.ACCEPTED);
+
+		client2 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client2.connect("client1", false, "topic", "msg", QoS.AT_MOST_ONCE, false);
+		verify(listener, timeout(5000)).connected(client2, ConnectReturnCode.OTHER);
+		verify(listener, timeout(5000)).disconnected(client2, null, false);
+	}
+
+	@Test
 	public void testConnect_ConnectionRejectedByBroker() {
 
 		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
@@ -138,7 +161,7 @@ public class ProxyIT {
 	}
 
 	@Test
-	public void testConnect_Disconnect_LastClient() {
+	public void testDisconnect_LastClient() {
 
 		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
 		client1.connect("client1", false);
@@ -151,7 +174,7 @@ public class ProxyIT {
 	}
 
 	@Test
-	public void testConnect_Disconnect_NotLastClient() throws Exception {
+	public void testDisconnect_NotLastClient() throws Exception {
 
 		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
 		client1.connect("client1", false);
