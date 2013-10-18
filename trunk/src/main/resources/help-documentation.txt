@@ -14,11 +14,7 @@ Copyright 2013 James McClure
    limitations under the License.
 ---------------------------------------------------------------------------------------------------
 
-USAGE: java -jar xenqtt.jar [-v[v]] mockbroker|help [args.or.flags]
-	mockbroker - Run a mock MQTT broker. Useful in testing and debugging
-	help - Display information on xenqtt and how it can be used
-	
-	-v: Increase logging verbosity. v = info, vv = debug
+{{USAGE}}
 
 Xenqtt - Facilitates advanced communication strategies for MQTT-based communication systems. Xenqtt
 provides the following:
