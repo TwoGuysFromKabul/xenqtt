@@ -29,10 +29,12 @@ import net.sf.xenqtt.proxy.ProxyApplication;
 public final class Xenqtt {
 
 	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class, TestClientApplication.class, ProxyApplication.class };
-	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] mockbroker|proxy|help [args.or.flags]"
-			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging\n\tproxy - Run the clustered proxy for supporting multiple "
-			+ "applications as a single client\n\thelp - Display information on xenqtt and how it can be used"
-			+ "\n\n\t-v: Increase logging verbosity. v = info, vv = debug";
+	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] mockbroker|proxy|help [args.or.flags]" //
+			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging" //
+			+ "\n\tproxy - Run the clustered proxy for supporting multiple applications as a single client" //
+			+ "\n\thelp - Display information on xenqtt and how it can be used" //
+			+ "\n" //
+			+ "\n\t-v: Increase logging verbosity. v = info, vv = debug";
 
 	static volatile LoggingLevels loggingLevels = new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
 	static volatile String outputFile;
@@ -179,6 +181,8 @@ public final class Xenqtt {
 	}
 
 	private static String wrap(String helpDocumentation) {
+
+		helpDocumentation = helpDocumentation.replace("{{USAGE}}", USAGE);
 		StringBuilder wrappedHelpDocumentation = new StringBuilder();
 		StringBuilder currentLine = new StringBuilder();
 		int currentLineSize = 0;
