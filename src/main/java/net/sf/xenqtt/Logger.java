@@ -26,6 +26,11 @@ interface Logger {
 	void init();
 
 	/**
+	 * Shut down the logger
+	 */
+	void shutdown();
+
+	/**
 	 * Log an event at a particular logging level.
 	 * 
 	 * @param levelFlag

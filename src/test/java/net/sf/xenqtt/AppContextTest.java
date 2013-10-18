@@ -43,7 +43,7 @@ public class AppContextTest {
 		argumentsMap.put("-b", "true");
 		argumentsMap.put("-s", "I am the very model of a modern Major General.");
 
-		arguments = new AppContext(flags, argumentsMap);
+		arguments = new AppContext(flags, argumentsMap, null);
 	}
 
 	@Test
@@ -195,7 +195,7 @@ public class AppContextTest {
 	@Test
 	public void testIsEmpty() {
 		assertFalse(arguments.isEmpty());
-		assertTrue(new AppContext().isEmpty());
+		assertTrue(new AppContext(null).isEmpty());
 	}
 
 }

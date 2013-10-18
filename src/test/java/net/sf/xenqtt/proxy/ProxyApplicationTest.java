@@ -31,7 +31,7 @@ public class ProxyApplicationTest {
 
 	Map<String, String> args = new HashMap<String, String>();
 	List<String> flags = new ArrayList<String>();
-	AppContext context = new AppContext(flags, args);
+	AppContext context = new AppContext(flags, args, null);
 	ProxyApplication app = new ProxyApplication();
 
 	@Test(expected = IllegalStateException.class)
@@ -44,7 +44,7 @@ public class ProxyApplicationTest {
 	public void testStart_NoPortArg() throws Exception {
 
 		args.put("-b", "tcp://127.0.0.1:1234");
-		context = new AppContext(flags, args);
+		context = new AppContext(flags, args, null);
 		app.start(context);
 
 		assertEquals(1883, getBroker().getPort());
@@ -56,7 +56,7 @@ public class ProxyApplicationTest {
 
 		args.put("-b", "tcp://127.0.0.1:1234");
 		args.put("-p", "19283");
-		context = new AppContext(flags, args);
+		context = new AppContext(flags, args, null);
 		app.start(context);
 
 		assertEquals(19283, getBroker().getPort());

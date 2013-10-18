@@ -51,7 +51,7 @@ public final class Log {
 
 			return new Log4jLoggingDelegate();
 		} catch (ClassNotFoundException ex) {
-			System.out.println("Log4j is not available on the classpath. Using Java logging by default.");
+			// ignore
 		} catch (Exception ex) {
 			System.err.println("Unable to determine which logging strategy to use. Using Java logging by default.");
 		}
@@ -88,6 +88,13 @@ public final class Log {
 		}
 
 		return new SynchronousLogger(levels, DELEGATE);
+	}
+
+	/**
+	 * Shuts down the logger. Package visible. Should only be called by {@link Xenqtt}.
+	 */
+	static void shutdown() {
+		LOGGER.shutdown();
 	}
 
 	/**

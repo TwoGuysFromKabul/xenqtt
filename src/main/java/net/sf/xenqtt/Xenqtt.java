@@ -15,7 +15,10 @@
  */
 package net.sf.xenqtt;
 
-import java.io.InputStream;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.ArgumentExtractor.Arguments;
@@ -28,13 +31,15 @@ import net.sf.xenqtt.proxy.ProxyApplication;
  */
 public final class Xenqtt {
 
-	private static final Class<?>[] APPLICATIONS = new Class<?>[] { MockBrokerApplication.class, TestClientApplication.class, ProxyApplication.class };
-	private static final String USAGE = "usage: java -jar xenqtt.jar [-v[v]] mockbroker|proxy|help [args.or.flags]" //
-			+ "\n\tmockbroker - Run a mock MQTT broker. Useful in testing and debugging" //
-			+ "\n\tproxy - Run the clustered proxy for supporting multiple applications as a single client" //
-			+ "\n\thelp - Display information on xenqtt and how it can be used" //
-			+ "\n" //
-			+ "\n\t-v: Increase logging verbosity. v = info, vv = debug";
+	private static final Class<?>[] APPLICATIONS = new Class<?>[] { HelpApplication.class, LicenseApplication.class, MockBrokerApplication.class,
+			TestClientApplication.class, ProxyApplication.class };
+
+	private static Map<String, XenqttApplication> APPS_BY_NAME;
+
+	private static final String JAVA_OPTS_TEXT = "[java.opts]]";
+	private static final String JAVA_OPTS_USAGE_TEXT = "\n\tjava.opts : Arguments to the JVM (-Xmx, -Xms, -server, etc)";
+	private static final String GLOBAL_OPTS_TEXT = "[-v[v]]";
+	private static final String GLOBAL_OPTS_USAGE_TEXT = "\n\t-v : Increase logging verbosity. v = info, vv = debug";
 
 	static volatile LoggingLevels loggingLevels = new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
 	static volatile String outputFile;
@@ -68,16 +73,18 @@ public final class Xenqtt {
 	 *            </p>
 	 */
 	public static void main(String... args) throws InterruptedException {
+
+		APPS_BY_NAME = Collections.unmodifiableMap(loadXenqttApplications());
+
 		Arguments arguments = ArgumentExtractor.extractArguments(shutdownLatch, args);
 		if (arguments == null) {
-			System.out.println(USAGE);
-
+			XenqttUtil.prettyPrintln(getFullUsageText(), false);
 			return;
 		}
 
 		loggingLevels = arguments.determineLoggingLevels();
 		outputFile = String.format("xenqtt-%s.log", arguments.mode.getMode().toLowerCase());
-		application = loadXenqttApplication(arguments.mode);
+		application = APPS_BY_NAME.get(arguments.mode.getMode().toLowerCase());
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 
@@ -89,39 +96,91 @@ public final class Xenqtt {
 
 				shutdownLatch.countDown();
 			}
-
 		});
 
 		runApplication(arguments.mode, arguments.applicationArguments);
 		shutdownLatch.await();
+		Log.shutdown();
 	}
 
-	private static XenqttApplication loadXenqttApplication(Mode mode) {
-		String modeName = mode.getMode().toLowerCase();
+	/**
+	 * @return All {@link XenqttApplication applications}
+	 */
+	public static Collection<XenqttApplication> getApplications() {
+		return APPS_BY_NAME.values();
+	}
+
+	/**
+	 * @return The {@link XenqttApplication application} with the specified name (case insensitive). Null if there is no app with the specified name.
+	 */
+	public static XenqttApplication getApplication(String appName) {
+		return APPS_BY_NAME.get(appName.toLowerCase());
+	}
+
+	/**
+	 * @return The usage text for a specific application
+	 */
+	public static String getAppSpecificUsageText(XenqttApplication application) {
+		StringBuilder usage = new StringBuilder();
+		usage.append("usage: java ");
+		usage.append(JAVA_OPTS_TEXT);
+		usage.append(" -jar xenqtt-version.jar ");
+		usage.append(GLOBAL_OPTS_TEXT);
+		usage.append(" ");
+		usage.append(application.getName());
+		usage.append(" ");
+		usage.append(application.getOptsText());
+		usage.append(JAVA_OPTS_USAGE_TEXT);
+		usage.append(GLOBAL_OPTS_USAGE_TEXT);
+		usage.append(application.getOptsUsageText());
+		return usage.toString();
+	}
+
+	/**
+	 * @return The full usage text for xenqtt
+	 */
+	public static String getFullUsageText() {
+
+		StringBuilder appList = new StringBuilder();
+		for (String appName : APPS_BY_NAME.keySet()) {
+			if (appList.length() > 0) {
+				appList.append('|');
+			}
+			appList.append(appName);
+		}
+
+		StringBuilder usage = new StringBuilder();
+		usage.append("usage: java ");
+		usage.append(JAVA_OPTS_TEXT);
+		usage.append(" -jar xenqtt-version.jar ");
+		usage.append(GLOBAL_OPTS_TEXT);
+		usage.append(" ");
+		usage.append(appList);
+		usage.append(" [app.opts]\n");
+		usage.append(JAVA_OPTS_USAGE_TEXT);
+		usage.append(GLOBAL_OPTS_USAGE_TEXT);
+		for (Map.Entry<String, XenqttApplication> entry : APPS_BY_NAME.entrySet()) {
+			usage.append(String.format("\n\t%s : %s", entry.getKey(), entry.getValue().getSummary()));
+		}
+		usage.append("\n\tapp.opts : Application specific options");
+		return usage.toString();
+	}
+
+	private static Map<String, XenqttApplication> loadXenqttApplications() {
+		Map<String, XenqttApplication> apps = new TreeMap<String, XenqttApplication>();
 		for (Class<?> clazz : APPLICATIONS) {
-			String className = clazz.getSimpleName().toLowerCase();
-			if (className.startsWith(modeName)) {
-				try {
-					return (XenqttApplication) clazz.newInstance();
-				} catch (Exception ex) {
-					throw new RuntimeException(String.format("Unable to instantiate the Xenqtt application %s.", className));
-				}
+			try {
+				XenqttApplication app = (XenqttApplication) clazz.newInstance();
+				apps.put(app.getName(), app);
+			} catch (Exception ex) {
+				throw new RuntimeException(String.format("Unable to instantiate the XenQTT application %s.", clazz.getSimpleName()));
 			}
 		}
 
-		return null;
+		return apps;
 	}
 
 	private static void runApplication(Mode mode, AppContext applicationArguments) {
-		if (mode == Mode.HELP) {
-			displayHelpInformation(applicationArguments);
-			System.exit(0);
-		}
-
-		if (mode == Mode.LICENSE) {
-			displayLicense();
-			System.exit(0);
-		}
 
 		if (application == null) {
 			Log.info("The following mode is not presently supported: %s", mode.getMode());
@@ -136,125 +195,10 @@ public final class Xenqtt {
 			ex.printStackTrace();
 			Class<?> exceptionClass = ex.getClass();
 			if (exceptionClass == IllegalArgumentException.class || exceptionClass == IllegalStateException.class) {
-				System.out.printf("\nUSAGE: %s\n", application.getUsageText());
+				XenqttUtil.prettyPrintln("\nUSAGE: " + getAppSpecificUsageText(application), true);
 			}
 
 			System.exit(0);
 		}
 	}
-
-	private static void displayHelpInformation(AppContext arguments) {
-		String desiredHelpMode = arguments.getArgAsString("-m", null);
-		if (desiredHelpMode == null) {
-			displayGeneralHelpInformation();
-		} else {
-			displayApplicationSpecificHelpInformation(desiredHelpMode);
-		}
-	}
-
-	private static void displayGeneralHelpInformation() {
-		String helpDocumentation = loadResourceFile("/help-documentation.txt");
-		if (helpDocumentation == null) {
-			System.err.println("Unable to load the help documentation. This is a bug!");
-			return;
-		}
-
-		System.out.println(wrap(helpDocumentation.toString()));
-	}
-
-	private static void displayApplicationSpecificHelpInformation(String desiredHelpMode) {
-		String toMatch = String.format("%sApplication", desiredHelpMode);
-		try {
-			for (Class<?> application : APPLICATIONS) {
-				if (application.getSimpleName().equalsIgnoreCase(toMatch)) {
-					XenqttApplication applicationInstance = (XenqttApplication) application.newInstance();
-					System.out.printf("\nHelp for: %s\n", desiredHelpMode);
-					System.out.println(applicationInstance.getUsageText());
-					return;
-				}
-			}
-		} catch (Exception ex) {
-			Log.error(ex, "Unable to load help information for the application %s", desiredHelpMode);
-		}
-
-		Log.warn("Unrecognized application: %s", desiredHelpMode);
-	}
-
-	private static String wrap(String helpDocumentation) {
-
-		helpDocumentation = helpDocumentation.replace("{{USAGE}}", USAGE);
-		StringBuilder wrappedHelpDocumentation = new StringBuilder();
-		StringBuilder currentLine = new StringBuilder();
-		int currentLineSize = 0;
-		for (int i = 0; i < helpDocumentation.length(); i++) {
-			char c = helpDocumentation.charAt(i);
-			if (c != '\t') {
-				currentLine.append(c);
-				currentLineSize++;
-			} else {
-				currentLine.append("    ");
-				currentLineSize += 4;
-			}
-
-			if (c == '\n') {
-				wrappedHelpDocumentation.append(currentLine.toString());
-				currentLine = new StringBuilder();
-				currentLineSize = 0;
-				continue;
-			}
-
-			if (currentLineSize > 100) {
-				if (c == ' ') {
-					wrappedHelpDocumentation.append(currentLine.toString());
-					currentLine = new StringBuilder();
-				} else {
-					int lastWhitespace = currentLine.lastIndexOf(" ");
-					String nextLine = currentLine.substring(lastWhitespace + 1);
-					wrappedHelpDocumentation.append(currentLine.substring(0, lastWhitespace));
-					currentLine = new StringBuilder(nextLine);
-				}
-				wrappedHelpDocumentation.append('\n');
-				currentLineSize = 0;
-			}
-		}
-		wrappedHelpDocumentation.append(currentLine.toString());
-
-		return wrappedHelpDocumentation.toString();
-	}
-
-	private static void displayLicense() {
-		String license = loadResourceFile("/LICENSE.txt");
-		if (license == null) {
-			System.err.println("Unable to load the license file. This is a bug!");
-			return;
-		}
-
-		System.out.println(license);
-	}
-
-	private static String loadResourceFile(String resourceName) {
-		resourceName = resourceName.charAt(0) == '/' ? resourceName : String.format("/%s", resourceName);
-		InputStream in = Xenqtt.class.getResourceAsStream(resourceName);
-		if (in == null) {
-			System.err.println("Unable to load the requested resource. This is a bug!");
-			return null;
-		}
-
-		StringBuilder resource = new StringBuilder();
-		byte[] buffer = new byte[8192];
-		int bytesRead = -1;
-		try {
-			while ((bytesRead = in.read(buffer)) != -1) {
-				resource.append(new String(buffer, 0, bytesRead));
-			}
-			in.close();
-		} catch (Exception ex) {
-			System.err.println("Unable to load the help documentation. This is a bug!");
-			ex.printStackTrace();
-			return null;
-		}
-
-		return resource.toString();
-	}
-
 }

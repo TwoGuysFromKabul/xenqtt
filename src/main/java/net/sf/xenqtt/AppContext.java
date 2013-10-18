@@ -33,21 +33,13 @@ public final class AppContext {
 
 	/**
 	 * Create a new instance of this class.
-	 */
-	public AppContext() {
-		this(Collections.<String> emptyList(), new HashMap<String, String>(), null);
-	}
-
-	/**
-	 * Create a new instance of this class.
 	 * 
-	 * @param flags
-	 *            The flags that were specified for the application
-	 * @param arguments
-	 *            The arguments that were specified for the application
+	 * @param latch
+	 *            The {@link CountDownLatch latch} which the main application thread will await on. Trigger this if your application can terminate after
+	 *            performing certain tasks (e.g. a test)
 	 */
-	public AppContext(List<String> flags, Map<String, String> arguments) {
-		this(flags, arguments, null);
+	public AppContext(CountDownLatch latch) {
+		this(Collections.<String> emptyList(), new HashMap<String, String>(), latch);
 	}
 
 	/**

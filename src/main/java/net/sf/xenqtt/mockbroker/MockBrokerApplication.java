@@ -15,22 +15,14 @@
  */
 package net.sf.xenqtt.mockbroker;
 
+import net.sf.xenqtt.AbstractXenqttApplication;
 import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.XenqttApplication;
 import net.sf.xenqtt.XenqttUtil;
 
 /**
  * Runs the {@link MockBroker} as a xenqtt command line application
  */
-public class MockBrokerApplication implements XenqttApplication {
-
-	private static String USAGE_TEXT = "[-t timeout] [-p port] [-c] [-a] [-u user1:pass1,...usern:passn]" //
-			+ "\n\tt timeout : Seconds to wait for an ack to a message with QoS > 0. Defaults to 15." //
-			+ "\n\tp port : Port to listen on. Defaults to 1883." //
-			+ "\n\ta : Allow anonymous access. Allows clients to connect with no credentials." //
-			+ "\n\tm : Max in-flight messages to a client. Defaults to 50." //
-			+ "\n\tu user:pass... : Credentials (usernames and passwords) a client can use to connet." //
-	;
+public final class MockBrokerApplication extends AbstractXenqttApplication {
 
 	private MockBroker broker;
 
@@ -69,10 +61,42 @@ public class MockBrokerApplication implements XenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getUsageText()
+	 * @see net.sf.xenqtt.XenqttApplication#getOptsText()
 	 */
 	@Override
-	public String getUsageText() {
-		return USAGE_TEXT;
+	public String getOptsText() {
+		return "[-t timeout] [-p port] [-c] [-a] [-u user1:pass1,...usern:passn]";
+	}
+
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#getOptsUsageText()
+	 */
+	@Override
+	public String getOptsUsageText() {
+		return "\n\tt timeout : Seconds to wait for an ack to a message with QoS > 0. Defaults to 15." //
+				+ "\n\tp port : Port to listen on. Defaults to 1883." //
+				+ "\n\ta : Allow anonymous access. Allows clients to connect with no credentials." //
+				+ "\n\tm : Max in-flight messages to a client. Defaults to 50." //
+				+ "\n\tu user:pass... : Credentials (usernames and passwords) a client can use to connet." //
+		;
+	}
+
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#getSummary()
+	 */
+	@Override
+	public String getSummary() {
+		return "Run a mock MQTT broker. Useful in testing and debugging.";
+	}
+
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#getDescription()
+	 */
+	@Override
+	public String getDescription() {
+		return "The mock broker is an MQTT broker that facilitates communication between disparate clients. " //
+				+ "The mock broker supports the MQTT protocol out-of-the-box (save for QoS 2 which is not presently supported). " //
+				+ "In addition to full protocol support the mock broker also provides hooks for users to customize the behavior "//
+				+ "of various operations. These include publishing, subscribing, and so forth.";
 	}
 }
