@@ -1,3 +1,12 @@
+0.9.0
+	Added the clustering proxy.
+	Added statistics to the client API.
+	Added received timestamp to PublishMessage for use by clients.
+	Added the MqttClientDebugListener interface clients can use to have visibility into the MQTT messaging layers for debugging.
+	Added examples of client and mock broker API use cases in the package net.sf.xenqtt.examples.
+	Made the test client more robust.
+	Fixed various small bugs.
+	
 0.8.2
 	Updated the client API to make it simpler to use and make type names more consistent.
 	Fixed memory leak in the asynchronous client 
