@@ -16,18 +16,19 @@
 package net.sf.xenqtt;
 
 /**
- * Specifies a type that implements a Xenqtt application. A Xenqtt application is an application that can be invoked via the command-line by the user.
+ * Specifies a type that implements a Xenqtt application. A Xenqtt application is an application that can be invoked via the command-line by the user. All
+ * applications are instantiated every time xenqtt is run so they should not do anything significant during construction. All applications must have a no-arg
+ * constructor.
  */
 public interface XenqttApplication {
 
 	/**
 	 * Start the application. This method is called by the main thread that is used in launching Xenqtt.
 	 * 
-	 * @param arguments
-	 *            The {@link AppContext arguments} that were supplied. This includes both normal arguments (e.g. {@code -p port}) and flags (e.g.
-	 *            {@code -a})
+	 * @param appContext
+	 *            The {@link AppContext context} for the application.
 	 */
-	void start(AppContext arguments);
+	void start(AppContext appContext);
 
 	/**
 	 * Stop the application. This method is called once the application is halted normally (e.g. {@code CTRL-c}). The application should take all appropriate
@@ -36,11 +37,36 @@ public interface XenqttApplication {
 	void stop();
 
 	/**
-	 * Get usage text to display to the user. This is used whenever the user invokes the help option ({@code java -jar xenqtt.jar --help application}) or if the
-	 * user supplies invalid arguments and/or flags to a specific application.
+	 * @return The application's name for use on the command line
+	 */
+	String getName();
+
+	/**
+	 * The command line options string to display as part of the usage statement.
+	 * 
+	 * @return The opts to display
+	 */
+	String getOptsText();
+
+	/**
+	 * The usage description of the opts in {@link #getOptsText()}. There should be a line in the format "\n\topt : description" for each opt in the
+	 * {@link #getOptsText()} string.
 	 * 
 	 * @return The usage text to display
 	 */
-	String getUsageText();
+	String getOptsUsageText();
 
+	/**
+	 * This is used to display a single line summary of what this application does. For use in documentation.
+	 * 
+	 * @return The summary display
+	 */
+	String getSummary();
+
+	/**
+	 * This is used to display a detailed description of what this application does. For use in documentation.
+	 * 
+	 * @return The description.
+	 */
+	String getDescription();
 }

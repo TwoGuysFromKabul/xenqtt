@@ -56,10 +56,10 @@ public final class MqttBrokerChannel extends AbstractMqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.AbstractMqttChannel#keepAlive(long, long)
+	 * @see net.sf.xenqtt.message.AbstractMqttChannel#keepAlive(long, long, long)
 	 */
 	@Override
-	long keepAlive(long now, long lastMessageReceived) throws Exception {
+	long keepAlive(long now, long lastMessageReceived, long lastMessageSent) throws Exception {
 
 		if (maxMessageIntervalMillis == 0) {
 			return Long.MAX_VALUE;

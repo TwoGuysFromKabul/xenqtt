@@ -74,7 +74,7 @@ public class ProxyIT {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-b", broker.getURI());
 		args.put("-p", "0");
-		AppContext arguments = new AppContext(Collections.<String> emptyList(), args);
+		AppContext arguments = new AppContext(Collections.<String> emptyList(), args, null);
 		proxy.start(arguments);
 	}
 

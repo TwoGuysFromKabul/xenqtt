@@ -15,6 +15,7 @@
  */
 package net.sf.xenqtt;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Collection;
 
@@ -385,4 +386,84 @@ public final class XenqttUtil {
 		return null;
 	}
 
+	/**
+	 * @return The specified classpath resource file contents as a string
+	 */
+	public static String loadResourceFile(String resourceName) {
+		resourceName = resourceName.charAt(0) == '/' ? resourceName : String.format("/%s", resourceName);
+		InputStream in = Xenqtt.class.getResourceAsStream(resourceName);
+		if (in == null) {
+			System.err.println("Unable to load the requested resource. This is a bug!");
+			return null;
+		}
+
+		StringBuilder resource = new StringBuilder();
+		byte[] buffer = new byte[8192];
+		int bytesRead = -1;
+		try {
+			while ((bytesRead = in.read(buffer)) != -1) {
+				resource.append(new String(buffer, 0, bytesRead));
+			}
+			in.close();
+		} catch (Exception ex) {
+			System.err.println("Unable to load the help documentation. This is a bug!");
+			ex.printStackTrace();
+			return null;
+		}
+
+		return resource.toString();
+	}
+
+	/**
+	 * Converts tabs to 4 spaces and optionally word wraps text at about 100 characters then prints to system.out and appends a newline character. Lines will be
+	 * continued past the specified length to avoid breaking in the middle of a word.
+	 */
+	public static void prettyPrintln(String text, boolean wrap) {
+		prettyPrint(text + "\n", wrap);
+	}
+
+	/**
+	 * Converts tabs to 4 spaces and optionally word wraps text at about 100 characters then prints to system.out. Lines will be continued past the specified
+	 * length to avoid breaking in the middle of a word.
+	 */
+	public static void prettyPrint(String text, boolean wrap) {
+
+		StringBuilder prettyText = new StringBuilder();
+		StringBuilder currentLine = new StringBuilder();
+		int currentLineSize = 0;
+		for (int i = 0; i < text.length(); i++) {
+			char c = text.charAt(i);
+			if (c != '\t') {
+				currentLine.append(c);
+				currentLineSize++;
+			} else {
+				currentLine.append("    ");
+				currentLineSize += 4;
+			}
+
+			if (c == '\n') {
+				prettyText.append(currentLine.toString());
+				currentLine = new StringBuilder();
+				currentLineSize = 0;
+				continue;
+			}
+
+			if (wrap && currentLineSize > 100) {
+				if (c == ' ') {
+					prettyText.append(currentLine.toString());
+					currentLine = new StringBuilder();
+				} else {
+					int lastWhitespace = currentLine.lastIndexOf(" ");
+					String nextLine = currentLine.substring(lastWhitespace + 1);
+					prettyText.append(currentLine.substring(0, lastWhitespace));
+					currentLine = new StringBuilder(nextLine);
+				}
+				prettyText.append('\n');
+				currentLineSize = 0;
+			}
+		}
+		prettyText.append(currentLine.toString());
+
+		System.out.print(prettyText);
+	}
 }

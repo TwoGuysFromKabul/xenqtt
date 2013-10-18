@@ -71,6 +71,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	private boolean connected;
 
 	private long lastReceivedTime;
+	private long lastSentTime;
 	private long pingIntervalMillis;
 
 	private boolean channelCloseCalled;
@@ -326,7 +327,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		}
 
 		try {
-			long maxKeepAliveTime = keepAlive(now, lastReceivedTime);
+			long maxKeepAliveTime = keepAlive(now, lastReceivedTime, lastSentTime);
 			if (maxKeepAliveTime < maxIdleTime) {
 				maxIdleTime = maxKeepAliveTime;
 			}
@@ -460,9 +461,11 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 *            The timestamp to use as the "current" time
 	 * @param lastMessageReceived
 	 *            The last time a message was received
+	 * @param lastMessageSent
+	 *            The last time a message was sent
 	 * @return Maximum time in millis until keep alive will have work to do and needs to be called again. < 0 if this method closes the channel.
 	 */
-	abstract long keepAlive(long now, long lastMessageReceived) throws Exception;
+	abstract long keepAlive(long now, long lastMessageReceived, long lastMessageSent) throws Exception;
 
 	/**
 	 * Called when a {@link PingReqMessage} is received.
@@ -524,6 +527,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			Log.debug("%s sent %s", this, sendMessageInProgress);
+			lastSentTime = now;
 			handler.messageSent(this, sendMessageInProgress);
 
 			if (!sendMessageInProgress.isDuplicate()) {

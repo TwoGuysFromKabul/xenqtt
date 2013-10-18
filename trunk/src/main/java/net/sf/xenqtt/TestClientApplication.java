@@ -20,14 +20,7 @@ import net.sf.xenqtt.test.XenqttTestClient;
 /**
  * Runs a test client application that can be used in load testing the Xenqtt client and the disparate applications embedded within.
  */
-final class TestClientApplication implements XenqttApplication {
-
-	private static final String USAGE_TEXT = "[-c clientType] [-b brokerUri] [-u user;pass] [-s subscribeTopic] [-d publishTopic] [-p numPublishers] "
-			+ "[-m messagesToPublish] [-r messagesToReceive] [-t duration]\n\t-c - The client type to use. Can be sync or async\n\t-b - The broker URI. "
-			+ "Format: tcp://host:port\n\t-u - Specifies the username and password to use. If omitted anonymous access is assumed\n\t-s - The topic to "
-			+ "subscribe to. Can be a topic filter\n\t-d - The topic to publish to. Must be a standard topic\n\t-p - The number of publishers to use. This is "
-			+ "not the number of MQTT clients\n\t-m - The number of messages to publish during the test per-publisher. Can be zero\n\t-r - The number of "
-			+ "messages to receive during the test\n\t-t - The duration of the test. Format: hh:mm:ss.SSS";
+final class TestClientApplication extends AbstractXenqttApplication {
 
 	private XenqttTestClient testClient;
 
@@ -51,11 +44,44 @@ final class TestClientApplication implements XenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getUsageText()
+	 * @see net.sf.xenqtt.XenqttApplication#getOptsText()
 	 */
 	@Override
-	public String getUsageText() {
-		return USAGE_TEXT;
+	public String getOptsText() {
+		return "[-c clientType] [-b brokerUri] [-u user;pass] [-s subscribeTopic] [-d publishTopic] [-p numPublishers] [-m messagesToPublish] [-r messagesToReceive] [-t duration]";
 	}
 
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#getOptsUsageText()
+	 */
+	@Override
+	public String getOptsUsageText() {
+		return "\n\t-c : The client type to use. Can be sync or async" //
+				+ "\n\t-b : The broker URI. Format: tcp://host:port" //
+				+ "\n\t-u : Specifies the username and password to use. If omitted anonymous access is assumed" //
+				+ "\n\t-s : The topic to subscribe to. Can be a topic filter" //
+				+ "\n\t-d : The topic to publish to. Must be a standard topic" //
+				+ "\n\t-p : The number of publishers to use. This is not the number of MQTT clients" //
+				+ "\n\t-m : The number of messages to publish during the test per-publisher. Can be zero" //
+				+ "\n\t-r : The number of messages to receive during the test" //
+				+ "\n\t-t : The duration of the test. Format: hh:mm:ss.SSS" //
+		;
+	}
+
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#getSummary()
+	 */
+	@Override
+	public String getSummary() {
+		return "Runs the test client. Useful for load testing brokers.";
+	}
+
+	/**
+	 * @see net.sf.xenqtt.XenqttApplication#getDescription()
+	 */
+	@Override
+	public String getDescription() {
+		// TODO [jeremy] - write a better description
+		return getSummary();
+	}
 }

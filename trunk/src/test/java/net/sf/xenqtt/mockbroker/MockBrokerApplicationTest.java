@@ -52,7 +52,7 @@ public class MockBrokerApplicationTest {
 	public void testStart_NotAuthorized() {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args);
+		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -76,7 +76,7 @@ public class MockBrokerApplicationTest {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		args.put("-u", "user1:pass1");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args);
+		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -101,7 +101,7 @@ public class MockBrokerApplicationTest {
 		flags.add("-a");
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
-		AppContext arguments = new AppContext(flags, args);
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -137,7 +137,7 @@ public class MockBrokerApplicationTest {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		args.put("-u", "user1:pass1");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args);
+		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -174,7 +174,7 @@ public class MockBrokerApplicationTest {
 		args.put("-p", "0");
 		args.put("-t", "2");
 		args.put("-u", "user1:pass1");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args);
+		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -223,7 +223,7 @@ public class MockBrokerApplicationTest {
 		args.put("-p", "0");
 		args.put("-t", "2");
 		args.put("-m", "2");
-		AppContext arguments = new AppContext(flags, args);
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -259,7 +259,7 @@ public class MockBrokerApplicationTest {
 		flags.add("-a");
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
-		AppContext arguments = new AppContext(flags, args);
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 		int port = getPort();
 
@@ -293,8 +293,12 @@ public class MockBrokerApplicationTest {
 	}
 
 	@Test
-	public void testGetUsageText() {
-		assertNotNull(application.getUsageText());
+	public void testGetOptsText() {
+		assertNotNull(application.getOptsText());
 	}
 
+	@Test
+	public void testGetOptsUsageText() {
+		assertNotNull(application.getOptsUsageText());
+	}
 }

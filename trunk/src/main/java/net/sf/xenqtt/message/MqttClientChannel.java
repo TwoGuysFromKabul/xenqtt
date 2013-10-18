@@ -62,18 +62,13 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.message.AbstractMqttChannel#keepAlive(long, long)
+	 * @see net.sf.xenqtt.message.AbstractMqttChannel#keepAlive(long, long, long)
 	 */
 	@Override
-	long keepAlive(long now, long lastMessageReceived) throws Exception {
+	long keepAlive(long now, long lastMessageReceived, long lastMessageSent) throws Exception {
 
 		if (pingIntervalMillis == 0) {
 			return Long.MAX_VALUE;
-		}
-
-		long elapsed = now - lastMessageReceived;
-		if (elapsed < pingIntervalMillis) {
-			return pingIntervalMillis - elapsed;
 		}
 
 		long millisSincePing = now - pingTime;
@@ -81,6 +76,11 @@ public final class MqttClientChannel extends AbstractMqttChannel {
 			Log.warn("%s lost communication with broker, closing channel", this);
 			close();
 			return -1;
+		}
+
+		long sentElapsed = now - lastMessageSent;
+		if (sentElapsed < pingIntervalMillis) {
+			return pingIntervalMillis - sentElapsed;
 		}
 
 		if (pingTime == Long.MAX_VALUE) {

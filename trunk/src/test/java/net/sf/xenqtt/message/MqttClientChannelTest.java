@@ -38,7 +38,7 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 
 		establishConnection();
 
-		assertEquals(Long.MAX_VALUE, clientChannel.keepAlive(now, 0));
+		assertEquals(Long.MAX_VALUE, clientChannel.keepAlive(now, 0, 0));
 		assertFalse(checkForPing());
 	}
 
@@ -49,51 +49,73 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 
 		clientChannel.connected(1000);
 		clientChannel.disconnected();
-		assertEquals(Long.MAX_VALUE, clientChannel.keepAlive(now, now - 1000));
+		assertEquals(Long.MAX_VALUE, clientChannel.keepAlive(now, now - 1000, now - 1000));
 		assertFalse(checkForPing());
 	}
 
 	@Test
-	public void testKeepAlive_Connected_TimeNotExpired() throws Exception {
+	public void testKeepAlive_Connected_ReceivedTimeNotExpired_SentTimeNotExpired_NoPingPending() throws Exception {
 
 		establishConnection();
 
 		clientChannel.connected(1000);
-		assertEquals(900, clientChannel.keepAlive(now, now - 100));
+		assertEquals(900, clientChannel.keepAlive(now, now - 100, now - 100));
 		assertFalse(checkForPing());
 	}
 
 	@Test
-	public void testKeepAlive_Connected_TimeExpired_NoPingPending() throws Exception {
+	public void testKeepAlive_Connected_ReceivedTimeNotExpired_SentTimeExpired_NoPingPending() throws Exception {
 
 		establishConnection();
 
 		clientChannel.connected(1000);
-		assertEquals(1000, clientChannel.keepAlive(now, now - 2000));
+		assertEquals(1000, clientChannel.keepAlive(now, now - 100, now - 2000));
 		assertTrue(checkForPing());
 
 		assertTrue(clientChannel.isOpen());
 	}
 
 	@Test
-	public void testKeepAlive_Connected_TimeExpired_PingPending() throws Exception {
+	public void testKeepAlive_Connected_ReceivedTimeExpired_SentTimeNotExpired_NoPingPending() throws Exception {
 
 		establishConnection();
 
 		clientChannel.connected(1000);
-		assertEquals(1000, clientChannel.keepAlive(now, now - 1000));
-		assertEquals(-1, clientChannel.keepAlive(now + 1001, now - 2001));
+		assertEquals(900, clientChannel.keepAlive(now, now - 2000, now - 100));
+		assertFalse(checkForPing());
+	}
+
+	@Test
+	public void testKeepAlive_Connected_ReceivedTimeExpired_SentTimeExpired_NoPingPending() throws Exception {
+
+		establishConnection();
+
+		clientChannel.connected(1000);
+		assertEquals(1000, clientChannel.keepAlive(now, now - 2000, now - 2000));
+		assertTrue(checkForPing());
+
+		assertTrue(clientChannel.isOpen());
+	}
+
+	@Test
+	public void testKeepAlive_Connected_PingResponseTimeExpired() throws Exception {
+
+		establishConnection();
+
+		clientChannel.connected(1000);
+		assertEquals(1000, clientChannel.keepAlive(now, now - 1000, now - 1000));
+		assertEquals(-1, clientChannel.keepAlive(now + 1001, now, now));
 
 		assertFalse(clientChannel.isOpen());
 	}
 
 	@Test
-	public void testKeepAlive_Connected_TimeExpired_PingGotResponse() throws Exception {
+	public void testKeepAlive_Connected_ReceivedTimeExpired__Sent_TimeExpired_PingGotResponse() throws Exception {
 
 		establishConnection();
 
 		clientChannel.connected(1000);
-		assertEquals(1000, clientChannel.keepAlive(now, now - 2000));
+		assertEquals(1000, clientChannel.keepAlive(now, now - 2000, now - 2000));
 		assertTrue(checkForPing());
 
 		// send the response
@@ -103,7 +125,7 @@ public class MqttClientChannelTest extends MqttChannelTestBase<MqttClientChannel
 		readWrite(1, 0);
 
 		// validate another ping was sent instead of the channel being closed
-		assertEquals(1000, clientChannel.keepAlive(now, now - 2000));
+		assertEquals(1000, clientChannel.keepAlive(now, now - 100, now - 2000));
 		assertTrue(checkForPing());
 
 		assertTrue(clientChannel.isOpen());

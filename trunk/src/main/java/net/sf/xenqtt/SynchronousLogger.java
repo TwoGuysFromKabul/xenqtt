@@ -44,6 +44,13 @@ final class SynchronousLogger implements Logger {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.Logger#shutdown()
+	 */
+	@Override
+	public void shutdown() {
+	}
+
+	/**
 	 * @see net.sf.xenqtt.Logger#log(int, java.lang.String, java.lang.Object[])
 	 */
 	@Override

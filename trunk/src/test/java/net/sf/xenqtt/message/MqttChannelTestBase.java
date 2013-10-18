@@ -225,6 +225,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		private final MockMessageHandler messageHandler;
 		Exception exceptionToThrow;
 		long lastReceived;
+		long lastSent;
 		boolean connectedCalled;
 		boolean disconnectedCalled;
 		long pingIntervalMillis;
@@ -266,12 +267,13 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 		}
 
 		@Override
-		long keepAlive(long now, long lastMessageReceived) throws Exception {
+		long keepAlive(long now, long lastMessageReceived, long lastMessageSent) throws Exception {
 
 			if (exceptionToThrow != null) {
 				throw exceptionToThrow;
 			}
 			lastReceived = lastMessageReceived;
+			lastSent = lastMessageSent;
 
 			return 25000;
 		}

@@ -91,7 +91,7 @@ final class ArgumentExtractor {
 
 	private static AppContext getApplicationArguments(List<String> modeArguments, boolean helpMode, CountDownLatch latch) {
 		if (modeArguments.isEmpty()) {
-			return new AppContext();
+			return new AppContext(latch);
 		}
 
 		if (helpMode) {
@@ -99,7 +99,7 @@ final class ArgumentExtractor {
 			Map<String, String> args = new HashMap<String, String>();
 			args.put("-m", desiredHelp);
 
-			return new AppContext(Collections.<String> emptyList(), args);
+			return new AppContext(Collections.<String> emptyList(), args, latch);
 		}
 
 		List<String> flags = new ArrayList<String>();

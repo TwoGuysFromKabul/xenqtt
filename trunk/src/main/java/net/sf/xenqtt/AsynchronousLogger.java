@@ -48,6 +48,14 @@ final class AsynchronousLogger implements Logger {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.Logger#shutdown()
+	 */
+	@Override
+	public void shutdown() {
+		manager.interrupt();
+	}
+
+	/**
 	 * @see net.sf.xenqtt.Logger#log(int, java.lang.String, java.lang.Object[])
 	 */
 	@Override

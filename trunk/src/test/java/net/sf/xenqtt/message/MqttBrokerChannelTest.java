@@ -50,7 +50,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 
 		establishConnection();
 
-		assertEquals(Long.MAX_VALUE, brokerChannel.keepAlive(now, 0));
+		assertEquals(Long.MAX_VALUE, brokerChannel.keepAlive(now, 0, 0));
 
 		assertTrue(brokerChannel.isOpen());
 	}
@@ -62,7 +62,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 
 		brokerChannel.connected(1000);
 		brokerChannel.disconnected();
-		assertEquals(Long.MAX_VALUE, brokerChannel.keepAlive(now, 0));
+		assertEquals(Long.MAX_VALUE, brokerChannel.keepAlive(now, 0, 0));
 
 		assertTrue(brokerChannel.isOpen());
 	}
@@ -73,7 +73,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 		establishConnection();
 
 		brokerChannel.connected(1000);
-		assertEquals(1400, brokerChannel.keepAlive(now, now - 100));
+		assertEquals(1400, brokerChannel.keepAlive(now, now - 100, 0));
 
 		assertTrue(brokerChannel.isOpen());
 	}
@@ -84,7 +84,7 @@ public class MqttBrokerChannelTest extends MqttChannelTestBase<MqttChannelTestBa
 		establishConnection();
 
 		brokerChannel.connected(1000);
-		assertEquals(-1, brokerChannel.keepAlive(now, now - 1500));
+		assertEquals(-1, brokerChannel.keepAlive(now, now - 1500, 0));
 
 		assertFalse(brokerChannel.isOpen());
 	}
