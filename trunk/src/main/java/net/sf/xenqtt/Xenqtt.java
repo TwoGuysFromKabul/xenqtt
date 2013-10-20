@@ -15,24 +15,23 @@
  */
 package net.sf.xenqtt;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.ArgumentExtractor.Arguments;
 import net.sf.xenqtt.ArgumentExtractor.Mode;
-import net.sf.xenqtt.mockbroker.MockBrokerApplication;
-import net.sf.xenqtt.proxy.ProxyApplication;
+import net.sf.xenqtt.application.AbstractXenqttApplication;
+import net.sf.xenqtt.application.XenqttApplication;
 
 /**
  * The entry point into the application when either the proxy or the gateway are run.
  */
 public final class Xenqtt {
-
-	private static final Class<?>[] APPLICATIONS = new Class<?>[] { HelpApplication.class, LicenseApplication.class, MockBrokerApplication.class,
-			TestClientApplication.class, ProxyApplication.class };
 
 	private static Map<String, XenqttApplication> APPS_BY_NAME;
 
@@ -72,7 +71,7 @@ public final class Xenqtt {
 	 *            To get mode-specific help information use the {@code help} mode and then specify the mode name (e.g. {@code help proxy})
 	 *            </p>
 	 */
-	public static void main(String... args) throws InterruptedException {
+	public static void main(String... args) {
 
 		APPS_BY_NAME = Collections.unmodifiableMap(loadXenqttApplications());
 
@@ -98,9 +97,19 @@ public final class Xenqtt {
 			}
 		});
 
-		runApplication(arguments.mode, arguments.applicationArguments);
-		shutdownLatch.await();
-		Log.shutdown();
+		try {
+			runApplication(arguments.mode, arguments.applicationArguments);
+			shutdownLatch.await();
+		} catch (Exception ex) {
+			System.err.printf("Unable to launch the application. Details: %s\n", ex.getMessage());
+			ex.printStackTrace();
+			Class<?> exceptionClass = ex.getClass();
+			if (exceptionClass == IllegalArgumentException.class || exceptionClass == IllegalStateException.class) {
+				XenqttUtil.prettyPrintln("\nUSAGE: " + getAppSpecificUsageText(application), true);
+			}
+		} finally {
+			Log.shutdown();
+		}
 	}
 
 	/**
@@ -114,6 +123,7 @@ public final class Xenqtt {
 	 * @return The {@link XenqttApplication application} with the specified name (case insensitive). Null if there is no app with the specified name.
 	 */
 	public static XenqttApplication getApplication(String appName) {
+
 		return APPS_BY_NAME.get(appName.toLowerCase());
 	}
 
@@ -167,38 +177,46 @@ public final class Xenqtt {
 	}
 
 	private static Map<String, XenqttApplication> loadXenqttApplications() {
-		Map<String, XenqttApplication> apps = new TreeMap<String, XenqttApplication>();
-		for (Class<?> clazz : APPLICATIONS) {
-			try {
+
+		try {
+			ClassLoader classLoader = Xenqtt.class.getClassLoader();
+			Map<String, XenqttApplication> apps = new TreeMap<String, XenqttApplication>();
+			for (String appClassName : getAppClassNames()) {
+				Class<?> clazz = classLoader.loadClass(appClassName);
 				XenqttApplication app = (XenqttApplication) clazz.newInstance();
 				apps.put(app.getName(), app);
-			} catch (Exception ex) {
-				throw new RuntimeException(String.format("Unable to instantiate the XenQTT application %s.", clazz.getSimpleName()));
+			}
+
+			return apps;
+		} catch (Exception ex) {
+			throw new RuntimeException("Unable to instantiate XenQTT applications.", ex);
+		}
+	}
+
+	private static List<String> getAppClassNames() throws Exception {
+
+		List<String> classFiles = XenqttUtil.findFilesOnClassPath(XenqttApplication.class.getPackage().getName(), ".class");
+
+		List<String> classNames = new ArrayList<String>(classFiles.size());
+
+		for (String classFile : classFiles) {
+			String className = classFile.replace('/', '.').substring(0, classFile.length() - ".class".length());
+			if (!XenqttApplication.class.getName().equals(className) && !AbstractXenqttApplication.class.getName().equals(className)) {
+				classNames.add(className);
 			}
 		}
 
-		return apps;
+		return classNames;
 	}
 
 	private static void runApplication(Mode mode, AppContext applicationArguments) {
 
 		if (application == null) {
 			Log.info("The following mode is not presently supported: %s", mode.getMode());
-			System.exit(0);
+			return;
 		}
 
-		try {
-			Log.info("Starting the following application: %s", application.getClass().getSimpleName());
-			application.start(applicationArguments);
-		} catch (Exception ex) {
-			System.err.printf("Unable to launch the application. Details: %s\n", ex.getMessage());
-			ex.printStackTrace();
-			Class<?> exceptionClass = ex.getClass();
-			if (exceptionClass == IllegalArgumentException.class || exceptionClass == IllegalStateException.class) {
-				XenqttUtil.prettyPrintln("\nUSAGE: " + getAppSpecificUsageText(application), true);
-			}
-
-			System.exit(0);
-		}
+		Log.info("Starting the following application: %s", application.getClass().getSimpleName());
+		application.start(applicationArguments);
 	}
 }

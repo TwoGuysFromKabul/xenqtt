@@ -13,11 +13,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package net.sf.xenqtt.proxy;
+package net.sf.xenqtt.application;
 
-import net.sf.xenqtt.AbstractXenqttApplication;
 import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.XenqttApplication;
+import net.sf.xenqtt.proxy.ProxyBroker;
 
 /**
  * A {@link XenqttApplication} is that acts as an MQTT proxy to allow a cluster of servers to act as a single MQTT proxy. All connections to this proxy that
@@ -28,7 +27,7 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	private ProxyBroker broker;
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#start(net.sf.xenqtt.AppContext)
+	 * @see net.sf.xenqtt.application.XenqttApplication#start(net.sf.xenqtt.AppContext)
 	 */
 	@Override
 	public void start(AppContext arguments) {
@@ -41,7 +40,7 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#stop()
+	 * @see net.sf.xenqtt.application.XenqttApplication#stop()
 	 */
 	@Override
 	public void stop() {
@@ -59,7 +58,7 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getOptsText()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getOptsText()
 	 */
 	@Override
 	public String getOptsText() {
@@ -67,7 +66,7 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getOptsUsageText()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getOptsUsageText()
 	 */
 	@Override
 	public String getOptsUsageText() {
@@ -77,7 +76,7 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getSummary()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getSummary()
 	 */
 	@Override
 	public String getSummary() {
@@ -85,7 +84,7 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getDescription()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getDescription()
 	 */
 	@Override
 	public String getDescription() {

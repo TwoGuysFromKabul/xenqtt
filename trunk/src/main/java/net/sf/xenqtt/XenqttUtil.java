@@ -15,9 +15,14 @@
  */
 package net.sf.xenqtt;
 
-import java.io.InputStream;
+import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Provides disparate utility methods useful across the Xenqtt application ecosystem.
@@ -360,61 +365,6 @@ public final class XenqttUtil {
 	}
 
 	/**
-	 * @return The path to the directory currently running the xenqtt JAR file.
-	 */
-	public static String getDirectoryHostingRunningXenqttJar() {
-		URL url = JavaLoggingDelegate.class.getResource("/" + JavaLoggingDelegate.class.getName().replace('.', '/') + ".class");
-		if (url == null) {
-			return null;
-		}
-
-		String path = url.getPath();
-		int startIndex = path.indexOf(":");
-		if (startIndex >= 0) {
-			path = path.substring(startIndex + 1);
-		}
-
-		int bangIndex = path.indexOf("jar!");
-		if (bangIndex >= 0) {
-			String jarFile = path.substring(0, bangIndex + 3);
-			int pos = jarFile.lastIndexOf('/');
-			if (pos > -1) {
-				return jarFile.substring(0, pos);
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * @return The specified classpath resource file contents as a string
-	 */
-	public static String loadResourceFile(String resourceName) {
-		resourceName = resourceName.charAt(0) == '/' ? resourceName : String.format("/%s", resourceName);
-		InputStream in = Xenqtt.class.getResourceAsStream(resourceName);
-		if (in == null) {
-			System.err.println("Unable to load the requested resource. This is a bug!");
-			return null;
-		}
-
-		StringBuilder resource = new StringBuilder();
-		byte[] buffer = new byte[8192];
-		int bytesRead = -1;
-		try {
-			while ((bytesRead = in.read(buffer)) != -1) {
-				resource.append(new String(buffer, 0, bytesRead));
-			}
-			in.close();
-		} catch (Exception ex) {
-			System.err.println("Unable to load the help documentation. This is a bug!");
-			ex.printStackTrace();
-			return null;
-		}
-
-		return resource.toString();
-	}
-
-	/**
 	 * Converts tabs to 4 spaces and optionally word wraps text at about 100 characters then prints to system.out and appends a newline character. Lines will be
 	 * continued past the specified length to avoid breaking in the middle of a word.
 	 */
@@ -465,5 +415,132 @@ public final class XenqttUtil {
 		prettyText.append(currentLine.toString());
 
 		System.out.print(prettyText);
+	}
+
+	/**
+	 * @return The xenqtt class path root. If xenqtt is running from a JAR it will be the JAR. Otherwise it will be the class path directory that contains the
+	 *         net/sf/xenqtt package. The latter is to support running in development which typically means it will be the 'project/target/classes' directory.
+	 */
+	public static File getXenqttClassPathRoot() {
+
+		URL url = Xenqtt.class.getResource("/" + XenqttUtil.class.getName().replace('.', '/') + ".class");
+		if (url == null) {
+			throw new RuntimeException("Unable to find Xenqtt class resource. THIS IS A BUG!");
+		}
+
+		String path = url.getPath();
+		// uncomment this and edit it to point to an existing xenqtt jar to manually test getting the classpath root from the jar
+		// path = "target/xenqtt-0.9.2-SNAPSHOT.jar!/net/sf/xenqtt/XenqttUtil.class";
+		int startIndex = path.indexOf(":");
+		if (startIndex >= 0) {
+			path = path.substring(startIndex + 1);
+		}
+
+		int bangIndex = path.indexOf(".jar!");
+		if (bangIndex >= 0) {
+			path = path.substring(0, bangIndex + 4);
+		} else {
+			int end = path.length() - XenqttUtil.class.getName().length() - ".class".length() - 1;
+			path = path.substring(0, end);
+		}
+
+		return new File(path);
+	}
+
+	/**
+	 * @return The directory where xenqtt is currently installed. If xenqtt is running from a JAR it will be the directory containing the JAR. Otherwise it will
+	 *         be the parent directory of the class path directory that contains the net/sf/xenqtt package. The latter is to support running in development
+	 *         which typically means it will be the 'project/target' directory.
+	 */
+	public static File getXenqttInstallDirectory() {
+
+		return getXenqttClassPathRoot().getParentFile();
+	}
+
+	/**
+	 * Finds files on the xenqtt class path optionally limited to package and/or extension.
+	 * 
+	 * @param packageName
+	 *            Name of package to limit the search to. Sub packages are not included. Null to include all packages.
+	 * @param extension
+	 *            File extension to limit search to. This should include the dot as in ".class". Null to include files with any extension.
+	 * 
+	 * @return The list of files found. Each entry will be '/' separated, relative to the class path, and will have no leading '/'.
+	 */
+	public static List<String> findFilesOnClassPath(String packageName, String extension) {
+
+		try {
+			String cpRoot = getXenqttClassPathRoot().getAbsolutePath();
+
+			ClassPathFileListBuilder builder;
+			if (cpRoot.endsWith(".jar")) {
+				builder = new ClassPathFileListBuilder(null, packageName, extension);
+				findFilesInJar(cpRoot, builder);
+			} else {
+				builder = new ClassPathFileListBuilder(cpRoot, packageName, extension);
+				findFilesInDir(new File(cpRoot), builder);
+			}
+
+			return builder.files;
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to find files in package: " + packageName, e);
+		}
+	}
+
+	private static void findFilesInJar(String jarPath, ClassPathFileListBuilder builder) throws Exception {
+
+		JarFile jarFile = new JarFile(jarPath);
+		try {
+			Enumeration<JarEntry> entries = jarFile.entries();
+			while (entries.hasMoreElements()) {
+				JarEntry entry = entries.nextElement();
+				builder.accept(entry.getName());
+			}
+		} finally {
+			jarFile.close();
+		}
+	}
+
+	private static void findFilesInDir(File dirFile, ClassPathFileListBuilder builder) throws Exception {
+
+		File[] files = dirFile.listFiles();
+		for (File file : files) {
+			if (file.isDirectory()) {
+				findFilesInDir(file, builder);
+			} else {
+				builder.accept(file.getAbsolutePath());
+			}
+		}
+	}
+
+	private final static class ClassPathFileListBuilder {
+
+		private final int rootDirLength;
+		private final List<String> files = new ArrayList<String>();
+		private final String filterPackagePath;
+		private final String filterExtension;
+
+		public ClassPathFileListBuilder(String dir, String filterPackageName, String filterExtension) {
+
+			this.rootDirLength = dir == null ? 0 : new File(dir).getAbsolutePath().length() + 1;
+			this.filterPackagePath = filterPackageName == null ? null : filterPackageName.replace('.', '/');
+			this.filterExtension = filterExtension;
+		}
+
+		void accept(String file) {
+
+			if (rootDirLength > 0) {
+				file = file.substring(rootDirLength, file.length());
+				file = file.replace('\\', '/');
+			}
+
+			boolean accepted = filterPackagePath == null || (file.startsWith(filterPackagePath) && filterPackagePath.length() == file.lastIndexOf('/'));
+			accepted &= (filterExtension == null || file.endsWith(filterExtension));
+
+			if (accepted) {
+				files.add(file);
+			}
+		}
 	}
 }

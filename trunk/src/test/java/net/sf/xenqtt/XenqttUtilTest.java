@@ -17,8 +17,10 @@ package net.sf.xenqtt;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -308,4 +310,42 @@ public class XenqttUtilTest {
 		XenqttUtil.validateInRange("range", null, start, end);
 	}
 
+	@Test
+	public void testGetDirectoryHostingRunningXenqttJar() throws Exception {
+
+		assertTrue(XenqttUtil.getXenqttInstallDirectory().getAbsolutePath().endsWith(File.separator + "target"));
+	}
+
+	@Test
+	public void testGetXenqttClassPathRoot() throws Exception {
+
+		assertTrue(XenqttUtil.getXenqttClassPathRoot().getAbsolutePath().endsWith(File.separator + "target" + File.separator + "classes"));
+	}
+
+	@Test
+	public void testFindFilesOnClassPath_NoPackageFilter_NoExtensionFilter() throws Exception {
+
+		List<String> files = XenqttUtil.findFilesOnClassPath(null, null);
+		assertTrue(files.contains("net/sf/xenqtt/Xenqtt.class"));
+		assertTrue(files.contains("net/sf/xenqtt/client/MqttClient.class"));
+		assertTrue(files.contains("LICENSE.txt"));
+	}
+
+	@Test
+	public void testFindFilesOnClassPath_WithPackageFilter_NoExtensionFilter() throws Exception {
+
+		List<String> files = XenqttUtil.findFilesOnClassPath("net.sf.xenqtt", null);
+		assertTrue(files.contains("net/sf/xenqtt/Xenqtt.class"));
+		assertFalse(files.contains("net/sf/xenqtt/client/MqttClient.class"));
+		assertFalse(files.contains("LICENSE.txt"));
+	}
+
+	@Test
+	public void testFindFilesOnClassPath_NoPackageFilter_WithExtensionFilter() throws Exception {
+
+		List<String> files = XenqttUtil.findFilesOnClassPath(null, ".txt");
+		assertFalse(files.contains("net/sf/xenqtt/Xenqtt.class"));
+		assertFalse(files.contains("net/sf/xenqtt/client/MqttClient.class"));
+		assertTrue(files.contains("LICENSE.txt"));
+	}
 }

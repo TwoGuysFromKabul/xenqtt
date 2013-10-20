@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package net.sf.xenqtt.mockbroker;
+package net.sf.xenqtt.application;
 
 import static org.junit.Assert.*;
 
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.MqttInvocationException;
+import net.sf.xenqtt.application.MockBrokerApplication;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
 import net.sf.xenqtt.client.MqttClientListener;
@@ -38,6 +39,7 @@ import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.client.SyncMqttClient;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.mockbroker.MockBroker;
 
 import org.junit.Test;
 

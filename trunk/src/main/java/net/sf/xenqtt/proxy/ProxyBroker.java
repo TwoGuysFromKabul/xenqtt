@@ -39,7 +39,7 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
 /**
  * {@link SimpleBroker} extension that handles creating/managing {@link ProxySession sessions}.
  */
-class ProxyBroker extends SimpleBroker implements MessageHandler {
+public class ProxyBroker extends SimpleBroker implements MessageHandler {
 
 	private final String brokerUri;
 
