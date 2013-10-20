@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package net.sf.xenqtt;
+package net.sf.xenqtt.application;
 
 /**
  * Base for {@link XenqttApplication} classes
@@ -23,7 +23,7 @@ public abstract class AbstractXenqttApplication implements XenqttApplication {
 	/**
 	 * Uses the concrete class's name without the trailing "Application" as the application name
 	 * 
-	 * @see net.sf.xenqtt.XenqttApplication#getName()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getName()
 	 */
 	@Override
 	public String getName() {

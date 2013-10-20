@@ -25,6 +25,7 @@ import java.util.Map;
 
 import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.MqttCommandCancelledException;
+import net.sf.xenqtt.application.ProxyApplication;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
 import net.sf.xenqtt.client.MqttClient;
@@ -39,7 +40,6 @@ import net.sf.xenqtt.message.UnsubscribeMessage;
 import net.sf.xenqtt.mockbroker.Client;
 import net.sf.xenqtt.mockbroker.MockBroker;
 import net.sf.xenqtt.mockbroker.MockBrokerHandler;
-import net.sf.xenqtt.proxy.ProxyApplication;
 
 import org.junit.After;
 import org.junit.Before;

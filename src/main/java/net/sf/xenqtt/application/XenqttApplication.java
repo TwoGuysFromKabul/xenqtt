@@ -13,7 +13,9 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package net.sf.xenqtt;
+package net.sf.xenqtt.application;
+
+import net.sf.xenqtt.AppContext;
 
 /**
  * Specifies a type that implements a Xenqtt application. A Xenqtt application is an application that can be invoked via the command-line by the user. All

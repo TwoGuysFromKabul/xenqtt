@@ -45,7 +45,7 @@ public class JavaLoggingDelegateTest {
 			return null;
 		}
 
-		String xenqttFileName = String.format("%s%sxenqtt.log.0", userHome, userHome.endsWith("/") ? "" : "/");
+		String xenqttFileName = "target/xenqtt.log.0";
 		File xenqttFile = new File(xenqttFileName);
 		if (!xenqttFile.exists()) {
 			return null;
@@ -58,7 +58,7 @@ public class JavaLoggingDelegateTest {
 		try {
 			xenqttLogFile.delete();
 		} catch (Exception ex) {
-			fail("Unable to delete the xenqtt.log.0 file in the user home directory.");
+			fail("Unable to delete the xenqtt.log.0 file in directory 'target'");
 		}
 	}
 

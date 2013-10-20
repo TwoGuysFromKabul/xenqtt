@@ -231,7 +231,7 @@ final class TestClientRunner extends Thread {
 	}
 
 	private void reportStats() {
-		String jarDirectory = XenqttUtil.getDirectoryHostingRunningXenqttJar();
+		String jarDirectory = XenqttUtil.getXenqttInstallDirectory().getAbsolutePath();
 		File statsReportFile = new File(jarDirectory, "xenqtt-testresults.txt");
 		try {
 			PrintWriter writer = new PrintWriter(statsReportFile);

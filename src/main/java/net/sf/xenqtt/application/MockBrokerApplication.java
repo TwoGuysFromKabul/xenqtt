@@ -13,11 +13,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package net.sf.xenqtt.mockbroker;
+package net.sf.xenqtt.application;
 
-import net.sf.xenqtt.AbstractXenqttApplication;
 import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.XenqttUtil;
+import net.sf.xenqtt.mockbroker.MockBroker;
 
 /**
  * Runs the {@link MockBroker} as a xenqtt command line application
@@ -27,7 +27,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	private MockBroker broker;
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#start(net.sf.xenqtt.AppContext)
+	 * @see net.sf.xenqtt.application.XenqttApplication#start(net.sf.xenqtt.AppContext)
 	 */
 	@Override
 	public void start(AppContext arguments) {
@@ -52,7 +52,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#stop()
+	 * @see net.sf.xenqtt.application.XenqttApplication#stop()
 	 */
 	@Override
 	public void stop() {
@@ -61,7 +61,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getOptsText()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getOptsText()
 	 */
 	@Override
 	public String getOptsText() {
@@ -69,7 +69,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getOptsUsageText()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getOptsUsageText()
 	 */
 	@Override
 	public String getOptsUsageText() {
@@ -82,7 +82,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getSummary()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getSummary()
 	 */
 	@Override
 	public String getSummary() {
@@ -90,7 +90,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	}
 
 	/**
-	 * @see net.sf.xenqtt.XenqttApplication#getDescription()
+	 * @see net.sf.xenqtt.application.XenqttApplication#getDescription()
 	 */
 	@Override
 	public String getDescription() {

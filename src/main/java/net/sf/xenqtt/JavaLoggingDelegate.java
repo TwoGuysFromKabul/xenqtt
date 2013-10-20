@@ -47,13 +47,9 @@ public class JavaLoggingDelegate implements LoggingDelegate {
 			properties.setProperty("java.util.logging.FileHandler.limit", "5368709120");
 			properties.setProperty("java.util.logging.FileHandler.count", "20");
 			properties.setProperty("java.util.logging.FileHandler.formatter", "net.sf.xenqtt.XenqttLogFormatter");
-			String jarDirectory = XenqttUtil.getDirectoryHostingRunningXenqttJar();
+			String jarDirectory = XenqttUtil.getXenqttInstallDirectory().getAbsolutePath();
 			String outputFile = Xenqtt.outputFile != null ? Xenqtt.outputFile : "xenqtt.log";
-			if (jarDirectory != null) {
-				properties.setProperty("java.util.logging.FileHandler.pattern", String.format("%s/%s", jarDirectory, outputFile));
-			} else {
-				properties.setProperty("java.util.logging.FileHandler.pattern", "%h/" + outputFile);
-			}
+			properties.setProperty("java.util.logging.FileHandler.pattern", String.format("%s/%s", jarDirectory, outputFile));
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			properties.store(baos, null);
 
