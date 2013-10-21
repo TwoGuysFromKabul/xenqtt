@@ -18,7 +18,6 @@ package net.sf.xenqtt;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,10 +64,7 @@ public final class XenqttBootstrap {
 			}
 			urls.add(new URL("log4j:log4jconfig.jar"));
 
-			// If that happens then they will not be able to see the classes in our internally packages jars resulting in class not found exceptions.
-			// This should be ok for all JVMs but if there are issues the solution is to write a class loader that overrides loadClass(String, boolean)
-			// (generally a bad idea) and does not call the super class's implementation for class names that start with net.sf.xenqtt.
-			return new URLClassLoader(urls.toArray(new URL[urls.size()]), ClassLoader.getSystemClassLoader().getParent());
+			return new XenqttClassLoader(urls.toArray(new URL[urls.size()]), XenqttBootstrap.class.getClassLoader());
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to extract libraries", e);
 		}
