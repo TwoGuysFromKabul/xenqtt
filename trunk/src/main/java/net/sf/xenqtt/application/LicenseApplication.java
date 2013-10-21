@@ -15,10 +15,8 @@
  */
 package net.sf.xenqtt.application;
 
-import java.io.InputStream;
-
 import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.Xenqtt;
+import net.sf.xenqtt.XenqttUtil;
 
 public final class LicenseApplication extends AbstractXenqttApplication {
 
@@ -28,7 +26,7 @@ public final class LicenseApplication extends AbstractXenqttApplication {
 	@Override
 	public void start(AppContext appContext) {
 
-		String license = loadResourceFile("/LICENSE.txt");
+		String license = XenqttUtil.loadResourceFile("/LICENSE.txt");
 		if (license == null) {
 			System.err.println("Unable to load the license file. This is a bug!");
 			return;
@@ -78,30 +76,5 @@ public final class LicenseApplication extends AbstractXenqttApplication {
 	@Override
 	public String getDescription() {
 		return getSummary();
-	}
-
-	private String loadResourceFile(String resourceName) {
-		resourceName = resourceName.charAt(0) == '/' ? resourceName : String.format("/%s", resourceName);
-		InputStream in = Xenqtt.class.getResourceAsStream(resourceName);
-		if (in == null) {
-			System.err.println("Unable to load the requested resource. This is a bug!");
-			return null;
-		}
-
-		StringBuilder resource = new StringBuilder();
-		byte[] buffer = new byte[8192];
-		int bytesRead = -1;
-		try {
-			while ((bytesRead = in.read(buffer)) != -1) {
-				resource.append(new String(buffer, 0, bytesRead));
-			}
-			in.close();
-		} catch (Exception ex) {
-			System.err.println("Unable to load the help documentation. This is a bug!");
-			ex.printStackTrace();
-			return null;
-		}
-
-		return resource.toString();
 	}
 }

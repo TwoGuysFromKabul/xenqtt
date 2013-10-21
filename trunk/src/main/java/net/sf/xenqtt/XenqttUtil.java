@@ -16,6 +16,7 @@
 package net.sf.xenqtt;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -370,6 +371,36 @@ public final class XenqttUtil {
 	 */
 	public static void prettyPrintln(String text, boolean wrap) {
 		prettyPrint(text + "\n", wrap);
+	}
+
+	/**
+	 * Loads the specified file as a class path resource and returns it as a string.
+	 * 
+	 * @return The contents of the specified resource
+	 */
+	public static String loadResourceFile(String resourceName) {
+		resourceName = resourceName.charAt(0) == '/' ? resourceName : String.format("/%s", resourceName);
+		InputStream in = Xenqtt.class.getResourceAsStream(resourceName);
+		if (in == null) {
+			System.err.println("Unable to load the requested resource. This is a bug!");
+			return null;
+		}
+
+		StringBuilder resource = new StringBuilder();
+		byte[] buffer = new byte[8192];
+		int bytesRead = -1;
+		try {
+			while ((bytesRead = in.read(buffer)) != -1) {
+				resource.append(new String(buffer, 0, bytesRead));
+			}
+			in.close();
+		} catch (Exception ex) {
+			System.err.println("Unable to load the help documentation. This is a bug!");
+			ex.printStackTrace();
+			return null;
+		}
+
+		return resource.toString();
 	}
 
 	/**

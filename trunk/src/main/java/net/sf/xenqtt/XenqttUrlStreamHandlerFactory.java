@@ -23,6 +23,12 @@ import java.net.URLStreamHandlerFactory;
  */
 final class XenqttUrlStreamHandlerFactory implements URLStreamHandlerFactory {
 
+	private final LoggingLevels loggingLevels;
+
+	public XenqttUrlStreamHandlerFactory(LoggingLevels loggingLevels) {
+		this.loggingLevels = loggingLevels;
+	}
+
 	/**
 	 * @see java.net.URLStreamHandlerFactory#createURLStreamHandler(java.lang.String)
 	 */
@@ -32,7 +38,7 @@ final class XenqttUrlStreamHandlerFactory implements URLStreamHandlerFactory {
 		if ("xenqtt".equals(protocol)) {
 			return new XenqttUrlStreamHandler();
 		} else if ("log4j".equals(protocol)) {
-			return new Log4jUrlStreamHandler();
+			return new Log4jUrlStreamHandler(loggingLevels);
 		}
 
 		return null;
