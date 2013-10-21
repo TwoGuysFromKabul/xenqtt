@@ -19,7 +19,7 @@ import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 
 /**
- * Factory to support custome {@link URLStreamHandler}s for "xenqtt" and "log4j" protocols
+ * Factory to support custom {@link URLStreamHandler}s for "xenqtt" and "log4j" protocols
  */
 final class XenqttUrlStreamHandlerFactory implements URLStreamHandlerFactory {
 
