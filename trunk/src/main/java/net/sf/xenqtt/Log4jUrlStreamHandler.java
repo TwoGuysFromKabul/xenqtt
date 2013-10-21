@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package sun.net.www.protocol.log4j;
+package net.sf.xenqtt;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,12 +30,12 @@ import java.util.jar.JarOutputStream;
  * URL protocol handler for 'log4j:...' protocol. The actual URL is ignored by the handler. The log4j.xml and log4j.dtd files in the config package are put into
  * a 'virtual' jar that can then be added to the class path in a {@link URLClassLoader}.
  */
-public final class Handler extends URLStreamHandler {
+final class Log4jUrlStreamHandler extends URLStreamHandler {
 
 	// FIXME [jim] - update log4j.xml and remove logging framework: should use place holders in log4j.xml to set the logging level, directory, etc.
 	private final byte[] bytes;
 
-	public Handler() {
+	public Log4jUrlStreamHandler() {
 
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
