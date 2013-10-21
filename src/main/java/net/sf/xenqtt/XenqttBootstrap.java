@@ -21,6 +21,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.xenqtt.ArgumentExtractor.Arguments;
+
 /**
  * This is the entry point for xenqtt console apps. It extracts internal jars and creats a class loader that includes them. This allows us to package jars
  * within our xenqtt jar. That class loader is then use to invoke {@link Xenqtt#main(String...)}.
@@ -29,8 +31,12 @@ public final class XenqttBootstrap {
 
 	public static void main(String... args) throws Throwable {
 
+		Arguments arguments = ArgumentExtractor.extractArguments(null, args);
+
+		LoggingLevels loggingLevels = arguments != null ? arguments.determineLoggingLevels() : new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
+
 		try {
-			ClassLoader classLoader = createClassLoader();
+			ClassLoader classLoader = createClassLoader(loggingLevels);
 
 			Class<?> xenqttClass = classLoader.loadClass("net.sf.xenqtt.Xenqtt");
 			Method mainMethod = xenqttClass.getMethod("main", new Class<?>[] { String[].class });
@@ -47,9 +53,9 @@ public final class XenqttBootstrap {
 		}
 	}
 
-	private static ClassLoader createClassLoader() {
+	private static ClassLoader createClassLoader(LoggingLevels loggingLevels) {
 
-		URL.setURLStreamHandlerFactory(new XenqttUrlStreamHandlerFactory());
+		URL.setURLStreamHandlerFactory(new XenqttUrlStreamHandlerFactory(loggingLevels));
 
 		try {
 			List<String> jars = XenqttUtil.findFilesOnClassPath("net.sf.xenqtt.lib", ".jar");

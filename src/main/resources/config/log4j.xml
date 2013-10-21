@@ -10,7 +10,7 @@
 	</appender>
 
 	<appender name="rollingFile" class="org.apache.log4j.RollingFileAppender">
-		<param name="file" value="xenqtt.log" />
+		<param name="file" value="${XENQTT_INSTALL_DIR}/xenqtt.log" />
 		<param name="MaxFileSize" value="5MB" />
 		<param name="maxBackupIndex" value="20" />
 		<layout class="org.apache.log4j.PatternLayout">
@@ -24,7 +24,7 @@
 	</appender>
 
 	<logger name="xenqtt">
-		<level value="info" />
+		<level value="${XENQTT_LOG_LEVEL}" />
 	</logger>
 	
 	<root>
