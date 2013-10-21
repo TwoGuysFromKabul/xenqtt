@@ -54,7 +54,6 @@ class ProxySession implements MessageHandler {
 		PENDING, CONNECTED, DISCONNECTED
 	}
 
-	private final Map<Integer, MessageDest> messageDestByBrokerMessageId = new HashMap<Integer, MessageDest>();
 	private final Map<Integer, MessageSource> messageSourceByBrokerMessageId = new HashMap<Integer, MessageSource>();
 	private final Map<MqttChannel, ConnectMessage> connectMessageByChannelPendingAttach = new ConcurrentHashMap<MqttChannel, ConnectMessage>();
 	private final Set<MqttChannel> channelsPendingBroker = new HashSet<MqttChannel>();
@@ -436,10 +435,6 @@ class ProxySession implements MessageHandler {
 			messageSourceByBrokerMessageId.put(brokerMessageId, new MessageSource(clientMessageId, channelToClient));
 		}
 
-		if (message.isAck()) {
-			messageDestByBrokerMessageId.remove(message.getMessageId());
-		}
-
 		channelToBroker.send(message);
 	}
 
@@ -457,9 +452,6 @@ class ProxySession implements MessageHandler {
 		} else {
 			MqttChannel channelToClient = getLeastBusyChannelToClient();
 			if (channelToClient != null) {
-				if (message.isAckable()) {
-					messageDestByBrokerMessageId.put(message.getMessageId(), new MessageDest(channelToClient, message));
-				}
 				channelToClient.send(message);
 			}
 		}
@@ -512,14 +504,11 @@ class ProxySession implements MessageHandler {
 
 	private void distributeMessagesForChannel(MqttChannel channel) {
 
-		for (MessageDest dest : messageDestByBrokerMessageId.values()) {
-
-			if (dest.channel == channel) {
-				MqttChannel newChannel = getLeastBusyChannelToClient();
-				if (newChannel != null) {
-					dest.channel = newChannel;
-					newChannel.send(dest.message);
-				}
+		List<MqttMessage> messages = channel.getUnsentMessages();
+		for (MqttMessage message : messages) {
+			MqttChannel newChannel = getLeastBusyChannelToClient();
+			if (newChannel != null) {
+				newChannel.send(message);
 			}
 		}
 	}
@@ -532,17 +521,6 @@ class ProxySession implements MessageHandler {
 		public MessageSource(int sourceMessageId, MqttChannel sourceChannel) {
 			this.sourceMessageId = sourceMessageId;
 			this.sourceChannel = sourceChannel;
-		}
-	}
-
-	private static class MessageDest {
-
-		private final MqttMessage message;
-		private MqttChannel channel;
-
-		public MessageDest(MqttChannel channel, MqttMessage message) {
-			this.channel = channel;
-			this.message = message;
 		}
 	}
 }
