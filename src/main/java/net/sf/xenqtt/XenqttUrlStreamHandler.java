@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package sun.net.www.protocol.xenqtt;
+package net.sf.xenqtt;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,9 +24,9 @@ import java.net.URLStreamHandler;
 /**
  * URL handler for 'xenqtt:...' protocol. The path portion of the URL is assumed to be a class path reference to a JAR packaged inside this jar.
  */
-public final class Handler extends URLStreamHandler {
+final class XenqttUrlStreamHandler extends URLStreamHandler {
 
-	private final ClassLoader classLoader = Handler.class.getClassLoader();
+	private final ClassLoader classLoader = XenqttUrlStreamHandler.class.getClassLoader();
 
 	/**
 	 * @see java.net.URLStreamHandler#openConnection(java.net.URL)

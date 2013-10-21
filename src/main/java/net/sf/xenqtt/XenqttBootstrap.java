@@ -50,6 +50,8 @@ public final class XenqttBootstrap {
 
 	private static ClassLoader createClassLoader() {
 
+		URL.setURLStreamHandlerFactory(new XenqttUrlStreamHandlerFactory());
+
 		try {
 			List<String> jars = XenqttUtil.findFilesOnClassPath("net.sf.xenqtt.lib", ".jar");
 			if (jars.isEmpty()) {
@@ -63,10 +65,9 @@ public final class XenqttBootstrap {
 			}
 			urls.add(new URL("log4j:log4jconfig.jar"));
 
-			// We are skipping over the system class loader because if we use it as the parent then it will load the net.sf.xenqtt... classes.
 			// If that happens then they will not be able to see the classes in our internally packages jars resulting in class not found exceptions.
 			// This should be ok for all JVMs but if there are issues the solution is to write a class loader that overrides loadClass(String, boolean)
-			// (generally a bad idea) and does not call the super class's impelementation for class names that start with net.sf.xenqtt.
+			// (generally a bad idea) and does not call the super class's implementation for class names that start with net.sf.xenqtt.
 			return new URLClassLoader(urls.toArray(new URL[urls.size()]), ClassLoader.getSystemClassLoader().getParent());
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to extract libraries", e);
