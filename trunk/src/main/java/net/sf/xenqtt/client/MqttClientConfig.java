@@ -21,6 +21,7 @@ import net.sf.xenqtt.XenqttUtil;
 import net.sf.xenqtt.message.ConnAckMessage;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.MqttMessage;
+import net.sf.xenqtt.message.QoS;
 
 /**
  * Use this class to configure the {@link MqttClient} implementations and the {@link MqttClientFactory}. This is an advanced operation. The defaults should be
@@ -34,6 +35,7 @@ public final class MqttClientConfig implements Cloneable {
 	private int blockingTimeoutSeconds = 0;
 	private int keepAliveSeconds = 300;
 	private MqttClientDebugListener clientDebugListener;
+	private int maxInFlightMessages = 0xffff;
 
 	/**
 	 * @return The algorithm used to reconnect to the broker if the connection is lost.
@@ -195,6 +197,29 @@ public final class MqttClientConfig implements Cloneable {
 	public MqttClientConfig setClientDebugListener(MqttClientDebugListener clientDebugListener) {
 		this.clientDebugListener = clientDebugListener;
 		return this;
+	}
+
+	/**
+	 * @return The maximum number of messages that may be in-flight. An in-flight message is a message with a QoS other than {@link QoS#AT_MOST_ONCE} that has
+	 *         been sent but not acknowledged. This value must be between 1 and 65535 inclusive. Defaults to 65535.
+	 *         <p>
+	 *         This is only applicable to asynchronous clients.
+	 *         </p>
+	 */
+	public int getMaxInFlightMessages() {
+		return maxInFlightMessages;
+	}
+
+	/**
+	 * @param maxInFlightMessages
+	 *            The maximum number of messages that may be in-flight. An in-flight message is a message with a QoS other than {@link QoS#AT_MOST_ONCE} that
+	 *            has been sent but not acknowledged. This value must be between 1 and 65535 inclusive. Defaults to 65535.
+	 *            <p>
+	 *            This is only applicable to asynchronous clients.
+	 *            </p>
+	 */
+	public void setMaxInFlightMessages(int maxInFlightMessages) {
+		this.maxInFlightMessages = maxInFlightMessages;
 	}
 
 	/**

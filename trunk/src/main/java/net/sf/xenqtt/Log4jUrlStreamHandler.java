@@ -41,6 +41,7 @@ final class Log4jUrlStreamHandler extends URLStreamHandler {
 
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
+	// FIXME [jim] - need to make rolling log file name include app name
 	// FIXME [jim] - update logging framework considering we now have log4j available. do we still need jul?
 	private final byte[] bytes;
 

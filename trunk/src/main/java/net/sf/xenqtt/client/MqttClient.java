@@ -23,6 +23,7 @@ import net.sf.xenqtt.MqttInvocationError;
 import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttQosNotGrantedException;
 import net.sf.xenqtt.MqttTimeoutException;
+import net.sf.xenqtt.MqttTooManyMessagesInFlightException;
 import net.sf.xenqtt.message.ConnectReturnCode;
 import net.sf.xenqtt.message.QoS;
 
@@ -222,9 +223,11 @@ public interface MqttClient {
 	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
 	 * @throws MqttInvocationError
 	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
+	 * @throws MqttTooManyMessagesInFlightException
+	 *             If there are already too many messages in flight. See {@link MqttClientConfig#getMaxInFlightMessages()} for details.
 	 */
 	Subscription[] subscribe(Subscription[] subscriptions) throws MqttQosNotGrantedException, MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException, MqttInvocationException, MqttInvocationError;
+			MqttInterruptedException, MqttInvocationException, MqttInvocationError, MqttTooManyMessagesInFlightException;
 
 	/**
 	 * Subscribes to topics. This is the same as {@link #subscribe(Subscription[])} except it uses {@link List lists} instead of arrays.
@@ -261,9 +264,11 @@ public interface MqttClient {
 	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
 	 * @throws MqttInvocationError
 	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
+	 * @throws MqttTooManyMessagesInFlightException
+	 *             If there are already too many messages in flight. See {@link MqttClientConfig#getMaxInFlightMessages()} for details.
 	 */
 	void unsubscribe(String[] topics) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException,
-			MqttInvocationError;
+			MqttInvocationError, MqttTooManyMessagesInFlightException;
 
 	/**
 	 * Unsubscribes from topics. This is the same as {@link #unsubscribe(String[])} except it uses {@link List lists} instead of arrays.
@@ -294,9 +299,12 @@ public interface MqttClient {
 	 *             Thrown when the internal command used to implement this feature throws an {@link Exception}.
 	 * @throws MqttInvocationError
 	 *             Thrown when the internal command used to implement this feature throws an {@link Error}.
+	 * @throws MqttTooManyMessagesInFlightException
+	 *             If there are already too many messages in flight. See {@link MqttClientConfig#getMaxInFlightMessages()} for details. This does not apply to
+	 *             messages with a QoS of {@link QoS#AT_MOST_ONCE}.
 	 */
 	void publish(PublishMessage message) throws MqttCommandCancelledException, MqttTimeoutException, MqttInterruptedException, MqttInvocationException,
-			MqttInvocationError;
+			MqttInvocationError, MqttTooManyMessagesInFlightException;
 
 	/**
 	 * Closes this client without doing a clean disconnect. This includes these actions:
