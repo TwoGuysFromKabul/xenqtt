@@ -19,12 +19,15 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import java.lang.reflect.Field;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.sf.xenqtt.MqttException;
 import net.sf.xenqtt.MqttInvocationException;
 import net.sf.xenqtt.MqttTimeoutException;
+import net.sf.xenqtt.MqttTooManyMessagesInFlightException;
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
 import net.sf.xenqtt.client.MqttClient;
@@ -41,6 +44,7 @@ import net.sf.xenqtt.mockbroker.MockBrokerHandler;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -386,5 +390,55 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
 		// verify the client is disconnected
 		verify(listener, timeout(5000)).disconnected(client, null, false);
+	}
+
+	@Test
+	public final void testPublish_Qos0_MaxInFlightMessagesReached() throws Exception {
+
+		config.setMaxInFlightMessages(0);
+		testPublish_Qos0_NoRetain();
+	}
+
+	@Test
+	public final void testPublish_Qos1_DuplicateMessageIdWouldBeUsed() throws Exception {
+
+		when(mockHandler.publish(any(Client.class), any(PubMessage.class))).thenReturn(true);
+
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker.init();
+		validBrokerUri = mockBroker.getURI();
+
+		// connect a client and generate the messages
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient14", true);
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+
+		Field field = Class.forName("net.sf.xenqtt.client.AbstractMqttClient").getDeclaredField("messageIdGenerator");
+		field.setAccessible(true);
+		AtomicInteger idGen = (AtomicInteger) field.get(client);
+
+		client.publish(new PublishMessage("my/topic5", QoS.AT_LEAST_ONCE, "my message " + 1));
+		ArgumentCaptor<PubMessage> captor = ArgumentCaptor.forClass(PubMessage.class);
+		verify(mockHandler, timeout(5000)).publish(any(Client.class), captor.capture());
+		assertEquals(1, captor.getValue().getMessageId());
+
+		// decrement the message id generator so it will try to reuse the ID we just used then make sure it skips that one.
+		idGen.decrementAndGet();
+
+		reset(mockHandler);
+		client.publish(new PublishMessage("my/topic5", QoS.AT_LEAST_ONCE, "my message " + 1));
+		captor = ArgumentCaptor.forClass(PubMessage.class);
+		verify(mockHandler, timeout(5000)).publish(any(Client.class), captor.capture());
+		assertEquals(2, captor.getValue().getMessageId());
+
+		client.disconnect();
+		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+	}
+
+	@Test(expected = MqttTooManyMessagesInFlightException.class)
+	public final void testPublish_Qos1_MaxInFLightMessagesReached() throws Exception {
+
+		config.setMaxInFlightMessages(0);
+		testPublish_Qos1_NoRetain();
 	}
 }

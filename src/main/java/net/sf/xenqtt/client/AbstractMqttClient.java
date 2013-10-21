@@ -17,7 +17,6 @@ package net.sf.xenqtt.client;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +32,7 @@ import net.sf.xenqtt.MqttCommandCancelledException;
 import net.sf.xenqtt.MqttInterruptedException;
 import net.sf.xenqtt.MqttQosNotGrantedException;
 import net.sf.xenqtt.MqttTimeoutException;
+import net.sf.xenqtt.MqttTooManyMessagesInFlightException;
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ChannelManagerImpl;
 import net.sf.xenqtt.message.ConnAckMessage;
@@ -73,7 +73,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	private final AsyncClientListener asyncClientListener;
 	private final MqttClientDebugListener debugListener;
 
-	private final Map<Integer, Object> dataByMessageId;
+	private final ConcurrentHashMap<Integer, Object> dataByMessageId;
 	private final AtomicInteger messageIdGenerator = new AtomicInteger();
 
 	private volatile MqttChannelRef channel;
@@ -361,19 +361,24 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private int nextMessageId(Object messageData) {
 
-		// TODO [jim] - need to deal with what happens when we have an in-flight message that is already using a message ID that we come around to again. Is
-		// this even realistic?
-		int next = messageIdGenerator.incrementAndGet();
-		if (next > 0xffff) {
-			messageIdGenerator.compareAndSet(next, 0);
-			return nextMessageId(messageData);
-		}
+		for (;;) {
+			int next = messageIdGenerator.incrementAndGet();
+			if (next > 0xffff) {
+				messageIdGenerator.compareAndSet(next, 0);
+				return nextMessageId(messageData);
+			}
 
-		if (dataByMessageId != null) {
-			dataByMessageId.put(next, messageData);
-		}
+			if (dataByMessageId != null) {
+				if (dataByMessageId.size() >= config.getMaxInFlightMessages()) {
+					throw new MqttTooManyMessagesInFlightException();
+				}
+				if (dataByMessageId.putIfAbsent(next, messageData) != null) {
+					continue;
+				}
+			}
 
-		return next;
+			return next;
+		}
 	}
 
 	private ConnectReturnCode doConnect(MqttChannelRef channel, ConnectMessage message) {

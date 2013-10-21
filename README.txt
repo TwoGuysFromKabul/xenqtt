@@ -1,3 +1,6 @@
+0.9.2 (pending)
+	Added maxInFlightMessages configuration to MQTT client.
+	
 0.9.1
 	Fixed a bug where ping requests were not always sent to the broker properly resulting in disconnection.
 	Updated command line help to be more... helpful
