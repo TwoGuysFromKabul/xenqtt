@@ -21,6 +21,8 @@ import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.sf.xenqtt.message.ChannelManager;
 import net.sf.xenqtt.message.ConnAckMessage;
@@ -436,6 +438,10 @@ public class ProxySessionTest {
 		verify(channelToClient1).send(same(message3));
 		assertEquals(789, message3.getMessageId());
 
+		List<MqttMessage> unsentMessages = new ArrayList<MqttMessage>();
+		unsentMessages.add(message1);
+		unsentMessages.add(message3);
+		when(channelToClient1.getUnsentMessages()).thenReturn(unsentMessages);
 		reset(channelToBroker);
 		session.channelClosed(channelToClient1, null);
 
