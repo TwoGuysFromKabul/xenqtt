@@ -559,9 +559,11 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			}
 
 			boolean ackable = sendMessageInProgress.isAckable();
-			if (ackable && messageResendIntervalMillis > 0) {
+			if (ackable) {
 				IdentifiableMqttMessage m = (IdentifiableMqttMessage) sendMessageInProgress;
-				m.nextSendTime = now + messageResendIntervalMillis;
+				if (messageResendIntervalMillis > 0) {
+					m.nextSendTime = now + messageResendIntervalMillis;
+				}
 				inFlightMessages.put(m.getMessageId(), m);
 			}
 
