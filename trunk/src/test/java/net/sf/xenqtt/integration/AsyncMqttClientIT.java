@@ -395,7 +395,8 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public final void testPublish_Qos0_MaxInFlightMessagesReached() throws Exception {
 
-		config.setMaxInFlightMessages(0);
+		// allow 1 for the subscribe message which is qos1
+		config.setMaxInFlightMessages(1);
 		testPublish_Qos0_NoRetain();
 	}
 
