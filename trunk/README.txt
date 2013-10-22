@@ -1,4 +1,7 @@
-0.9.2 (pending)
+The xenqtt.jar in each release folder is the same as the xenqtt-version.jar. It is supplied for convenience when running XenQTT 
+applications. The versioned JAR is better suited when using it as a dependency in another application.
+ 
+0.9.2-SNAPSHOT
 	Added maxInFlightMessages configuration to MQTT client.
 	Moved all command line application logs to ./logs directory.
 	Added command line option to log to the console for command line applications.
