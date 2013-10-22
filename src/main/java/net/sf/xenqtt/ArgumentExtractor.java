@@ -22,13 +22,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import net.sf.xenqtt.application.XenqttApplication;
+
 /**
  * <p>
  * Extracts arguments passed on the command-line for the invocation of a Xenqtt application. Arguments passed in must come in the following order:
  * </p>
  * 
  * <pre>
- * [global-options] mode [mode-arguments]
+ * [global-options] appName [app-arguments]
  * </pre>
  * 
  * <p>
@@ -36,9 +38,9 @@ import java.util.concurrent.CountDownLatch;
  * </p>
  * 
  * <ul>
- * <li>{@code global-options} - Global options and switches that apply regardless of the chosen mode. Optional</li>
- * <li>{@code mode} - One of the operating modes for Xenqtt. Required</li>
- * <li>{@code mode-arguments} - The arguments that will be passed into the invocation of the mode's {@code main} method. Arguments are passed in the order they
+ * <li>{@code global-options} - Global options and switches that apply regardless of the chosen app. Optional</li>
+ * <li>{@code appNAME} - One of the Xenqtt applications. Required</li>
+ * <li>{@code app-arguments} - The arguments that will be passed into the invocation of the app's {@code main} method. Arguments are passed in the order they
  * are received. Optional</li>
  * </ul>
  */
@@ -65,37 +67,50 @@ final class ArgumentExtractor {
 		}
 
 		List<String> globalOptions = new ArrayList<String>();
-		String mode = null;
-		List<String> modeArguments = new ArrayList<String>();
+		String appName = null;
+		List<String> appArguments = new ArrayList<String>();
 		for (String arg : args) {
-			if (arg.startsWith("-") && mode == null) {
+			if (arg.startsWith("-") && appName == null) {
 				globalOptions.add(arg);
 			} else {
-				if (mode == null) {
-					mode = arg;
+				if (appName == null) {
+					appName = arg.toLowerCase();
 				} else {
-					modeArguments.add(arg);
+					appArguments.add(arg);
 				}
 			}
 		}
 
-		if (mode == null || !Mode.isValidMode(mode)) {
+		if (appName == null || !isValidApp(appName)) {
 			return null;
 		}
 
-		boolean helpMode = Mode.lookup(mode) == Mode.HELP;
-		AppContext applicationArguments = getApplicationArguments(modeArguments, helpMode, latch);
+		boolean helpApp = appName.equalsIgnoreCase("help");
+		AppContext applicationArguments = getApplicationArguments(appArguments, helpApp, latch);
 
-		return new Arguments(globalOptions, mode, applicationArguments);
+		return new Arguments(globalOptions, appName, applicationArguments);
 	}
 
-	private static AppContext getApplicationArguments(List<String> modeArguments, boolean helpMode, CountDownLatch latch) {
-		if (modeArguments.isEmpty()) {
+	private static boolean isValidApp(String app) {
+
+		String searchFor = String.format("%s/%sApplication.class", XenqttApplication.class.getPackage().getName().replace('.', '/'), app);
+		List<String> classFileNames = XenqttUtil.findFilesOnClassPath(XenqttApplication.class.getPackage().getName(), ".class");
+		for (String name : classFileNames) {
+			if (searchFor.equalsIgnoreCase(name)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static AppContext getApplicationArguments(List<String> appArguments, boolean helpApp, CountDownLatch latch) {
+		if (appArguments.isEmpty()) {
 			return new AppContext(latch);
 		}
 
-		if (helpMode) {
-			String desiredHelp = modeArguments.get(0);
+		if (helpApp) {
+			String desiredHelp = appArguments.get(0);
 			Map<String, String> args = new HashMap<String, String>();
 			args.put("-m", desiredHelp);
 
@@ -105,22 +120,22 @@ final class ArgumentExtractor {
 		List<String> flags = new ArrayList<String>();
 		Map<String, String> arguments = new HashMap<String, String>();
 		char previousFlagOrArg = '\u0000';
-		for (String modeArgument : modeArguments) {
-			if (modeArgument.startsWith("-")) {
-				if (modeArgument.length() < 2) {
+		for (String appArgument : appArguments) {
+			if (appArgument.startsWith("-")) {
+				if (appArgument.length() < 2) {
 					throw new IllegalArgumentException("You cannot specify a flag or an argument identifier that just has the -");
 				}
 
 				if (previousFlagOrArg != '\u0000') {
 					flags.add(String.format("-%c", previousFlagOrArg));
 				}
-				previousFlagOrArg = parseFlags(modeArgument, flags);
+				previousFlagOrArg = parseFlags(appArgument, flags);
 			} else {
 				if (previousFlagOrArg == '\u0000') {
-					throw new IllegalArgumentException(String.format("Cannot specify an argument value without an argument. Value: %s", modeArgument));
+					throw new IllegalArgumentException(String.format("Cannot specify an argument value without an argument. Value: %s", appArgument));
 				}
 
-				arguments.put(String.format("-%c", previousFlagOrArg), modeArgument);
+				arguments.put(String.format("-%c", previousFlagOrArg), appArgument);
 				previousFlagOrArg = '\u0000';
 			}
 		}
@@ -132,101 +147,14 @@ final class ArgumentExtractor {
 		return new AppContext(flags, arguments, latch);
 	}
 
-	private static char parseFlags(String modeArgument, List<String> flags) {
-		char previous = modeArgument.charAt(1);
-		for (int i = 2; i < modeArgument.length(); i++) {
+	private static char parseFlags(String appArgument, List<String> flags) {
+		char previous = appArgument.charAt(1);
+		for (int i = 2; i < appArgument.length(); i++) {
 			flags.add(String.format("-%c", previous));
-			previous = modeArgument.charAt(i);
+			previous = appArgument.charAt(i);
 		}
 
 		return previous;
-	}
-
-	/**
-	 * Defines the valid modes in which Xenqtt can operate. The user specifies which mode they'd like to use via a command-line argument. The mode argument is
-	 * required.
-	 */
-	static enum Mode {
-
-		/**
-		 * A {@link Mode mode} that displays help information for using Xenqtt and exits.
-		 */
-		HELP("help"),
-
-		/**
-		 * A {@link Mode mode} that displays the license file for using Xenqtt and exits.
-		 */
-		LICENSE("license"),
-
-		/**
-		 * A {@link Mode mode} that runs the MQTT proxy.
-		 */
-		PROXY("proxy"),
-
-		/**
-		 * A {@link Mode mode} that runs the MQTT gateway.
-		 */
-		GATEWAY("gateway"),
-
-		/**
-		 * A {@link Mode mode} that runs the mock broker used in testing.
-		 */
-		MOCK_BROKER("mockbroker"),
-
-		/**
-		 * A {@link Mode mode} that runs the test client for load testing Xenqtt.
-		 */
-		TEST_CLIENT("testclient");
-
-		private final String mode;
-
-		private Mode(String mode) {
-			this.mode = mode;
-		}
-
-		/**
-		 * @return The mode as a {@link String string}
-		 */
-		String getMode() {
-			return mode;
-		}
-
-		/**
-		 * Lookup a {@link Mode mode} based on a textual {@link String string}.
-		 * 
-		 * @param m
-		 *            The string value specifying the mode
-		 * 
-		 * @return The {@code Mode} corresponding to the specified mode string. If no such mode is found an exception is raised
-		 */
-		static Mode lookup(String m) {
-			for (Mode mode : values()) {
-				if (mode.mode.equalsIgnoreCase(m)) {
-					return mode;
-				}
-			}
-
-			throw new IllegalArgumentException(String.format("Invalid mode specified: %s", m));
-		}
-
-		/**
-		 * Determine if a particular mode string represents a valid operating {@link Mode mode}.
-		 * 
-		 * @param m
-		 *            The mode string
-		 * 
-		 * @return {@code true} if {@code m} represents a valid operating mode, {@code false} if it does not
-		 */
-		static boolean isValidMode(String m) {
-			for (Mode mode : values()) {
-				if (mode.mode.equalsIgnoreCase(m)) {
-					return true;
-				}
-			}
-
-			return false;
-		}
-
 	}
 
 	/**
@@ -241,9 +169,9 @@ final class ArgumentExtractor {
 		final List<String> globalOptions;
 
 		/**
-		 * The specified {@link Mode mode}. This is required and will not be {@code null}.
+		 * The specified application name. This is required and will not be {@code null}. This will always be all lower case.
 		 */
-		final Mode mode;
+		final String applicationName;
 
 		/**
 		 * The {@link AppContext arguments} to pass into the application. These arguments are optional and can be {@code null}.
@@ -253,14 +181,14 @@ final class ArgumentExtractor {
 		/**
 		 * Create a new instance of this class.
 		 * 
-		 * @param mode
-		 *            The mode to run Xenqtt in. This is required and cannot be empty or {@code null}
+		 * @param app
+		 *            The XenQTT application to run. This is required and cannot be empty or {@code null}
 		 * @param applicationArguments
-		 *            The {@link AppContext arguments} to pass to the application being started as specified by the {@code mode} given. These are optional and
+		 *            The {@link AppContext arguments} to pass to the application being started as specified by the {@code a[[} given. These are optional and
 		 *            may be {@code null}
 		 */
-		Arguments(String mode, AppContext applicationArguments) {
-			this(null, mode, applicationArguments);
+		Arguments(String app, AppContext applicationArguments) {
+			this(null, app, applicationArguments);
 		}
 
 		/**
@@ -268,11 +196,11 @@ final class ArgumentExtractor {
 		 * 
 		 * @param globalOptions
 		 *            The global options to use system-wide. These are optional and may be {@code null}
-		 * @param mode
-		 *            The mode to run Xenqtt in. This is required and cannot be empty or {@code null}
+		 * @param app
+		 *            The Xenqtt application to run. This is required and cannot be empty or {@code null}
 		 */
-		Arguments(List<String> globalOptions, String mode) {
-			this(globalOptions, mode, null);
+		Arguments(List<String> globalOptions, String app) {
+			this(globalOptions, app, null);
 		}
 
 		/**
@@ -280,19 +208,19 @@ final class ArgumentExtractor {
 		 * 
 		 * @param globalOptions
 		 *            The global options to use system-wide. These are optional and may be {@code null}
-		 * @param mode
-		 *            The mode to run Xenqtt in. This is required and cannot be empty or {@code null}
+		 * @param app
+		 *            The Xenqtt application to run. This is required and cannot be empty or {@code null}
 		 * @param applicationArguments
-		 *            The {@link AppContext arguments} to pass to the application being started as specified by the {@code mode} given. These are optional and
+		 *            The {@link AppContext arguments} to pass to the application being started as specified by the {@code app} given. These are optional and
 		 *            may be {@code null}
 		 */
-		Arguments(List<String> globalOptions, String mode, AppContext applicationArguments) {
-			if (mode == null || mode.trim().equals("")) {
-				throw new IllegalArgumentException("The mode cannot be empty or null.");
+		Arguments(List<String> globalOptions, String app, AppContext applicationArguments) {
+			if (app == null || app.trim().equals("")) {
+				throw new IllegalArgumentException("The application to run cannot be empty or null.");
 			}
 
 			this.globalOptions = globalOptions;
-			this.mode = Mode.lookup(mode);
+			this.applicationName = app.toLowerCase();
 			this.applicationArguments = applicationArguments;
 		}
 
