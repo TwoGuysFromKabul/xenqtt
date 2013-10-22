@@ -68,15 +68,36 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	 * reads and writes until the specified number of client and broker messages are received
 	 */
 	void readWrite(int clientMessageCount, int brokerMessageCount) throws Exception {
+		readWrite(clientMessageCount, brokerMessageCount, 0);
+	}
+
+	/**
+	 * reads and writes until the specified number of client and broker messages are received
+	 * 
+	 * @return False if the timeout occurs
+	 */
+	boolean readWrite(int clientMessageCount, int brokerMessageCount, long timeoutMillis) throws Exception {
+
+		long end = timeoutMillis == 0 ? 0 : System.currentTimeMillis() + timeoutMillis;
 
 		clientHandler.clearMessages();
 		brokerHandler.clearMessages();
 
 		while (brokerHandler.messageCount() < brokerMessageCount || clientHandler.messageCount() < clientMessageCount) {
 
-			selector.select();
-			Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+			if (end != 0) {
+				long time = end - System.currentTimeMillis();
+				if (time > 0) {
+					selector.select(time);
+				}
+			} else {
+				selector.select();
+			}
 
+			Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+			if (!iter.hasNext() && System.currentTimeMillis() >= end) {
+				return false;
+			}
 			while (iter.hasNext()) {
 				SelectionKey key = iter.next();
 				MqttChannel channel = (MqttChannel) key.attachment();
@@ -89,6 +110,8 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 				iter.remove();
 			}
 		}
+
+		return true;
 	}
 
 	/**

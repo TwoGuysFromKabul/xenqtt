@@ -64,6 +64,16 @@ public interface MqttChannel extends MqttChannelRef {
 	boolean read(long now);
 
 	/**
+	 * Pauses reading on the channel. To resume call {@link #resumeRead()}.
+	 */
+	void pauseRead();
+
+	/**
+	 * Resumes reading on this channel.
+	 */
+	void resumeRead();
+
+	/**
 	 * Sends the specified message asynchronously. When a {@link DisconnectMessage} or a {@link ConnAckMessage} where {@link ConnAckMessage#getReturnCode()} is
 	 * not {@link ConnectReturnCode#ACCEPTED} is sent the channel is closed automatically.
 	 * 

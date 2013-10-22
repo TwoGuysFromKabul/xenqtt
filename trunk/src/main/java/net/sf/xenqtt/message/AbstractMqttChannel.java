@@ -224,6 +224,29 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#pauseRead()
+	 */
+	@Override
+	public void pauseRead() {
+
+		if (selectionKey.isValid()) {
+			int ops = selectionKey.interestOps() & (~SelectionKey.OP_READ);
+			selectionKey.interestOps(ops);
+		}
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#resumeRead()
+	 */
+	@Override
+	public void resumeRead() {
+		if (selectionKey.isValid()) {
+			int ops = selectionKey.interestOps() | SelectionKey.OP_READ;
+			selectionKey.interestOps(ops);
+		}
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
