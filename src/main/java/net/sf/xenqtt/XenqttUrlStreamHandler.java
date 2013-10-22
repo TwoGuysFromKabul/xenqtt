@@ -42,6 +42,7 @@ final class XenqttUrlStreamHandler extends URLStreamHandler {
 			@Override
 			public InputStream getInputStream() throws IOException {
 
+				// FIXME [jim] - Use u instead of url
 				return classLoader.getResourceAsStream(url.getPath());
 			}
 		};
