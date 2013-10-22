@@ -45,7 +45,7 @@ final class Log4jUrlStreamHandler extends URLStreamHandler {
 	// FIXME [jim] - update logging framework considering we now have log4j available. do we still need jul?
 	private final byte[] bytes;
 
-	public Log4jUrlStreamHandler(LoggingLevels loggingLevels, String appName) {
+	public Log4jUrlStreamHandler(LoggingLevels loggingLevels, String appName, boolean consoleLogger) {
 
 		try {
 			String logLevel = loggingLevels.debugEnabled ? "debug" : loggingLevels.infoEnabled ? "info" : "warn";
@@ -55,6 +55,7 @@ final class Log4jUrlStreamHandler extends URLStreamHandler {
 			xml = xml.replace("${XENQTT_INSTALL_DIR}", XenqttUtil.getXenqttInstallDirectory().getAbsolutePath());
 			xml = xml.replace("${XENQTT_LOG_LEVEL}", logLevel);
 			xml = xml.replace("${XENQTT_APP_NAME}", appName);
+			xml = consoleLogger ? xml.replace("${XENQTT_LOG_APPENDER_REF}", "console") : xml.replace("${XENQTT_LOG_APPENDER_REF}", "rollingFile");
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			JarOutputStream out = new JarOutputStream(baos);

@@ -326,6 +326,20 @@ final class ArgumentExtractor {
 			return new LoggingLevels(loggingLevels);
 		}
 
+		boolean isConsoleLoggingSpecified() {
+			if (globalOptions == null) {
+				return false;
+			}
+
+			for (String globalOption : globalOptions) {
+				if (globalOption.equalsIgnoreCase("-c")) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 	}
 
 }
