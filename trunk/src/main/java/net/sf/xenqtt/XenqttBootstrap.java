@@ -24,7 +24,7 @@ import java.util.List;
 import net.sf.xenqtt.ArgumentExtractor.Arguments;
 
 /**
- * This is the entry point for xenqtt console apps. It extracts internal jars and creats a class loader that includes them. This allows us to package jars
+ * This is the entry point for xenqtt console apps. It extracts internal jars and creates a class loader that includes them. This allows us to package jars
  * within our xenqtt jar. That class loader is then use to invoke {@link Xenqtt#main(String...)}.
  */
 public final class XenqttBootstrap {
