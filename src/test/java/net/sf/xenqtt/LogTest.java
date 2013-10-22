@@ -17,33 +17,54 @@ package net.sf.xenqtt;
 
 import static org.junit.Assert.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Appender;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.Filter;
+import org.apache.log4j.spi.LoggingEvent;
+import org.apache.log4j.spi.ThrowableInformation;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class LogTest {
 
-	PrintStream standardOut = System.out;
-	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	PrintStream out = new PrintStream(baos, true);
+	static List<String> entries = new ArrayList<String>();
 
-	@Before
-	public void setup() {
-		System.setOut(out);
+	@BeforeClass
+	public static void setupBeforeClass() throws Exception {
+		Logger xenqtt = Logger.getLogger("xenqtt");
+		assertNotNull(xenqtt);
+
+		Appender console = Logger.getRootLogger().getAppender("console");
+		assertNotNull(console);
+
+		console.addFilter(new Filter() {
+			@Override
+			public int decide(LoggingEvent event) {
+				entries.add(event.getRenderedMessage());
+
+				ThrowableInformation info = event.getThrowableInformation();
+				if (info != null) {
+					Throwable t = info.getThrowable();
+					if (t != null) {
+						entries.add(t.getMessage());
+					}
+				}
+
+				return Filter.ACCEPT;
+			}
+		});
 	}
 
 	@After
 	public void teardown() {
-		System.setOut(standardOut);
+		entries.clear();
 	}
 
 	@Test
@@ -52,23 +73,22 @@ public class LogTest {
 		Log.debug("Should not appear: %s", "debug");
 		Log.info("Should appear: %s", "info");
 		Log.warn("Should appear: %s", "warn");
-		Log.warn(new RuntimeException("warn"), "Should appear: %s", "warn");
+		Log.warn(new RuntimeException("Exception: warn"), "Should appear: %s", "warn");
 		Log.error("Should appear: %s", "error");
-		Log.error(new RuntimeException("error"), "Should appear: %s", "error");
+		Log.error(new RuntimeException("Exception: error"), "Should appear: %s", "error");
 		Log.fatal("Should appear: %s", "fatal");
-		Log.fatal(new RuntimeException("fatal"), "Should appear: %s", "fatal");
+		Log.fatal(new RuntimeException("Exception: fatal"), "Should appear: %s", "fatal");
 
 		Thread.sleep(1000);
 
-		List<String> entries = Arrays.asList(new String(baos.toByteArray(), Charset.forName("US-ASCII")).split("\n"));
 		Map<String, Integer> counts = new HashMap<String, Integer>();
 		counts.put("Should appear: info", 1);
 		counts.put("Should appear: warn", 2);
-		counts.put("java.lang.RuntimeException: warn", 1);
+		counts.put("Exception: warn", 1);
 		counts.put("Should appear: error", 2);
-		counts.put("java.lang.RuntimeException: error", 1);
+		counts.put("Exception: error", 1);
 		counts.put("Should appear: fatal", 2);
-		counts.put("java.lang.RuntimeException: fatal", 1);
+		counts.put("Exception: fatal", 1);
 		for (String entry : entries) {
 			String formattedEntry = entry.replaceAll("^.*\\- ", "");
 			Integer count = counts.get(formattedEntry);
