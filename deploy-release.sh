@@ -1,3 +1,12 @@
+#!/bin/bash
+
+function verifyFileExists {
+	if [ ! -f $1 ]; then
+		echo Required file missing: $1
+		exit 1
+	fi
+}
+
 USER=$1
 if [ -z "$USER" ]; then
     echo Usage: ./deploy-release.sh username version api-key
@@ -15,6 +24,12 @@ if [ -z "$API_KEY" ]; then
     echo Usage: ./deploy-release.sh username version api-key
     exit 1
 fi
+
+verifyFileExists target/xenqtt-$VERSION.jar
+verifyFileExists target/xenqtt-$VERSION-sources.jar
+verifyFileExists target/xenqtt-$VERSION-javadoc.jar
+verifyFileExists README.txt
+verifyFileExists target/site/apidocs/index.html
 
 echo Deploying jars...
 rm -fR target/deploy-jars
@@ -37,5 +52,5 @@ rsync -avP -e ssh  --exclude=.svn --exclude=.htaccess $DOCDIR $USER,xenqtt@web.s
 echo
 
 echo Configuring default download file...
-curl -H "Accept: application/json" -X PUT -d "default=windows&default=mac&default=linux&default=bsd&default=solaris&default=others" -d "api_key=$API_KEY" https://sourceforge.net/projects/xenqtt/files/$VERSION/xenqtt-$VERSION.jar
+curl -H "Accept: application/json" -X PUT -d "default=windows&default=mac&default=linux&default=bsd&default=solaris&default=others" -d "api_key=$API_KEY" https://sourceforge.net/projects/xenqtt/files/$VERSION/xenqtt.jar
 echo
