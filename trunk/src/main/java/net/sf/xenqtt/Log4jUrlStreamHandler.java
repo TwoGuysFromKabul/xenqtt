@@ -57,7 +57,7 @@ final class Log4jUrlStreamHandler extends URLStreamHandler {
 			xml = xml.replace("${XENQTT_INSTALL_DIR}", XenqttUtil.getXenqttInstallDirectory().getAbsolutePath());
 			xml = xml.replace("${XENQTT_LOG_LEVEL}", logLevel);
 			xml = xml.replace("${XENQTT_APP_NAME}", appName);
-			xml = consoleLogger ? xml.replace("${XENQTT_LOG_APPENDER_REF}", "console") : xml.replace("${XENQTT_LOG_APPENDER_REF}", "");
+			xml = consoleLogger ? xml.replace("${XENQTT_LOG_APPENDER_REF}", "<appender-ref ref=\"console\" />") : xml.replace("${XENQTT_LOG_APPENDER_REF}", "");
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			JarOutputStream out = new JarOutputStream(baos);
