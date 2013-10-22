@@ -34,9 +34,10 @@ public final class XenqttBootstrap {
 		Arguments arguments = ArgumentExtractor.extractArguments(null, args);
 
 		LoggingLevels loggingLevels = arguments != null ? arguments.determineLoggingLevels() : new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
+		String appName = arguments.mode.getMode().toLowerCase();
 
 		try {
-			ClassLoader classLoader = createClassLoader(loggingLevels);
+			ClassLoader classLoader = createClassLoader(loggingLevels, appName);
 
 			Class<?> xenqttClass = classLoader.loadClass("net.sf.xenqtt.Xenqtt");
 			Method mainMethod = xenqttClass.getMethod("main", new Class<?>[] { String[].class });
@@ -53,9 +54,9 @@ public final class XenqttBootstrap {
 		}
 	}
 
-	private static ClassLoader createClassLoader(LoggingLevels loggingLevels) {
+	private static ClassLoader createClassLoader(LoggingLevels loggingLevels, String appName) {
 
-		URL.setURLStreamHandlerFactory(new XenqttUrlStreamHandlerFactory(loggingLevels));
+		URL.setURLStreamHandlerFactory(new XenqttUrlStreamHandlerFactory(loggingLevels, appName));
 
 		try {
 			List<String> jars = XenqttUtil.findFilesOnClassPath("net.sf.xenqtt.lib", ".jar");
