@@ -496,6 +496,68 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 	}
 
 	@Test
+	public void testPauseRead_InvalidKey() throws Exception {
+
+		// testing to be sure no exception is thrown
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 15000);
+		clientChannel.deregister();
+		clientChannel.pauseRead();
+	}
+
+	@Test
+	public void testResumeRead_InvalidKey() throws Exception {
+
+		// testing to be sure no exception is thrown
+		clientChannel = new TestChannel("localhost", port, clientHandler, selector, 15000);
+		clientChannel.deregister();
+		clientChannel.resumeRead();
+	}
+
+	@Test
+	public void testResumeRead_NotPaused() throws Exception {
+
+		establishConnection();
+
+		clientChannel.resumeRead();
+		SubAckMessage msg = new SubAckMessage(1, new QoS[] {});
+		brokerChannel.send(msg, blockingCommand);
+		assertTrue(readWrite(1, 0, 1000));
+
+		closeConnection();
+	}
+
+	@Test
+	public void testPauseRead() throws Exception {
+
+		establishConnection();
+
+		clientChannel.pauseRead();
+		SubAckMessage msg = new SubAckMessage(1, new QoS[] {});
+		brokerChannel.send(msg, blockingCommand);
+		assertFalse(readWrite(1, 0, 1000));
+
+		closeConnection();
+	}
+
+	@Test
+	public void testPauseAndResumeRead() throws Exception {
+
+		establishConnection();
+
+		clientChannel.pauseRead();
+		SubAckMessage msg = new SubAckMessage(1, new QoS[] {});
+		brokerChannel.send(msg, blockingCommand);
+		assertFalse(readWrite(1, 0, 1000));
+
+		clientChannel.resumeRead();
+		msg = new SubAckMessage(1, new QoS[] {});
+		brokerChannel.send(msg, blockingCommand);
+		assertTrue(readWrite(1, 0, 1000));
+
+		closeConnection();
+	}
+
+	@Test
 	public void testReadFromClosedConnection() throws Exception {
 
 		establishConnection();

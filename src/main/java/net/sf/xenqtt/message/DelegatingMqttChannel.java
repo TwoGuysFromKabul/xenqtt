@@ -76,6 +76,22 @@ final class DelegatingMqttChannel implements MqttChannel {
 	}
 
 	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#pauseRead()
+	 */
+	@Override
+	public void pauseRead() {
+		delegate.pauseRead();
+	}
+
+	/**
+	 * @see net.sf.xenqtt.message.MqttChannel#resumeRead()
+	 */
+	@Override
+	public void resumeRead() {
+		delegate.resumeRead();
+	}
+
+	/**
 	 * @see net.sf.xenqtt.message.MqttChannel#send(net.sf.xenqtt.message.MqttMessage)
 	 */
 	@Override
