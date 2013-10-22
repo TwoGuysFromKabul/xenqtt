@@ -20,7 +20,8 @@
 	
 	<appender name="async" class="org.apache.log4j.AsyncAppender">
 		<param name="BufferSize" value="500" />
-		<appender-ref ref="${XENQTT_LOG_APPENDER_REF}" />
+		${XENQTT_LOG_APPENDER_REF}
+		<appender-ref ref="rollingFile" />
 	</appender>
 
 	<logger name="xenqtt">
