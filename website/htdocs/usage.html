@@ -461,8 +461,238 @@ public class MusicProducerAsync {
 					</div>
 					<div class="post" id="mockbrokerapi">
 						<h3>Using the Mock Broker API</h3>
-						<img src="images/under-construction-man.jpg" />
 						<p>All examples are included in the xenqtt jar in the <code>net.sf.xenqtt.examples</code> package.</p>
+						<p class="code-header">Mock Broker - Vanilla</p>
+						The following example shows how to fire up an instance of the Mock Broker within a running JVM. The mock broker that launches uses the
+						default setup and configuration. No special handlers or eventing rules are employed.
+						<pre class="prettyprint code">
+package net.sf.xenqtt.examples;
+
+import net.sf.xenqtt.mockbroker.MockBroker;
+import net.sf.xenqtt.mockbroker.MockBrokerHandler;
+
+/**
+ * Fires up a mock broker that specializes in routing data of the 'Glam' variety.
+ */
+public class GlamBroker {
+
+	public static void main(String... args) throws InterruptedException {
+		MockBrokerHandler handler = new MockBrokerHandler();
+		MockBroker broker = new MockBroker(handler);
+
+		broker.init(); // Blocks until startup is complete.
+
+		// At this point the broker is online. Clients can connect to it, publish messages, subscribe, etc.
+		Thread.sleep(60000);
+
+		// We are done. Shutdown the broker. Wait forever (> 0 means wait that many milliseconds).
+		broker.shutdown(0);
+	}
+
+}
+						</pre>
+						<p class="code-header">Mock Broker - Custom Handler</p>
+						The following example shows how to fire up a mock broker instance in the local JVM. The mock broker is given a custom event handler.
+						This handler is invoked as events move through the broker. Such handlers can be used to customize the behavior of the broker and prove
+						extremely useful in testing.
+						<pre class="prettyprint code">
+package net.sf.xenqtt.examples;
+
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+
+import net.sf.xenqtt.message.PubMessage;
+import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.message.SubscribeMessage;
+import net.sf.xenqtt.mockbroker.Client;
+import net.sf.xenqtt.mockbroker.MockBroker;
+import net.sf.xenqtt.mockbroker.MockBrokerHandler;
+
+/**
+ * Fires up a mock broker that specializes in routing data of the 'Glam' variety. This particular broker has a special handler that rejects any and all attempts
+ * to interact with country music.
+ */
+public class GlamNoCountryBroker {
+
+	public static void main(String... args) throws InterruptedException {
+		MockBrokerHandler handler = new GlamBrokerHandler();
+		MockBroker broker = new MockBroker(handler);
+
+		broker.init(); // Blocks until startup is complete.
+
+		// At this point the broker is online. Clients can connect to it, publish messages, subscribe, etc.
+		Thread.sleep(60000);
+
+		// We are done. Shutdown the broker. Wait forever (> 0 means wait that many milliseconds).
+		broker.shutdown(0);
+	}
+
+	private static final class GlamBrokerHandler extends MockBrokerHandler {
+
+		@Override
+		public boolean publish(Client client, PubMessage message) throws Exception {
+			String payload = new String(message.getPayload(), Charset.forName("UTF-8"));
+			if (payload.indexOf("Country Music") > -1) {
+				// We don't do that stuff here! Return true to suppress processing of the message
+				return true;
+			}
+
+			return super.publish(client, message);
+		}
+
+		/**
+		 * @see net.sf.xenqtt.mockbroker.MockBrokerHandler#subscribe(net.sf.xenqtt.mockbroker.Client, net.sf.xenqtt.message.SubscribeMessage)
+		 */
+		@Override
+		public boolean subscribe(Client client, SubscribeMessage message) throws Exception {
+			String[] topics = message.getTopics();
+			QoS[] qoses = message.getRequestedQoSes();
+			List<String> allowedTopics = new ArrayList<String>();
+			List<QoS> allowedQoses = new ArrayList<QoS>();
+			int index = 0;
+			for (String topic : topics) {
+				// Only allow topic subscriptions for topics that don't include country music.
+				if (!topic.matches("^.*(?i:country).*$")) {
+					allowedTopics.add(topic);
+					allowedQoses.add(qoses[index]);
+				}
+
+				index++;
+			}
+
+			message = new SubscribeMessage(message.getMessageId(), allowedTopics.toArray(new String[0]), allowedQoses.toArray(new QoS[0]));
+
+			return super.subscribe(client, message);
+		}
+
+	}
+
+}
+						</pre>
+						<p>Please see the JavaDoc for a complete list of the methods that can be overridden on the <code>MockBrokerHandler</code>.</p>
+						<p class="code-header">Mock Broker - Event Reporting</p>
+						The following example shows how to fire up the mock broker in the local JVM. In addition to a custom handler the example shows how to
+						interrogate the broker for certain events that pass through it. The information from these events can be used for many disparate
+						purposes. These are typically application-specific.
+						<pre class="prettyprint code">
+package net.sf.xenqtt.examples;
+
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import net.sf.xenqtt.message.MessageType;
+import net.sf.xenqtt.message.PubMessage;
+import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.message.SubscribeMessage;
+import net.sf.xenqtt.mockbroker.BrokerEvent;
+import net.sf.xenqtt.mockbroker.BrokerEventType;
+import net.sf.xenqtt.mockbroker.Client;
+import net.sf.xenqtt.mockbroker.MockBroker;
+import net.sf.xenqtt.mockbroker.MockBrokerHandler;
+
+/**
+ * Fires up a mock broker that specializes in routing data of the 'Glam' variety. This particular broker has a special handler that rejects any and all attempts
+ * to interact with country music. In addition, it allows for retrieval of events from the broker and their subsequent interrogation.
+ */
+public class GlamEventReportingBroker {
+
+	public static void main(String... args) throws InterruptedException {
+		MockBrokerHandler handler = new GlamBrokerHandler();
+		MockBroker broker = new MockBroker(handler);
+
+		broker.init(); // Blocks until startup is complete.
+
+		// At this point the broker is online. Clients can connect to it, publish messages, subscribe, etc.
+		Thread.sleep(60000);
+
+		// Examine broker events and report some useful stats about them.
+		List<BrokerEvent> events = broker.getEvents();
+		Set<String> clientIds = new HashSet<String>();
+		Map<BrokerEventType, Integer> eventTypes = new EnumMap<BrokerEventType, Integer>(BrokerEventType.class);
+		Map<MessageType, Integer> messageTypes = new EnumMap<MessageType, Integer>(MessageType.class);
+		for (BrokerEvent event : events) {
+			clientIds.add(event.getClientId());
+
+			BrokerEventType brokerEventType = event.getEventType();
+			Integer brokerEventCount = eventTypes.get(brokerEventType);
+			if (brokerEventCount == null) {
+				brokerEventCount = Integer.valueOf(0);
+			}
+			eventTypes.put(brokerEventType, Integer.valueOf(brokerEventCount.intValue() + 1));
+
+			MessageType messageType = event.getMessage().getMessageType();
+			Integer messageTypeCount = messageTypes.get(messageType);
+			if (messageTypeCount == null) {
+				messageTypeCount = Integer.valueOf(0);
+			}
+			messageTypes.put(messageType, Integer.valueOf(messageTypeCount.intValue() + 1));
+		}
+		System.out.printf("Total events: %d\n", events.size());
+		System.out.printf("Total client IDs: %d\n", clientIds.size());
+
+		System.out.println("Counts by broker event type:");
+		for (Entry<BrokerEventType, Integer> entry : eventTypes.entrySet()) {
+			System.out.printf("\t%s: %d\n", entry.getKey().name(), entry.getValue());
+		}
+
+		System.out.printf("Counts by MQTT message type:");
+		for (Entry<MessageType, Integer> entry : messageTypes.entrySet()) {
+			System.out.printf("\t%s: %d\n", entry.getKey().name(), entry.getValue());
+		}
+
+		// We are done. Shutdown the broker. Wait forever (> 0 means wait that many milliseconds).
+		broker.shutdown(0);
+	}
+
+	private static final class GlamBrokerHandler extends MockBrokerHandler {
+
+		@Override
+		public boolean publish(Client client, PubMessage message) throws Exception {
+			String payload = new String(message.getPayload(), Charset.forName("UTF-8"));
+			if (payload.indexOf("Country Music") > -1) {
+				// We don't do that stuff here! Return true to suppress processing of the message
+				return true;
+			}
+
+			return super.publish(client, message);
+		}
+
+		/**
+		 * @see net.sf.xenqtt.mockbroker.MockBrokerHandler#subscribe(net.sf.xenqtt.mockbroker.Client, net.sf.xenqtt.message.SubscribeMessage)
+		 */
+		@Override
+		public boolean subscribe(Client client, SubscribeMessage message) throws Exception {
+			String[] topics = message.getTopics();
+			QoS[] qoses = message.getRequestedQoSes();
+			List<String> allowedTopics = new ArrayList<String>();
+			List<QoS> allowedQoses = new ArrayList<QoS>();
+			int index = 0;
+			for (String topic : topics) {
+				// Only allow topic subscriptions for topics that don't include country music.
+				if (!topic.matches("^.*(?i:country).*$")) {
+					allowedTopics.add(topic);
+					allowedQoses.add(qoses[index]);
+				}
+
+				index++;
+			}
+
+			message = new SubscribeMessage(message.getMessageId(), allowedTopics.toArray(new String[0]), allowedQoses.toArray(new QoS[0]));
+
+			return super.subscribe(client, message);
+		}
+
+	}
+
+}
+						</pre>
 					</div>
 					<div class="post post-last" id="links">
 						<h3>Related Resources</h3>
