@@ -25,10 +25,12 @@ final class XenqttUrlStreamHandlerFactory implements URLStreamHandlerFactory {
 
 	private final LoggingLevels loggingLevels;
 	private final String appName;
+	private final boolean consoleLogger;
 
-	public XenqttUrlStreamHandlerFactory(LoggingLevels loggingLevels, String appName) {
+	public XenqttUrlStreamHandlerFactory(LoggingLevels loggingLevels, String appName, boolean consoleLogger) {
 		this.loggingLevels = loggingLevels;
 		this.appName = appName;
+		this.consoleLogger = consoleLogger;
 	}
 
 	/**
@@ -40,7 +42,7 @@ final class XenqttUrlStreamHandlerFactory implements URLStreamHandlerFactory {
 		if ("xenqtt".equals(protocol)) {
 			return new XenqttUrlStreamHandler();
 		} else if ("log4j".equals(protocol)) {
-			return new Log4jUrlStreamHandler(loggingLevels, appName);
+			return new Log4jUrlStreamHandler(loggingLevels, appName, consoleLogger);
 		}
 
 		return null;
