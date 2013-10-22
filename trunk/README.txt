@@ -1,5 +1,7 @@
 0.9.2 (pending)
 	Added maxInFlightMessages configuration to MQTT client.
+	Moved all command line application logs to ./logs directory.
+	Added command line option to log to the console for command line applications.
 	
 0.9.1
 	Fixed a bug where ping requests were not always sent to the broker properly resulting in disconnection.
