@@ -37,8 +37,9 @@ public final class Xenqtt {
 
 	private static final String JAVA_OPTS_TEXT = "[java.opts]]";
 	private static final String JAVA_OPTS_USAGE_TEXT = "\n\tjava.opts : Arguments to the JVM (-Xmx, -Xms, -server, etc)";
-	private static final String GLOBAL_OPTS_TEXT = "[-v[v]]";
-	private static final String GLOBAL_OPTS_USAGE_TEXT = "\n\t-v : Increase logging verbosity. v = info, vv = debug";
+	private static final String GLOBAL_OPTS_TEXT = "[-v[v]][-c]";
+	private static final String GLOBAL_OPTS_USAGE_TEXT = "\n\t-v : Increase logging verbosity. v = info, vv = debug" //
+			+ "\n\t-c: Use console logging instead of file-based logging";
 
 	static volatile LoggingLevels loggingLevels = new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
 	static volatile String outputFile;
@@ -107,8 +108,6 @@ public final class Xenqtt {
 			if (exceptionClass == IllegalArgumentException.class || exceptionClass == IllegalStateException.class) {
 				XenqttUtil.prettyPrintln("\nUSAGE: " + getAppSpecificUsageText(application), true);
 			}
-		} finally {
-			Log.shutdown();
 		}
 	}
 
