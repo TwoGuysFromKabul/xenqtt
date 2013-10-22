@@ -15,14 +15,13 @@
  */
 package net.sf.xenqtt.application;
 
-import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.Xenqtt;
-import net.sf.xenqtt.XenqttUtil;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
-/**
- * Displays help text
- */
-public final class HelpApplication extends AbstractXenqttApplication {
+import net.sf.xenqtt.AppContext;
+
+public final class VersionApplication extends AbstractXenqttApplication {
 
 	/**
 	 * @see net.sf.xenqtt.application.XenqttApplication#start(net.sf.xenqtt.AppContext)
@@ -30,11 +29,23 @@ public final class HelpApplication extends AbstractXenqttApplication {
 	@Override
 	public void start(AppContext appContext) {
 
-		String desiredHelpApp = appContext.getArgAsString("-m", null);
-		if (desiredHelpApp == null) {
-			displayGeneralHelpInformation();
-		} else {
-			displayApplicationSpecificHelpInformation(desiredHelpApp);
+		String pomPropsPath = "/META-INF/maven/net.sf.xenqtt/xenqtt/pom.properties";
+
+		InputStream in = null;
+
+		try {
+			in = VersionApplication.class.getResourceAsStream(pomPropsPath);
+			Properties props = new Properties();
+			props.load(in);
+			String version = props.getProperty("version");
+			System.out.println("XenQTT version: " + version);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to open stream to resource: " + pomPropsPath, e);
+		} finally {
+			try {
+				in.close();
+			} catch (IOException ignore) {
+			}
 		}
 
 		appContext.applicationDone();
@@ -46,6 +57,7 @@ public final class HelpApplication extends AbstractXenqttApplication {
 	@Override
 	public void stop() {
 		// ignore
+
 	}
 
 	/**
@@ -53,7 +65,7 @@ public final class HelpApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getOptsText() {
-		return "app";
+		return "";
 	}
 
 	/**
@@ -61,7 +73,7 @@ public final class HelpApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getOptsUsageText() {
-		return "\n\tapp : Application to display help for";
+		return "";
 	}
 
 	/**
@@ -69,7 +81,7 @@ public final class HelpApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getSummary() {
-		return "Displays help information.";
+		return "Displays the XenQTT version";
 	}
 
 	/**
@@ -78,34 +90,5 @@ public final class HelpApplication extends AbstractXenqttApplication {
 	@Override
 	public String getDescription() {
 		return getSummary();
-	}
-
-	private void displayGeneralHelpInformation() {
-
-		XenqttUtil.prettyPrintln(Xenqtt.getFullUsageText(), false);
-
-		for (XenqttApplication application : Xenqtt.getApplications()) {
-			System.out.println("----------------------------------------------------------------------------------------------------");
-			System.out.printf("%s:\n", application.getName());
-			displayApplicationSpecificHelpInformation(application);
-		}
-	}
-
-	private void displayApplicationSpecificHelpInformation(String desiredHelpApp) {
-
-		XenqttApplication application = Xenqtt.getApplication(desiredHelpApp);
-		if (application == null) {
-			System.out.println("Unrecognized application: " + desiredHelpApp);
-			return;
-		}
-
-		displayApplicationSpecificHelpInformation(application);
-	}
-
-	private void displayApplicationSpecificHelpInformation(XenqttApplication application) {
-
-		XenqttUtil.prettyPrintln(application.getDescription(), true);
-		System.out.println();
-		XenqttUtil.prettyPrintln(Xenqtt.getAppSpecificUsageText(application), true);
 	}
 }

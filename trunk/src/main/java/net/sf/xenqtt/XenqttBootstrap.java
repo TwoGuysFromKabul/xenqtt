@@ -34,7 +34,7 @@ public final class XenqttBootstrap {
 		Arguments arguments = ArgumentExtractor.extractArguments(null, args);
 
 		LoggingLevels loggingLevels = arguments != null ? arguments.determineLoggingLevels() : new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
-		String appName = arguments.mode.getMode().toLowerCase();
+		String appName = arguments.applicationName;
 		boolean consoleLogger = arguments.isConsoleLoggingSpecified();
 
 		try {

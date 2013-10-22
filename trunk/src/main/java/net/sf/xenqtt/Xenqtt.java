@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.ArgumentExtractor.Arguments;
-import net.sf.xenqtt.ArgumentExtractor.Mode;
 import net.sf.xenqtt.application.AbstractXenqttApplication;
 import net.sf.xenqtt.application.XenqttApplication;
 
@@ -56,20 +55,11 @@ public final class Xenqtt {
 	 * 
 	 * @param args
 	 *            <p>
-	 *            The arguments specified by the user at the command-line. You can supply global logging flags ({@code -v}, {@code -vv}, or {@code -v -v}) and a
-	 *            mode to run Xenqtt in. The supported modes, at present, are:
+	 *            The arguments specified by the user at the command-line. You can supply global logging flags ({@code -v}, {@code -vv}, or {@code -v -v}) and
+	 *            Xenqtt application to run.
 	 *            </p>
-	 * 
-	 *            <ul>
-	 *            <li>{@code proxy}</li>
-	 *            <li>{@code gateway}</li>
-	 *            <li>{@code mockbroker}</li>
-	 *            <li>{@code testclient}</li>
-	 *            <li>{@code help}</li>
-	 *            </ul>
-	 * 
 	 *            <p>
-	 *            To get mode-specific help information use the {@code help} mode and then specify the mode name (e.g. {@code help proxy})
+	 *            To get app-specific help information use the {@code help} app and then specify the app name to get help for (e.g. {@code help proxy})
 	 *            </p>
 	 */
 	public static void main(String... args) {
@@ -83,8 +73,8 @@ public final class Xenqtt {
 		}
 
 		loggingLevels = arguments.determineLoggingLevels();
-		outputFile = String.format("xenqtt-%s.log", arguments.mode.getMode().toLowerCase());
-		application = APPS_BY_NAME.get(arguments.mode.getMode().toLowerCase());
+		outputFile = String.format("xenqtt-%s.log", arguments.applicationName);
+		application = APPS_BY_NAME.get(arguments.applicationName);
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 
@@ -99,7 +89,7 @@ public final class Xenqtt {
 		});
 
 		try {
-			runApplication(arguments.mode, arguments.applicationArguments);
+			runApplication(arguments.applicationName, arguments.applicationArguments);
 			shutdownLatch.await();
 		} catch (Exception ex) {
 			System.err.printf("Unable to launch the application. Details: %s\n", ex.getMessage());
@@ -208,10 +198,10 @@ public final class Xenqtt {
 		return classNames;
 	}
 
-	private static void runApplication(Mode mode, AppContext applicationArguments) {
+	private static void runApplication(String appName, AppContext applicationArguments) {
 
 		if (application == null) {
-			Log.info("The following mode is not presently supported: %s", mode.getMode());
+			Log.info("The following application is not presently supported: %s", appName);
 			return;
 		}
 

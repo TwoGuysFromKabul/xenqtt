@@ -20,7 +20,6 @@ import static org.junit.Assert.*;
 import java.util.concurrent.CountDownLatch;
 
 import net.sf.xenqtt.ArgumentExtractor.Arguments;
-import net.sf.xenqtt.ArgumentExtractor.Mode;
 
 import org.junit.Test;
 
@@ -29,41 +28,41 @@ public class ArgumentExtractorTest {
 	CountDownLatch latch = new CountDownLatch(0);
 
 	@Test
-	public void testExtractArguments_ModeOnly() {
-		Arguments arguments = ArgumentExtractor.extractArguments(latch, "proxy");
+	public void testExtractArguments_AppOnly() {
+		Arguments arguments = ArgumentExtractor.extractArguments(latch, "Proxy");
 
 		assertTrue(arguments.globalOptions.isEmpty());
-		assertSame(Mode.PROXY, arguments.mode);
+		assertEquals("proxy", arguments.applicationName);
 		assertNotNull(arguments.applicationArguments);
 	}
 
 	@Test
-	public void testExtractArguments_InvalidMode() {
+	public void testExtractArguments_InvalidApp() {
 		assertNull(ArgumentExtractor.extractArguments(latch, "proxyer"));
 	}
 
 	@Test
-	public void testExtractArguments_GlobalOptionsNoMode() {
+	public void testExtractArguments_GlobalOptionsNoApp() {
 		assertNull(ArgumentExtractor.extractArguments(latch, "-v", "-v"));
 	}
 
 	@Test
-	public void testExtractArguments_ModeAndModeArguments() {
+	public void testExtractArguments_AppAndAppArguments() {
 		Arguments arguments = ArgumentExtractor.extractArguments(latch, "proxy", "-p", "1883", "-a");
 
 		assertTrue(arguments.globalOptions.isEmpty());
-		assertSame(Mode.PROXY, arguments.mode);
+		assertEquals("proxy", arguments.applicationName);
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
 		assertEquals(1883, arguments.applicationArguments.getArgAsInt("-p"));
 		assertTrue(arguments.applicationArguments.wereAllFlagsInterrogated());
 	}
 
 	@Test
-	public void testExtractArguments_ModeAndModeArguments_MultipleFlagsRunTogether() {
+	public void testExtractArguments_AppAndAppArguments_MultipleFlagsRunTogether() {
 		Arguments arguments = ArgumentExtractor.extractArguments(latch, "proxy", "-p", "1883", "-abcd");
 
 		assertTrue(arguments.globalOptions.isEmpty());
-		assertSame(Mode.PROXY, arguments.mode);
+		assertEquals("proxy", arguments.applicationName);
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-b"));
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-c"));
@@ -73,11 +72,11 @@ public class ArgumentExtractorTest {
 	}
 
 	@Test
-	public void testExtractArguments_ModeAndModeArguments_MultipleFlagsRunTogether_FinalParameterIsArg() {
+	public void testExtractArguments_AppAndAppArguments_MultipleFlagsRunTogether_FinalParameterIsArg() {
 		Arguments arguments = ArgumentExtractor.extractArguments(latch, "proxy", "-p", "1883", "-abcd", "true");
 
 		assertTrue(arguments.globalOptions.isEmpty());
-		assertSame(Mode.PROXY, arguments.mode);
+		assertEquals("proxy", arguments.applicationName);
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-b"));
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-c"));
@@ -88,42 +87,42 @@ public class ArgumentExtractorTest {
 	}
 
 	@Test
-	public void testExtractArguments_HelpMode_NoSpecifiedMode() {
+	public void testExtractArguments_HelpApp_NoSpecifiedApp() {
 		Arguments arguments = ArgumentExtractor.extractArguments(latch, "help");
 
 		assertTrue(arguments.globalOptions.isEmpty());
-		assertSame(Mode.HELP, arguments.mode);
+		assertEquals("help", arguments.applicationName);
 		assertTrue(arguments.applicationArguments.isEmpty());
 	}
 
 	@Test
-	public void testExtractArguments_HelpMode_SpecifiedMode() {
+	public void testExtractArguments_HelpApp_SpecifiedApp() {
 		Arguments arguments = ArgumentExtractor.extractArguments(latch, "help", "mockbroker");
 
 		assertTrue(arguments.globalOptions.isEmpty());
-		assertSame(Mode.HELP, arguments.mode);
+		assertEquals("help", arguments.applicationName);
 		assertEquals("mockbroker", arguments.applicationArguments.getArgAsString("-m"));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testExtractArguments_ModeAndModeArguments_MultipleValuesToOneParameter() {
+	public void testExtractArguments_AppAndAppArguments_MultipleValuesToOneParameter() {
 		ArgumentExtractor.extractArguments(latch, "proxy", "-p", "1883", "8883");
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testExtractArguments_ModeAndModeArguments_DashOnlyForFlagOrArg() {
+	public void testExtractArguments_AppAndAppArguments_DashOnlyForFlagOrArg() {
 		ArgumentExtractor.extractArguments(latch, "proxy", "-", "1883");
 	}
 
 	@Test
-	public void testExtractArguments_GlobalOptionsAndMode() {
+	public void testExtractArguments_GlobalOptionsAndApp() {
 		Arguments arguments = ArgumentExtractor.extractArguments(latch, "-v", "-v", "proxy");
 
 		assertEquals(2, arguments.globalOptions.size());
 		for (String globalOption : arguments.globalOptions) {
 			assertEquals("-v", globalOption);
 		}
-		assertSame(Mode.PROXY, arguments.mode);
+		assertEquals("proxy", arguments.applicationName);
 		assertNotNull(arguments.applicationArguments);
 	}
 
@@ -135,7 +134,7 @@ public class ArgumentExtractorTest {
 		for (String globalOption : arguments.globalOptions) {
 			assertEquals("-v", globalOption);
 		}
-		assertSame(Mode.PROXY, arguments.mode);
+		assertEquals("proxy", arguments.applicationName);
 		assertTrue(arguments.applicationArguments.isFlagSpecified("-a"));
 		assertEquals(1883, arguments.applicationArguments.getArgAsInt("-p"));
 		assertTrue(arguments.applicationArguments.wereAllFlagsInterrogated());
