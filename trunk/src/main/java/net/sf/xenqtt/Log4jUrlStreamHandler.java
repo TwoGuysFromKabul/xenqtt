@@ -35,17 +35,17 @@ import java.util.jar.JarOutputStream;
  * <ul>
  * <li>${XENQTT_INSTALL_DIR}: The XenQTT install directory from {@link XenqttUtil#getXenqttInstallDirectory()}</li>
  * <li>${XENQTT_LOG_LEVEL}: The logging level from the {@link LoggingLevels} object passed to the constructor.</li>
+ * <li>${XENQTT_APP_NAME}: The application name from the app name passed to the constructor.</li>
  * </ul>
  */
 final class Log4jUrlStreamHandler extends URLStreamHandler {
 
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
-	// FIXME [jim] - need to make rolling log file name include app name
 	// FIXME [jim] - update logging framework considering we now have log4j available. do we still need jul?
 	private final byte[] bytes;
 
-	public Log4jUrlStreamHandler(LoggingLevels loggingLevels) {
+	public Log4jUrlStreamHandler(LoggingLevels loggingLevels, String appName) {
 
 		try {
 			String logLevel = loggingLevels.debugEnabled ? "debug" : loggingLevels.infoEnabled ? "info" : "warn";
@@ -54,8 +54,8 @@ final class Log4jUrlStreamHandler extends URLStreamHandler {
 			String xml = XenqttUtil.loadResourceFile("config/log4j.xml");
 			xml = xml.replace("${XENQTT_INSTALL_DIR}", XenqttUtil.getXenqttInstallDirectory().getAbsolutePath());
 			xml = xml.replace("${XENQTT_LOG_LEVEL}", logLevel);
+			xml = xml.replace("${XENQTT_APP_NAME}", appName);
 
-			System.out.println(xml);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			JarOutputStream out = new JarOutputStream(baos);
 			addEntry(out, "log4j.dtd", dtd);

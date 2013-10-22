@@ -24,9 +24,11 @@ import java.net.URLStreamHandlerFactory;
 final class XenqttUrlStreamHandlerFactory implements URLStreamHandlerFactory {
 
 	private final LoggingLevels loggingLevels;
+	private final String appName;
 
-	public XenqttUrlStreamHandlerFactory(LoggingLevels loggingLevels) {
+	public XenqttUrlStreamHandlerFactory(LoggingLevels loggingLevels, String appName) {
 		this.loggingLevels = loggingLevels;
+		this.appName = appName;
 	}
 
 	/**
@@ -38,7 +40,7 @@ final class XenqttUrlStreamHandlerFactory implements URLStreamHandlerFactory {
 		if ("xenqtt".equals(protocol)) {
 			return new XenqttUrlStreamHandler();
 		} else if ("log4j".equals(protocol)) {
-			return new Log4jUrlStreamHandler(loggingLevels);
+			return new Log4jUrlStreamHandler(loggingLevels, appName);
 		}
 
 		return null;
