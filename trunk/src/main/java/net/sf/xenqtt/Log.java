@@ -15,6 +15,9 @@
  */
 package net.sf.xenqtt;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 /**
  * <p>
  * Provides disparate logging methods for use within xenqtt. The {@code Log} class is able to detect other logging implementations and, should they be present
@@ -28,73 +31,25 @@ package net.sf.xenqtt;
  */
 public final class Log {
 
-	private static final LoggingDelegate DELEGATE;
-	private static final Logger LOGGER;
+	private static final Logger log = Logger.getLogger("xenqtt");
+	private static final boolean TRACE_ENABLED;
+	private static final boolean DEBUG_ENABLED;
+	private static final boolean INFO_ENABLED;
+	private static final boolean WARN_ENABLED;
+	private static final boolean ERROR_ENABLED;
+	private static final boolean FATAL_ENABLED;
 
 	static {
-		DELEGATE = createDelegate();
-		LoggingLevels levels = determineLoggingLevels();
-		LOGGER = getLogger(levels);
-		LOGGER.init();
+		Level effectiveLevel = log.getEffectiveLevel();
+		TRACE_ENABLED = Level.TRACE.isGreaterOrEqual(effectiveLevel);
+		DEBUG_ENABLED = Level.DEBUG.isGreaterOrEqual(effectiveLevel);
+		INFO_ENABLED = Level.INFO.isGreaterOrEqual(effectiveLevel);
+		WARN_ENABLED = Level.WARN.isGreaterOrEqual(effectiveLevel);
+		ERROR_ENABLED = Level.ERROR.isGreaterOrEqual(effectiveLevel);
+		FATAL_ENABLED = Level.FATAL.isGreaterOrEqual(effectiveLevel);
 	}
 
 	private Log() {
-	}
-
-	private static LoggingDelegate createDelegate() {
-		if (inUnitTest()) {
-			return new ConsoleLoggingDelegate();
-		}
-
-		try {
-			Class.forName("org.apache.log4j.Logger");
-
-			return new Log4jLoggingDelegate();
-		} catch (ClassNotFoundException ex) {
-			// ignore
-		} catch (Exception ex) {
-			System.err.println("Unable to determine which logging strategy to use. Using Java logging by default.");
-		}
-
-		return new JavaLoggingDelegate();
-	}
-
-	private static boolean inUnitTest() {
-		StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-		for (StackTraceElement element : stackTrace) {
-			if (element.getClassName().startsWith("org.junit")) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private static LoggingLevels determineLoggingLevels() {
-		if (DELEGATE instanceof Log4jLoggingDelegate) {
-			return getLog4jLoggingLevels();
-		}
-
-		return Xenqtt.loggingLevels;
-	}
-
-	private static LoggingLevels getLog4jLoggingLevels() {
-		return ((Log4jLoggingDelegate) DELEGATE).getLoggingLevels();
-	}
-
-	private static Logger getLogger(LoggingLevels levels) {
-		if (Boolean.parseBoolean(System.getProperty("xenqtt.logging.async")) || inUnitTest()) {
-			return new AsynchronousLogger(levels, DELEGATE);
-		}
-
-		return new SynchronousLogger(levels, DELEGATE);
-	}
-
-	/**
-	 * Shuts down the logger. Package visible. Should only be called by {@link Xenqtt}.
-	 */
-	static void shutdown() {
-		LOGGER.shutdown();
 	}
 
 	/**
@@ -106,7 +61,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void trace(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.TRACE_FLAG, message, parameters);
+		if (TRACE_ENABLED) {
+			log.trace(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -118,7 +75,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void debug(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.DEBUG_FLAG, message, parameters);
+		if (DEBUG_ENABLED) {
+			log.debug(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -130,7 +89,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void info(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.INFO_FLAG, message, parameters);
+		if (INFO_ENABLED) {
+			log.info(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -142,7 +103,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.WARN_FLAG, message, parameters);
+		if (WARN_ENABLED) {
+			log.warn(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -156,7 +119,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(Throwable t, String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.WARN_FLAG, t, message, parameters);
+		if (WARN_ENABLED) {
+			log.warn(String.format(message, parameters), t);
+		}
 	}
 
 	/**
@@ -168,7 +133,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.ERROR_FLAG, message, parameters);
+		if (ERROR_ENABLED) {
+			log.error(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -182,7 +149,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(Throwable t, String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.ERROR_FLAG, t, message, parameters);
+		if (ERROR_ENABLED) {
+			log.error(String.format(message, parameters), t);
+		}
 	}
 
 	/**
@@ -194,7 +163,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.FATAL_FLAG, message, parameters);
+		if (FATAL_ENABLED) {
+			log.fatal(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -208,90 +179,9 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(Throwable t, String message, Object... parameters) {
-		LOGGER.log(LoggingLevels.FATAL_FLAG, t, message, parameters);
-	}
-
-	private static final class ConsoleLoggingDelegate implements LoggingDelegate {
-
-		@Override
-		public void trace(String message) {
-			System.out.println(message);
+		if (FATAL_ENABLED) {
+			log.fatal(String.format(message, parameters), t);
 		}
-
-		@Override
-		public void trace(Throwable t, String message) {
-			System.out.println(message);
-			if (t != null) {
-				t.printStackTrace(System.out);
-			}
-		}
-
-		@Override
-		public void debug(String message) {
-			System.out.println(message);
-		}
-
-		@Override
-		public void debug(Throwable t, String message) {
-			System.out.println(message);
-			if (t != null) {
-				t.printStackTrace(System.out);
-			}
-		}
-
-		@Override
-		public void info(String message) {
-			System.out.println(message);
-		}
-
-		@Override
-		public void info(Throwable t, String message) {
-			System.out.println(message);
-			if (t != null) {
-				t.printStackTrace(System.out);
-			}
-		}
-
-		@Override
-		public void warn(String message) {
-			System.out.println(message);
-		}
-
-		@Override
-		public void warn(Throwable t, String message) {
-			System.out.println(message);
-			if (t != null) {
-				t.printStackTrace(System.out);
-			}
-		}
-
-		@Override
-		public void error(String message) {
-			System.out.println(message);
-		}
-
-		@Override
-		public void error(Throwable t, String message) {
-			System.out.println(message);
-			if (t != null) {
-				t.printStackTrace(System.out);
-			}
-		}
-
-		@Override
-		public void fatal(String message) {
-			System.out.println(message);
-		}
-
-		@Override
-		public void fatal(Throwable t, String message) {
-			System.out.println(message);
-			if (t != null) {
-				t.printStackTrace(System.out);
-			}
-
-		}
-
 	}
 
 }
