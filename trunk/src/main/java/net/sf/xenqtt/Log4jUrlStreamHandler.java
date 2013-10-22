@@ -36,6 +36,8 @@ import java.util.jar.JarOutputStream;
  * <li>${XENQTT_INSTALL_DIR}: The XenQTT install directory from {@link XenqttUtil#getXenqttInstallDirectory()}</li>
  * <li>${XENQTT_LOG_LEVEL}: The logging level from the {@link LoggingLevels} object passed to the constructor.</li>
  * <li>${XENQTT_APP_NAME}: The application name from the app name passed to the constructor.</li>
+ * <li>${XENQTT_LOG_APPENDER_REF}: Placeholder for console logging. If the {@code -c} option is specified on the command-line logging goes to the console as
+ * well as the file</li>
  * </ul>
  */
 final class Log4jUrlStreamHandler extends URLStreamHandler {
@@ -55,7 +57,7 @@ final class Log4jUrlStreamHandler extends URLStreamHandler {
 			xml = xml.replace("${XENQTT_INSTALL_DIR}", XenqttUtil.getXenqttInstallDirectory().getAbsolutePath());
 			xml = xml.replace("${XENQTT_LOG_LEVEL}", logLevel);
 			xml = xml.replace("${XENQTT_APP_NAME}", appName);
-			xml = consoleLogger ? xml.replace("${XENQTT_LOG_APPENDER_REF}", "console") : xml.replace("${XENQTT_LOG_APPENDER_REF}", "rollingFile");
+			xml = consoleLogger ? xml.replace("${XENQTT_LOG_APPENDER_REF}", "console") : xml.replace("${XENQTT_LOG_APPENDER_REF}", "");
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			JarOutputStream out = new JarOutputStream(baos);

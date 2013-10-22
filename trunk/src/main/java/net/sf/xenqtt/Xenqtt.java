@@ -39,7 +39,7 @@ public final class Xenqtt {
 	private static final String JAVA_OPTS_USAGE_TEXT = "\n\tjava.opts : Arguments to the JVM (-Xmx, -Xms, -server, etc)";
 	private static final String GLOBAL_OPTS_TEXT = "[-v[v]][-c]";
 	private static final String GLOBAL_OPTS_USAGE_TEXT = "\n\t-v : Increase logging verbosity. v = info, vv = debug" //
-			+ "\n\t-c: Use console logging instead of file-based logging";
+			+ "\n\t-c: Use console logging in addition to file-based logging";
 
 	static volatile LoggingLevels loggingLevels = new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
 	static volatile String outputFile;
