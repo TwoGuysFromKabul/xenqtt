@@ -216,7 +216,7 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void pubRec(MqttChannel channel, PubRecMessage message) throws Exception {
-		// TODO qos 2 not supported
+		// qos 2 not supported
 	}
 
 	/**
@@ -224,7 +224,7 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void pubRel(MqttChannel channel, PubRelMessage message) throws Exception {
-		// TODO qos 2 not supported
+		// qos 2 not supported
 	}
 
 	/**
@@ -232,7 +232,7 @@ class ProxySession implements MessageHandler {
 	 */
 	@Override
 	public void pubComp(MqttChannel channel, PubCompMessage message) throws Exception {
-		// TODO qos 2 not supported
+		// qos 2 not supported
 	}
 
 	/**
