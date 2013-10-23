@@ -66,6 +66,11 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 
 	/**
 	 * reads and writes until the specified number of client and broker messages are received
+	 * 
+	 * @param clientMessageCount
+	 *            Number of client messages to read
+	 * @param brokerMessageCount
+	 *            Number of broker messages to read
 	 */
 	void readWrite(int clientMessageCount, int brokerMessageCount) throws Exception {
 		readWrite(clientMessageCount, brokerMessageCount, 0);
@@ -74,7 +79,12 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 	/**
 	 * reads and writes until the specified number of client and broker messages are received
 	 * 
-	 * @return False if the timeout occurs
+	 * @param clientMessageCount
+	 *            Number of client messages to read
+	 * @param brokerMessageCount
+	 *            Number of broker messages to read
+	 * @param timeoutMillis
+	 *            Millis to wait for the client and broker message count to be reached
 	 */
 	boolean readWrite(int clientMessageCount, int brokerMessageCount, long timeoutMillis) throws Exception {
 

@@ -182,6 +182,7 @@ public interface MqttChannel extends MqttChannelRef {
 	 */
 	List<MqttMessage> getUnsentMessages();
 
+	// FIXME [jim] - cache these addresses
 	/**
 	 * @return The channel's remote address
 	 */

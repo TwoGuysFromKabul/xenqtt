@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -553,6 +554,39 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 		msg = new SubAckMessage(1, new QoS[] {});
 		brokerChannel.send(msg, blockingCommand);
 		assertTrue(readWrite(1, 0, 1000));
+
+		closeConnection();
+	}
+
+	@Test
+	public void testRead_ReadPaused() throws Exception {
+
+		establishConnection();
+
+		SubAckMessage msg = new SubAckMessage(1, new QoS[] {});
+		brokerChannel.send(msg, blockingCommand);
+
+		selector.select();
+		assertEquals(1, selector.selectedKeys().size());
+		Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+		SelectionKey key = iter.next();
+		MqttChannel channel = (MqttChannel) key.attachment();
+		assertTrue(key.isWritable());
+		channel.write(now);
+		iter.remove();
+
+		selector.select();
+		assertEquals(1, selector.selectedKeys().size());
+		iter = selector.selectedKeys().iterator();
+		key = iter.next();
+		channel = (MqttChannel) key.attachment();
+		assertTrue(key.isReadable());
+		iter.remove();
+
+		channel.pauseRead();
+		channel.read(now);
+
+		assertEquals(0, clientHandler.messageCount());
 
 		closeConnection();
 	}

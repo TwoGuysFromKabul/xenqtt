@@ -228,11 +228,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public void pauseRead() {
-
-		if (selectionKey.isValid()) {
-			int ops = selectionKey.interestOps() & (~SelectionKey.OP_READ);
-			selectionKey.interestOps(ops);
-		}
+		disableOp(SelectionKey.OP_READ);
 	}
 
 	/**
@@ -240,10 +236,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public void resumeRead() {
-		if (selectionKey.isValid()) {
-			int ops = selectionKey.interestOps() | SelectionKey.OP_READ;
-			selectionKey.interestOps(ops);
-		}
+		enableOp(SelectionKey.OP_READ);
 	}
 
 	/**
@@ -528,7 +521,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			sendMessageInProgress = message;
 
 			if (selectionKey.isValid() && channel.socket().isConnected()) {
-				selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+				enableOp(SelectionKey.OP_WRITE);
 				return true;
 			}
 		} catch (Exception e) {
@@ -601,7 +594,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 			return isOpen();
 		}
 
-		selectionKey.interestOps(SelectionKey.OP_READ);
+		disableOp(SelectionKey.OP_WRITE);
 
 		return true;
 	}
@@ -635,6 +628,11 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 * @return False to have the channel closed
 	 */
 	private boolean doRead(long now) throws IOException {
+
+		if (isReadPaused()) {
+			return true;
+		}
+
 		if (readRemaining != null) {
 			return readRemaining(now);
 		}
@@ -663,6 +661,22 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		}
 
 		return readRemaining(now);
+	}
+
+	private boolean isReadPaused() {
+		return (selectionKey.interestOps() & SelectionKey.OP_READ) == 0;
+	}
+
+	private void enableOp(int op) {
+		if (selectionKey.isValid()) {
+			selectionKey.interestOps(selectionKey.interestOps() | op);
+		}
+	}
+
+	private void disableOp(int op) {
+		if (selectionKey.isValid()) {
+			selectionKey.interestOps(selectionKey.interestOps() & ~op);
+		}
 	}
 
 	private void setFailureOnBlockingCommands(Throwable cause) {

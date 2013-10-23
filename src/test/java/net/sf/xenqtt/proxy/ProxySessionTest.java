@@ -62,7 +62,7 @@ public class ProxySessionTest {
 	public void before() {
 
 		MockitoAnnotations.initMocks(this);
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 	}
 
@@ -251,7 +251,7 @@ public class ProxySessionTest {
 		message = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 126, new byte[1]);
 		session.publish(channelToClient1, message);
 		verify(channelToBroker).send(same(message));
-		assertEquals(1, message.getMessageId());
+		assertEquals(3, message.getMessageId());
 	}
 
 	@Test
@@ -395,6 +395,66 @@ public class ProxySessionTest {
 	}
 
 	@Test
+	public void testUnackedMessageIdNotReused() throws Exception {
+
+		connectClientAndBroker();
+
+		UnsubscribeMessage message = new UnsubscribeMessage(123, new String[0]);
+		session.unsubscribe(channelToClient1, message);
+		verify(channelToBroker).send(same(message));
+		assertEquals(1, message.getMessageId());
+
+		Field field = ProxySession.class.getDeclaredField("nextIdToBroker");
+		field.setAccessible(true);
+		field.set(session, 1);
+
+		message = new UnsubscribeMessage(123, new String[0]);
+		session.unsubscribe(channelToClient1, message);
+		verify(channelToBroker).send(same(message));
+		assertEquals(2, message.getMessageId());
+	}
+
+	@Test
+	public void testClientPauseAndResumeRead() throws Exception {
+
+		connectClientAndBroker();
+		assertTrue(session.newConnection(channelToClient2, connectMessage));
+		session.channelAttached(channelToClient2);
+		// add a channel pending session attachment
+		MqttChannel channelToClient3 = mock(MqttChannel.class);
+		assertTrue(session.newConnection(channelToClient3, connectMessage));
+
+		UnsubscribeMessage message = new UnsubscribeMessage(123, new String[0]);
+		for (int i = 1; i <= 0xffff; i++) {
+			verify(channelToClient1, never()).pauseRead();
+			verify(channelToClient2, never()).pauseRead();
+			verify(channelToClient3, never()).pauseRead();
+			session.unsubscribe(channelToClient1, message);
+		}
+
+		verify(channelToClient1).pauseRead();
+		verify(channelToClient2).pauseRead();
+		verify(channelToClient3, never()).pauseRead();
+
+		session.channelAttached(channelToClient3);
+		verify(channelToClient3).pauseRead();
+
+		UnsubAckMessage ack = new UnsubAckMessage(1234);
+		session.unsubAck(channelToBroker, ack);
+
+		verify(channelToClient1).resumeRead();
+		verify(channelToClient2).resumeRead();
+		verify(channelToClient3).resumeRead();
+
+		session.unsubscribe(channelToClient1, message);
+		assertEquals(1234, message.getMessageId());
+
+		verify(channelToClient1, times(2)).pauseRead();
+		verify(channelToClient2, times(2)).pauseRead();
+		verify(channelToClient3, times(2)).pauseRead();
+	}
+
+	@Test
 	public void testChannelOpened() throws Exception {
 
 		session.channelOpened(channelToBroker);
@@ -414,6 +474,27 @@ public class ProxySessionTest {
 		verify(channelToClient1).close();
 		verify(channelToClient2).close();
 		assertTrue(session.isClosed());
+	}
+
+	@Test
+	public void testChannelClosed_ChannelToClient_MaxInFlightMessagesReached() throws Exception {
+
+		session = new ProxySession(brokerUri, connectMessage, manager, 1);
+
+		connectClientAndBroker();
+		assertTrue(session.newConnection(channelToClient2, connectMessage));
+		session.channelAttached(channelToClient2);
+
+		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, false, "foo", 789, new byte[1]);
+		session.publish(channelToClient1, message);
+
+		verify(channelToClient1).pauseRead();
+		verify(channelToClient2).pauseRead();
+
+		session.channelClosed(channelToClient1, null);
+
+		verify(channelToClient1).resumeRead();
+		verify(channelToClient2).resumeRead();
 	}
 
 	@Test
@@ -534,7 +615,7 @@ public class ProxySessionTest {
 	public void testChannelAttached_PasswordFlagDoesNotMatch() throws Exception {
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "user", null);
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "user", "pass");
@@ -549,7 +630,7 @@ public class ProxySessionTest {
 	public void testChannelAttached_UserNameDoesNotMatch() throws Exception {
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "user", "pass");
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "otheruser", "pass");
@@ -564,7 +645,7 @@ public class ProxySessionTest {
 	public void testChannelAttached_PasswordDoesNotMatch() throws Exception {
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "user", "otherpass");
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "user", "pass");
@@ -590,7 +671,7 @@ public class ProxySessionTest {
 	public void testChannelAttached_WillRetainFlagDoesNotMatch() throws Exception {
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, true);
@@ -605,7 +686,7 @@ public class ProxySessionTest {
 	public void testChannelAttached_WillTopicDoesNotMatch() throws Exception {
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "othertopic", "msg", QoS.AT_LEAST_ONCE, false);
@@ -620,7 +701,7 @@ public class ProxySessionTest {
 	public void testChannelAttached_WillMessageDoesNotMatch() throws Exception {
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "othermsg", QoS.AT_LEAST_ONCE, false);
@@ -635,7 +716,7 @@ public class ProxySessionTest {
 	public void testChannelAttached_WillQosDoesNotMatch() throws Exception {
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_LEAST_ONCE, false);
-		session = new ProxySession(brokerUri, connectMessage, manager);
+		session = new ProxySession(brokerUri, connectMessage, manager, 0xffff);
 		when(manager.newClientChannel(brokerUri, session)).thenReturn(channelToBroker);
 
 		connectMessage = new ConnectMessage("foo", false, 10000, "topic", "msg", QoS.AT_MOST_ONCE, false);
@@ -656,6 +737,17 @@ public class ProxySessionTest {
 	}
 
 	@Test
+	public void testChannelAttached_ConnectionToBrokerPending_MaxInFlightMessagesReached() throws Exception {
+
+		session = new ProxySession(brokerUri, connectMessage, manager, 0);
+
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verifyZeroInteractions(channelToClient1);
+	}
+
+	@Test
 	public void testChannelAttached_ConnectionToBrokerEstablished() throws Exception {
 
 		session.channelOpened(channelToBroker);
@@ -667,6 +759,24 @@ public class ProxySessionTest {
 
 		verify(channelToClient1).send(messageCaptor.capture());
 		assertEquals(message, messageCaptor.getValue());
+	}
+
+	@Test
+	public void testChannelAttached_ConnectionToBrokerEstablished_MaxInFlightMessagesReached() throws Exception {
+
+		session = new ProxySession(brokerUri, connectMessage, manager, 0);
+
+		session.channelOpened(channelToBroker);
+		ConnAckMessage message = new ConnAckMessage(ConnectReturnCode.ACCEPTED);
+		session.connAck(channelToBroker, message);
+
+		assertTrue(session.newConnection(channelToClient1, connectMessage));
+		session.channelAttached(channelToClient1);
+
+		verify(channelToClient1).send(messageCaptor.capture());
+		assertEquals(message, messageCaptor.getValue());
+
+		verify(channelToClient1).pauseRead();
 	}
 
 	@Test
