@@ -45,14 +45,21 @@ public class ProxyBroker extends SimpleBroker implements MessageHandler {
 
 	private final Map<String, ProxySession> proxySessionByClientId = new HashMap<String, ProxySession>();
 
+	private final int maxInFlightBrokerMessages;
+
 	/**
+	 * @param brokerUri
+	 *            The URI of the broker the proxy should connect to
 	 * @param port
 	 *            The port for the server to listen on. 0 will choose an arbitrary available port which you can get from {@link #getPort()} after calling
 	 *            {@link #init()}.
+	 * @param maxInFlightBrokerMessages
+	 *            Maximum number of messages that may be in-flight to the broker at a time
 	 */
-	public ProxyBroker(String brokerUri, int port) {
+	public ProxyBroker(String brokerUri, int port, int maxInFlightBrokerMessages) {
 		super(0, port);
 		this.brokerUri = brokerUri;
+		this.maxInFlightBrokerMessages = maxInFlightBrokerMessages;
 	}
 
 	/**
@@ -85,7 +92,7 @@ public class ProxyBroker extends SimpleBroker implements MessageHandler {
 		String clientId = message.getClientId();
 		ProxySession session = proxySessionByClientId.get(clientId);
 		if (session == null) {
-			session = newProxySession(brokerUri, message);
+			session = newProxySession(brokerUri, message, maxInFlightBrokerMessages);
 			session.init();
 			proxySessionByClientId.put(clientId, session);
 		}
@@ -107,8 +114,8 @@ public class ProxyBroker extends SimpleBroker implements MessageHandler {
 	 * 
 	 * @return A new {@link ProxySession} instance
 	 */
-	ProxySession newProxySession(String brokerUri, ConnectMessage message) {
-		return new ProxySession(brokerUri, message);
+	ProxySession newProxySession(String brokerUri, ConnectMessage message, int maxInFlightBrokerMessages) {
+		return new ProxySession(brokerUri, message, maxInFlightBrokerMessages);
 	}
 
 	private void shutdownClosedSessions() {

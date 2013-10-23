@@ -65,7 +65,7 @@ public class ProxyIT {
 	AsyncMqttClient client3;
 
 	@Before
-	public void before() {
+	public void before() throws Exception {
 		MockitoAnnotations.initMocks(this);
 		broker = new MockBroker(handler, 15, 0, true, true, 50);
 		broker.init();
@@ -74,6 +74,7 @@ public class ProxyIT {
 		Map<String, String> args = new HashMap<String, String>();
 		args.put("-b", broker.getURI());
 		args.put("-p", "0");
+		args.put("-m", "10");
 		AppContext arguments = new AppContext(Collections.<String> emptyList(), args, null);
 		proxy.start(arguments);
 	}
@@ -394,6 +395,42 @@ public class ProxyIT {
 			assertEquals(pubMessageAtBroker.getMessageId(), pubAckAtBroker.getMessageId());
 
 			verify(listener).published(same(client), same(sentMsg));
+		}
+	}
+
+	@Test
+	public void testProxyHasToThrottlePublishers() throws Exception {
+
+		client1 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client1.connect("client1", false);
+		verify(listener, timeout(5000)).connected(client1, ConnectReturnCode.ACCEPTED);
+
+		client2 = new AsyncMqttClient(proxy.getProxyURI(), listener, 1);
+		client2.connect("client1", false);
+		verify(listener, timeout(5000)).connected(client2, ConnectReturnCode.ACCEPTED);
+
+		int messageCount = 15;
+
+		when(handler.publish(any(Client.class), any(PubMessage.class))).thenReturn(true);
+
+		for (int i = 0; i < messageCount; i++) {
+
+			PublishMessage sentMsg = new PublishMessage("topic1", QoS.AT_LEAST_ONCE, new byte[] { 1, 2, 3 });
+			MqttClient client = i % 2 == 0 ? client1 : client2;
+			client.publish(sentMsg);
+		}
+
+		ArgumentCaptor<Client> clientCaptor = ArgumentCaptor.forClass(Client.class);
+		verify(handler, timeout(5000).times(10)).publish(clientCaptor.capture(), (PubMessage) mqttMsgCaptor.capture());
+
+		Client client = clientCaptor.getValue();
+
+		for (int i = 0; i < 5; i++) {
+			reset(handler);
+			when(handler.publish(any(Client.class), any(PubMessage.class))).thenReturn(true);
+			PubMessage msg = (PubMessage) mqttMsgCaptor.getAllValues().get(i + 3);
+			client.send(new PubAckMessage(msg.getMessageId()));
+			verify(handler, timeout(5000)).publish(clientCaptor.capture(), (PubMessage) mqttMsgCaptor.capture());
 		}
 	}
 }

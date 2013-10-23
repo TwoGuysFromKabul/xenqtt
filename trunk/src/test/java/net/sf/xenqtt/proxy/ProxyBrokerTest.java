@@ -206,11 +206,11 @@ public class ProxyBrokerTest {
 	private class TestBroker extends ProxyBroker {
 
 		public TestBroker() {
-			super(brokerUri, 0);
+			super(brokerUri, 0, 0xffff);
 		}
 
 		@Override
-		ProxySession newProxySession(String brokerUri, ConnectMessage message) {
+		ProxySession newProxySession(String brokerUri, ConnectMessage message, int maxInFlightBrokerMessages) {
 			return sessions.poll();
 		}
 	}

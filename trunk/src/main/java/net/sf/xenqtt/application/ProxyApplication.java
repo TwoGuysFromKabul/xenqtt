@@ -34,8 +34,12 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 
 		String brokerUri = arguments.getArgAsString("b");
 		int port = arguments.getArgAsInt("p", 1883);
+		int maxInFlightBrokerMessages = arguments.getArgAsInt("m", 0xffff);
+		if (maxInFlightBrokerMessages < 1 || maxInFlightBrokerMessages > 0xffff) {
+			throw new IllegalArgumentException("Max in flight broker messages must be > 0 and <= 65535");
+		}
 
-		broker = new ProxyBroker(brokerUri, port);
+		broker = new ProxyBroker(brokerUri, port, maxInFlightBrokerMessages);
 		broker.init();
 	}
 
@@ -62,7 +66,7 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getOptsText() {
-		return "-b brokerUri [-p port]";
+		return "-b brokerUri [-p port] [-m maxInFlight]";
 	}
 
 	/**
@@ -72,6 +76,9 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	public String getOptsUsageText() {
 		return "\n\tb brokerUri : URI of the broker to connect to. For example: tcp://q.m2m.io:1883. Required." //
 				+ "\n\tp port : Port to listen on. Defaults to 1883." //
+				+ "\n\tm maxInFlight : Maximum number of in-flight messages to the broker per cluster. This" //
+				+ "\n\t                should not be changed unless you really understand what you are doing." //
+				+ "\n\t                Defaults to 65535." //
 		;
 	}
 

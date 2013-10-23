@@ -54,6 +54,8 @@ class ProxySession implements MessageHandler {
 		PENDING, CONNECTED, DISCONNECTED
 	}
 
+	private final int maxInFlightBrokerMessages;
+
 	private final Map<Integer, MessageSource> messageSourceByBrokerMessageId = new HashMap<Integer, MessageSource>();
 	private final Map<MqttChannel, ConnectMessage> connectMessageByChannelPendingAttach = new ConcurrentHashMap<MqttChannel, ConnectMessage>();
 	private final Set<MqttChannel> channelsPendingBroker = new HashSet<MqttChannel>();
@@ -71,6 +73,7 @@ class ProxySession implements MessageHandler {
 
 	private int nextIdToBroker = 1;
 	private int nextBrokerChannelIndex;
+	private long enablePauseMessageTime;
 
 	private volatile boolean sessionClosed;
 
@@ -81,20 +84,23 @@ class ProxySession implements MessageHandler {
 	 *            The URI of the broker the proxy should connect to
 	 * @param connectMessage
 	 *            The {@link ConnectMessage connect message} the proxy will use for the broker
+	 * @param maxInFlightBrokerMessages
+	 *            Maximum number of messages that may be in-flight to the broker at a time
 	 */
-	public ProxySession(String brokerUri, ConnectMessage connectMessage) {
+	public ProxySession(String brokerUri, ConnectMessage connectMessage, int maxInFlightBrokerMessages) {
 
-		this(brokerUri, connectMessage, new ChannelManagerImpl(0));
+		this(brokerUri, connectMessage, new ChannelManagerImpl(0), maxInFlightBrokerMessages);
 	}
 
 	/**
 	 * For unit testing only
 	 */
-	ProxySession(String brokerUri, ConnectMessage connectMessage, ChannelManager channelManager) {
+	ProxySession(String brokerUri, ConnectMessage connectMessage, ChannelManager channelManager, int maxInFlightBrokerMessages) {
 
 		this.brokerUri = brokerUri;
 		this.originalConnectMessage = connectMessage;
 		this.channelManager = channelManager;
+		this.maxInFlightBrokerMessages = maxInFlightBrokerMessages;
 		this.clientId = originalConnectMessage.getClientId();
 	}
 
@@ -301,6 +307,9 @@ class ProxySession implements MessageHandler {
 				MessageSource source = iter.next();
 				if (source.sourceChannel == channel) {
 					iter.remove();
+					if (messageSourceByBrokerMessageId.size() == maxInFlightBrokerMessages - 1) {
+						resumeRead();
+					}
 				}
 			}
 
@@ -413,6 +422,9 @@ class ProxySession implements MessageHandler {
 		} else {
 			Log.info("New client connection accepted into cluster; clientId: %s, address: %s", clientId, channel.getRemoteAddress());
 			channel.send(new ConnAckMessage(brokerConnectReturnCode));
+			if (messageSourceByBrokerMessageId.size() == maxInFlightBrokerMessages) {
+				channel.pauseRead();
+			}
 			channelsToClients.add(channel);
 		}
 	}
@@ -433,6 +445,9 @@ class ProxySession implements MessageHandler {
 			int brokerMessageId = nextIdToBroker();
 			message.setMessageId(brokerMessageId);
 			messageSourceByBrokerMessageId.put(brokerMessageId, new MessageSource(clientMessageId, channelToClient));
+			if (messageSourceByBrokerMessageId.size() == maxInFlightBrokerMessages) {
+				pauseRead();
+			}
 		}
 
 		channelToBroker.send(message);
@@ -447,6 +462,9 @@ class ProxySession implements MessageHandler {
 			if (messageSource != null) {
 				message.setMessageId(messageSource.sourceMessageId);
 				messageSource.sourceChannel.send(message);
+				if (messageSourceByBrokerMessageId.size() == maxInFlightBrokerMessages - 1) {
+					resumeRead();
+				}
 			}
 
 		} else {
@@ -454,6 +472,28 @@ class ProxySession implements MessageHandler {
 			if (channelToClient != null) {
 				channelToClient.send(message);
 			}
+		}
+	}
+
+	private void pauseRead() {
+
+		long now = System.currentTimeMillis();
+		if (now > enablePauseMessageTime) {
+			enablePauseMessageTime = now + 60000;
+			Log.warn(
+					"There are too many in-flight (unacknowledged) messages to the broker in cluster with client ID %s. No more message IDs are available. This means the broker is unable to keep up with the rate your clients are publishing messages. The proxy is pausing accepting messages from clients in the cluster until the broker acknowledges an existing in-flight message. This will not cause data loss but will make message publishing slow down. This log message will be disabled for 60 seconds.",
+					clientId);
+		}
+
+		for (MqttChannel channel : channelsToClients) {
+			channel.pauseRead();
+		}
+	}
+
+	private void resumeRead() {
+
+		for (MqttChannel channel : channelsToClients) {
+			channel.resumeRead();
 		}
 	}
 
@@ -480,13 +520,19 @@ class ProxySession implements MessageHandler {
 
 	private int nextIdToBroker() {
 
-		// TODO [jim] - need to deal with what happens when we have an in-flight message that is already using a message ID that we come around to again. Is
-		// this even realistic?
-		if (nextIdToBroker > 0xffff) {
-			nextIdToBroker = 1;
+		for (int i = 0; i < maxInFlightBrokerMessages; i++) {
+			if (nextIdToBroker > maxInFlightBrokerMessages) {
+				nextIdToBroker = 1;
+			}
+			int id = nextIdToBroker++;
+			if (!messageSourceByBrokerMessageId.containsKey(id)) {
+				return id;
+			}
 		}
 
-		return nextIdToBroker++;
+		Log.error("Unable to generate message ID to broker. THIS IS A BUG!!");
+
+		return 0;
 	}
 
 	private boolean stringEquqls(String string1, String string2) {
