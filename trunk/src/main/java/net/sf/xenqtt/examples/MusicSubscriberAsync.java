@@ -63,7 +63,6 @@ public class MusicSubscriberAsync {
 			public void connected(MqttClient client, ConnectReturnCode returnCode) {
 				if (returnCode != ConnectReturnCode.ACCEPTED) {
 					log.error("Unable to connect to the broker. Reason: " + returnCode);
-					// TODO - Handle this per your application's requirements
 				}
 			}
 
@@ -76,7 +75,6 @@ public class MusicSubscriberAsync {
 			public void subscribed(MqttClient client, Subscription[] requestedSubscriptions, Subscription[] grantedSubscriptions, boolean requestsGranted) {
 				if (!requestsGranted) {
 					log.error("Unable to subscribe to the following subscriptions: " + Arrays.toString(requestedSubscriptions));
-					// TODO - Handle this per-application requirements
 				}
 
 				log.debug("Granted subscriptions: " + Arrays.toString(grantedSubscriptions));
@@ -85,7 +83,6 @@ public class MusicSubscriberAsync {
 			@Override
 			public void unsubscribed(MqttClient client, String[] topics) {
 				log.debug("Unsubscribed from the following topics: " + Arrays.toString(topics));
-				// TODO - Implement application-specific logic here, if any
 			}
 
 		};
