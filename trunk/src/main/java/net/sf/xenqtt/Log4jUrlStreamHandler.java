@@ -44,7 +44,6 @@ final class Log4jUrlStreamHandler extends URLStreamHandler {
 
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
-	// FIXME [jim] - update logging framework considering we now have log4j available. do we still need jul?
 	private final byte[] bytes;
 
 	public Log4jUrlStreamHandler(LoggingLevels loggingLevels, String appName, boolean consoleLogger) {
