@@ -552,7 +552,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		 */
 		@Override
 		public void pubRec(final MqttChannel channel, final PubRecMessage message) throws Exception {
-			// TODO qos2 not supported
+			// qos2 not supported
 		}
 
 		/**
@@ -560,7 +560,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		 */
 		@Override
 		public void pubRel(final MqttChannel channel, final PubRelMessage message) throws Exception {
-			// TODO qos2 not supported
+			// qos2 not supported
 		}
 
 		/**
@@ -568,7 +568,7 @@ abstract class AbstractMqttClient implements MqttClient {
 		 */
 		@Override
 		public void pubComp(final MqttChannel channel, final PubCompMessage message) throws Exception {
-			// TODO qos2 not supported
+			// qos2 not supported
 		}
 
 		/**
