@@ -82,7 +82,6 @@ public final class TestClientApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getDescription() {
-		// TODO [jeremy] - write a better description
 		return getSummary();
 	}
 }
