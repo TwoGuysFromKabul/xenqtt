@@ -78,6 +78,9 @@ abstract class AbstractMqttChannel implements MqttChannel {
 
 	private final MutableMessageStats stats;
 
+	private String remoteAddress;
+	private String localAddress;
+
 	/**
 	 * Starts an asynchronous connection to the specified host and port. When a {@link SelectionKey} for the specified selector has
 	 * {@link SelectionKey#OP_CONNECT} as a ready op then {@link #finishConnect()} should be called.
@@ -416,13 +419,16 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	@Override
 	public final String getRemoteAddress() {
 
-		Socket socket = channel.socket();
-		SocketAddress address = socket.isBound() ? socket.getRemoteSocketAddress() : null;
-		if (address == null) {
-			return "N/A";
+		if (remoteAddress == null) {
+			Socket socket = channel.socket();
+			SocketAddress address = socket.isBound() ? socket.getRemoteSocketAddress() : null;
+			if (address == null) {
+				return "N/A";
+			}
+			remoteAddress = address.toString();
 		}
 
-		return address.toString();
+		return remoteAddress;
 	}
 
 	/**
@@ -430,17 +436,21 @@ abstract class AbstractMqttChannel implements MqttChannel {
 	 */
 	@Override
 	public String getLocalAddress() {
-		Socket socket = channel.socket();
-		if (!channel.isOpen()) {
-			return "N/A";
+
+		if (localAddress == null) {
+			Socket socket = channel.socket();
+			if (!channel.isOpen()) {
+				return "N/A";
+			}
+
+			SocketAddress address = socket.getLocalSocketAddress();
+			if (address == null) {
+				return "N/A";
+			}
+			localAddress = address.toString();
 		}
 
-		SocketAddress address = socket.getLocalSocketAddress();
-		if (address == null) {
-			return "N/A";
-		}
-
-		return address.toString();
+		return localAddress;
 	}
 
 	/**
