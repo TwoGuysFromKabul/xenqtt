@@ -270,7 +270,7 @@ public final class ChannelManagerImpl implements ChannelManager {
 	 */
 	@Override
 	public MessageStats getStats(boolean reset) {
-		return addCommand(new GetStatsCommand(stats, reset)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
+		return addCommand(new GetStatsCommand(reset)).await(blockingTimeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
 	private void closeAll() {
@@ -662,24 +662,22 @@ public final class ChannelManagerImpl implements ChannelManager {
 
 	private final class GetStatsCommand extends Command<MessageStats> {
 
-		private final MessageStatsImpl stats;
 		private final boolean reset;
 
-		public GetStatsCommand(MessageStatsImpl stats, boolean reset) {
+		public GetStatsCommand(boolean reset) {
 			super(true);
-			this.stats = stats;
 			this.reset = reset;
 		}
 
 		@Override
 		public void doExecute(long now) {
 			try {
-				MessageStats stats = this.stats.clone();
+				MessageStats snapshot = stats.clone();
 				if (reset) {
-					this.stats.reset();
+					stats.reset();
 				}
 
-				setResult(stats);
+				setResult(snapshot);
 			} catch (Exception ex) {
 				Log.error(ex, "Unable to get a snapshot of the current stats.");
 			}
