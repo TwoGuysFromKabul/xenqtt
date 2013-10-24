@@ -16,30 +16,9 @@
 package net.sf.xenqtt;
 
 /**
- * <p>
- * Provides disparate logging methods for use within xenqtt. The {@code Log} class is able to detect other logging implementations and, should they be present
- * and available, use those by default. Should other logging implementations not be available the fallback logging mechanism will be used.
- * </p>
- * 
- * <p>
- * At present the fallback logging mechanism writes all {@code trace}, {@code debug}, and {@code info} logging events to standard out and all {@code warn},
- * {@code error}, and {@code fatal} logging events to standard error.
- * </p>
+ * Implementations are delegated to by {@link Log}.
  */
-public final class Log {
-
-	private static LogDelegate DELEGATE;
-
-	static {
-		try {
-			DELEGATE = new Log4jLogDelegate();
-		} catch (NoClassDefFoundError ignore) {
-			DELEGATE = new NullLogDelegate();
-		}
-	}
-
-	private Log() {
-	}
+interface LogDelegate {
 
 	/**
 	 * Log a message at the TRACE log level, if possible.
@@ -49,9 +28,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void trace(String message, Object... parameters) {
-		DELEGATE.trace(String.format(message, parameters));
-	}
+	void trace(String message, Object... parameters);
 
 	/**
 	 * Log a message at the DEBUG log level, if possible.
@@ -61,9 +38,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void debug(String message, Object... parameters) {
-		DELEGATE.debug(String.format(message, parameters));
-	}
+	void debug(String message, Object... parameters);
 
 	/**
 	 * Log a message at the INFO log level, if possible.
@@ -73,9 +48,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void info(String message, Object... parameters) {
-		DELEGATE.info(String.format(message, parameters));
-	}
+	void info(String message, Object... parameters);
 
 	/**
 	 * Log a message at the WARN log level, if possible.
@@ -85,9 +58,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void warn(String message, Object... parameters) {
-		DELEGATE.warn(String.format(message, parameters));
-	}
+	void warn(String message, Object... parameters);
 
 	/**
 	 * Log a message at the WARN log level, if possible.
@@ -99,9 +70,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void warn(Throwable t, String message, Object... parameters) {
-		DELEGATE.warn(String.format(message, parameters), t);
-	}
+	void warn(Throwable t, String message, Object... parameters);
 
 	/**
 	 * Log a message at the ERROR log level, if possible.
@@ -111,9 +80,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void error(String message, Object... parameters) {
-		DELEGATE.error(String.format(message, parameters));
-	}
+	void error(String message, Object... parameters);
 
 	/**
 	 * Log a message at the ERROR log level, if possible.
@@ -125,9 +92,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void error(Throwable t, String message, Object... parameters) {
-		DELEGATE.error(String.format(message, parameters), t);
-	}
+	void error(Throwable t, String message, Object... parameters);
 
 	/**
 	 * Log a message at the FATAL log level.
@@ -137,9 +102,7 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void fatal(String message, Object... parameters) {
-		DELEGATE.fatal(String.format(message, parameters));
-	}
+	void fatal(String message, Object... parameters);
 
 	/**
 	 * Log a message at the FATAL log level.
@@ -151,8 +114,5 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void fatal(Throwable t, String message, Object... parameters) {
-		DELEGATE.fatal(String.format(message, parameters), t);
-	}
-
+	void fatal(Throwable t, String message, Object... parameters);
 }
