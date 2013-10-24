@@ -15,30 +15,30 @@
  */
 package net.sf.xenqtt;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 /**
- * <p>
- * Provides disparate logging methods for use within xenqtt. The {@code Log} class is able to detect other logging implementations and, should they be present
- * and available, use those by default. Should other logging implementations not be available the fallback logging mechanism will be used.
- * </p>
- * 
- * <p>
- * At present the fallback logging mechanism writes all {@code trace}, {@code debug}, and {@code info} logging events to standard out and all {@code warn},
- * {@code error}, and {@code fatal} logging events to standard error.
- * </p>
+ * Log4J based implementation of {@link LogDelegate}
  */
-public final class Log {
+final class Log4jLogDelegate implements LogDelegate {
 
-	private static LogDelegate DELEGATE;
+	private final Logger log = Logger.getLogger("xenqtt");
+	private final boolean traceEnabled;
+	private final boolean debugEnabled;
+	private final boolean infoEnabled;
+	private final boolean warnEnabled;
+	private final boolean errorEnabled;
+	private final boolean fatalEnabled;
 
-	static {
-		try {
-			DELEGATE = new Log4jLogDelegate();
-		} catch (NoClassDefFoundError ignore) {
-			DELEGATE = new NullLogDelegate();
-		}
-	}
-
-	private Log() {
+	Log4jLogDelegate() {
+		Level effectiveLevel = log.getEffectiveLevel();
+		traceEnabled = Level.TRACE.isGreaterOrEqual(effectiveLevel);
+		debugEnabled = Level.DEBUG.isGreaterOrEqual(effectiveLevel);
+		infoEnabled = Level.INFO.isGreaterOrEqual(effectiveLevel);
+		warnEnabled = Level.WARN.isGreaterOrEqual(effectiveLevel);
+		errorEnabled = Level.ERROR.isGreaterOrEqual(effectiveLevel);
+		fatalEnabled = Level.FATAL.isGreaterOrEqual(effectiveLevel);
 	}
 
 	/**
@@ -49,8 +49,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void trace(String message, Object... parameters) {
-		DELEGATE.trace(String.format(message, parameters));
+	@Override
+	public void trace(String message, Object... parameters) {
+		if (traceEnabled) {
+			log.trace(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -61,8 +64,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void debug(String message, Object... parameters) {
-		DELEGATE.debug(String.format(message, parameters));
+	@Override
+	public void debug(String message, Object... parameters) {
+		if (debugEnabled) {
+			log.debug(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -73,8 +79,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void info(String message, Object... parameters) {
-		DELEGATE.info(String.format(message, parameters));
+	@Override
+	public void info(String message, Object... parameters) {
+		if (infoEnabled) {
+			log.info(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -85,8 +94,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void warn(String message, Object... parameters) {
-		DELEGATE.warn(String.format(message, parameters));
+	@Override
+	public void warn(String message, Object... parameters) {
+		if (warnEnabled) {
+			log.warn(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -99,8 +111,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void warn(Throwable t, String message, Object... parameters) {
-		DELEGATE.warn(String.format(message, parameters), t);
+	@Override
+	public void warn(Throwable t, String message, Object... parameters) {
+		if (warnEnabled) {
+			log.warn(String.format(message, parameters), t);
+		}
 	}
 
 	/**
@@ -111,8 +126,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void error(String message, Object... parameters) {
-		DELEGATE.error(String.format(message, parameters));
+	@Override
+	public void error(String message, Object... parameters) {
+		if (errorEnabled) {
+			log.error(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -125,8 +143,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void error(Throwable t, String message, Object... parameters) {
-		DELEGATE.error(String.format(message, parameters), t);
+	@Override
+	public void error(Throwable t, String message, Object... parameters) {
+		if (errorEnabled) {
+			log.error(String.format(message, parameters), t);
+		}
 	}
 
 	/**
@@ -137,8 +158,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void fatal(String message, Object... parameters) {
-		DELEGATE.fatal(String.format(message, parameters));
+	@Override
+	public void fatal(String message, Object... parameters) {
+		if (fatalEnabled) {
+			log.fatal(String.format(message, parameters));
+		}
 	}
 
 	/**
@@ -151,8 +175,11 @@ public final class Log {
 	 * @param parameters
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
-	public static void fatal(Throwable t, String message, Object... parameters) {
-		DELEGATE.fatal(String.format(message, parameters), t);
+	@Override
+	public void fatal(Throwable t, String message, Object... parameters) {
+		if (fatalEnabled) {
+			log.fatal(String.format(message, parameters), t);
+		}
 	}
 
 }
