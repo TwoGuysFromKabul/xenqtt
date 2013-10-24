@@ -63,4 +63,16 @@ public final class MqttInvocationException extends MqttException {
 			}
 		}
 	}
+
+	/**
+	 * @see java.lang.Throwable#getMessage()
+	 */
+	@Override
+	public String getMessage() {
+		if (rootCause == null) {
+			return String.format("%s; ROOT CAUSE: Unknown", super.getMessage());
+		} else {
+			return String.format("%s; ROOT CAUSE: %s", super.getMessage(), rootCause.getMessage());
+		}
+	}
 }
