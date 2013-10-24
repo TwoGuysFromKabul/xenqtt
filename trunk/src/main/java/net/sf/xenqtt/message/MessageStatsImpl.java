@@ -194,6 +194,16 @@ final class MessageStatsImpl implements MutableMessageStats {
 		}
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return String.format("{messagesQueuedToSend: %d, messagesInFlight: %d, messagesSent: %s, messagesReceived: %s, ackLatency: %s}", messagesQueuedToSend,
+				messagesInFlight, messagesSent, messagesReceived, ackLatency);
+	}
+
 	private long getQueuedToSend() {
 		if (registeredChannels == null) {
 			return 0;
@@ -248,7 +258,7 @@ final class MessageStatsImpl implements MutableMessageStats {
 		registeredChannels = null;
 	}
 
-	private final class MessageStat implements Cloneable {
+	private static final class MessageStat implements Cloneable {
 
 		private long value;
 		private long resendOrDup;
@@ -269,6 +279,13 @@ final class MessageStatsImpl implements MutableMessageStats {
 			return (MessageStat) super.clone();
 		}
 
+		/**
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return String.format("{value: %d, resendOrDup: %d}", value, resendOrDup);
+		}
 	}
 
 }
