@@ -50,7 +50,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void trace(String message, Object... parameters) {
-		DELEGATE.trace(String.format(message, parameters));
+		DELEGATE.trace(message, parameters);
 	}
 
 	/**
@@ -62,7 +62,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void debug(String message, Object... parameters) {
-		DELEGATE.debug(String.format(message, parameters));
+		DELEGATE.debug(message, parameters);
 	}
 
 	/**
@@ -74,7 +74,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void info(String message, Object... parameters) {
-		DELEGATE.info(String.format(message, parameters));
+		DELEGATE.info(message, parameters);
 	}
 
 	/**
@@ -86,7 +86,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(String message, Object... parameters) {
-		DELEGATE.warn(String.format(message, parameters));
+		DELEGATE.warn(message, parameters);
 	}
 
 	/**
@@ -100,7 +100,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void warn(Throwable t, String message, Object... parameters) {
-		DELEGATE.warn(String.format(message, parameters), t);
+		DELEGATE.warn(t, message, parameters);
 	}
 
 	/**
@@ -112,7 +112,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(String message, Object... parameters) {
-		DELEGATE.error(String.format(message, parameters));
+		DELEGATE.error(message, parameters);
 	}
 
 	/**
@@ -126,7 +126,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void error(Throwable t, String message, Object... parameters) {
-		DELEGATE.error(String.format(message, parameters), t);
+		DELEGATE.error(t, message, parameters);
 	}
 
 	/**
@@ -138,7 +138,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(String message, Object... parameters) {
-		DELEGATE.fatal(String.format(message, parameters));
+		DELEGATE.fatal(message, parameters);
 	}
 
 	/**
@@ -152,7 +152,7 @@ public final class Log {
 	 *            The parameters to use in replacing format specifiers in the specified {@code message}. This can be omitted if no such specifiers exist
 	 */
 	public static void fatal(Throwable t, String message, Object... parameters) {
-		DELEGATE.fatal(String.format(message, parameters), t);
+		DELEGATE.fatal(t, message, parameters);
 	}
 
 }
