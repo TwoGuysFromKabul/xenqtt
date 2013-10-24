@@ -97,4 +97,12 @@ final class LatencyStatImpl implements LatencyStat, Cloneable {
 		return (LatencyStatImpl) super.clone();
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return String.format("{count: %d, min: %d, max: %d, avg: %.3f}", count, min, max, getAverage());
+	}
 }

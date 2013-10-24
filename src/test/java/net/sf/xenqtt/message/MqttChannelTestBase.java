@@ -112,7 +112,7 @@ public abstract class MqttChannelTestBase<C extends AbstractMqttChannel, B exten
 				SelectionKey key = iter.next();
 				MqttChannel channel = (MqttChannel) key.attachment();
 				if (key.isValid() && key.isReadable()) {
-					channel.read(now);
+					channel.read(now + 10);
 				}
 				if (key.isValid() && key.isWritable()) {
 					channel.write(now);

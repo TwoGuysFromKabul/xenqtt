@@ -1186,11 +1186,9 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 			readWrite(1, 0);
 			clientHandler.assertMessages(ack);
 			if (ack instanceof PubAckMessage) {
-				assertTrue(stats.getMinAckLatencyMillis() > 0);
-				assertTrue(stats.getMaxAckLatencyMillis() > 0);
-				assertTrue(stats.getAverageAckLatencyMillis() > 0.0);
-				assertTrue(stats.getMinAckLatencyMillis() <= stats.getAverageAckLatencyMillis());
-				assertTrue(stats.getAverageAckLatencyMillis() <= stats.getMaxAckLatencyMillis());
+				assertTrue(stats.getMinAckLatencyMillis() == 10);
+				assertTrue(stats.getMaxAckLatencyMillis() == 10);
+				assertTrue(stats.getAverageAckLatencyMillis() == 10.0);
 			}
 		}
 
@@ -1217,11 +1215,9 @@ public class AbstractMqttChannelTest extends MqttChannelTestBase<MqttChannelTest
 			clientHandler.assertMessages(ack);
 			verify(blockingCommand).setResult(ack);
 			if (ack instanceof PubAckMessage) {
-				assertTrue(stats.getMinAckLatencyMillis() > 0);
-				assertTrue(stats.getMaxAckLatencyMillis() > 0);
-				assertTrue(stats.getAverageAckLatencyMillis() > 0.0);
-				assertTrue(stats.getMinAckLatencyMillis() <= stats.getAverageAckLatencyMillis());
-				assertTrue(stats.getAverageAckLatencyMillis() <= stats.getMaxAckLatencyMillis());
+				assertTrue(stats.getMinAckLatencyMillis() == 10);
+				assertTrue(stats.getMaxAckLatencyMillis() == 10);
+				assertTrue(stats.getAverageAckLatencyMillis() == 10.0);
 			}
 		}
 

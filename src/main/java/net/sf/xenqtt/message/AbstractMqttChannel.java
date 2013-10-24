@@ -925,7 +925,7 @@ abstract class AbstractMqttChannel implements MqttChannel {
 		IdentifiableMqttMessage ackedMessage = inFlightMessages.remove(ackMessage.getMessageId());
 		if (ackedMessage != null) {
 			if (ackedMessage instanceof PubMessage) {
-				stats.messageAcked(now - ackMessage.originalSendTime);
+				stats.messageAcked(now - ackedMessage.originalSendTime);
 			}
 			commandComplete(ackedMessage.blockingCommand, ackMessage);
 		}
