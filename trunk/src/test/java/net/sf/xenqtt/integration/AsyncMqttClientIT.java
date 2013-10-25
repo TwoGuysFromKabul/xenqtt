@@ -35,8 +35,13 @@ import net.sf.xenqtt.client.PublishMessage;
 import net.sf.xenqtt.client.Subscription;
 import net.sf.xenqtt.message.ConnectMessage;
 import net.sf.xenqtt.message.ConnectReturnCode;
+import net.sf.xenqtt.message.PubAckMessage;
 import net.sf.xenqtt.message.PubMessage;
 import net.sf.xenqtt.message.QoS;
+import net.sf.xenqtt.message.SubAckMessage;
+import net.sf.xenqtt.message.SubscribeMessage;
+import net.sf.xenqtt.message.UnsubAckMessage;
+import net.sf.xenqtt.message.UnsubscribeMessage;
 import net.sf.xenqtt.mockbroker.Client;
 import net.sf.xenqtt.mockbroker.MockBroker;
 import net.sf.xenqtt.mockbroker.MockBrokerHandler;
@@ -441,5 +446,98 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
 		config.setMaxInFlightMessages(0);
 		testPublish_Qos1_NoRetain();
+	}
+
+	@Test
+	public final void testSubscribe_MultipleAcks() throws Exception {
+
+		doAnswer(new Answer<Boolean>() {
+
+			@Override
+			public Boolean answer(InvocationOnMock invocation) throws Throwable {
+
+				Client client = (Client) invocation.getArguments()[0];
+				SubscribeMessage msg = (SubscribeMessage) invocation.getArguments()[1];
+
+				client.send(new SubAckMessage(msg.getMessageId(), msg.getRequestedQoSes()));
+				client.send(new SubAckMessage(msg.getMessageId(), msg.getRequestedQoSes()));
+
+				return true;
+			}
+		}).when(mockHandler).subscribe(any(Client.class), any(SubscribeMessage.class));
+
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		// connect client
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient11", true);
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+
+		Subscription[] requestedSubscriptions = new Subscription[] { new Subscription("my/topic1", QoS.AT_LEAST_ONCE),
+				new Subscription("my/topic2", QoS.AT_MOST_ONCE) };
+		client.subscribe(requestedSubscriptions);
+		verify(listener, timeout(5000)).subscribed(any(MqttClient.class), any(Subscription[].class), any(Subscription[].class), anyBoolean());
+	}
+
+	@Test
+	public final void testUnubscribe_MultipleAcks() throws Exception {
+		doAnswer(new Answer<Boolean>() {
+
+			@Override
+			public Boolean answer(InvocationOnMock invocation) throws Throwable {
+
+				Client client = (Client) invocation.getArguments()[0];
+				UnsubscribeMessage msg = (UnsubscribeMessage) invocation.getArguments()[1];
+
+				client.send(new UnsubAckMessage(msg.getMessageId()));
+				client.send(new UnsubAckMessage(msg.getMessageId()));
+
+				return true;
+			}
+		}).when(mockHandler).unsubscribe(any(Client.class), any(UnsubscribeMessage.class));
+
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		// connect client
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient11", true);
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+
+		client.unsubscribe(new String[] { "my/topic1" });
+		verify(listener, timeout(5000)).unsubscribed(any(MqttClient.class), any(String[].class));
+	}
+
+	@Test
+	public final void testPublish_MultipleAcks() throws Exception {
+		doAnswer(new Answer<Boolean>() {
+
+			@Override
+			public Boolean answer(InvocationOnMock invocation) throws Throwable {
+
+				Client client = (Client) invocation.getArguments()[0];
+				PubMessage msg = (PubMessage) invocation.getArguments()[1];
+
+				client.send(new PubAckMessage(msg.getMessageId()));
+				client.send(new PubAckMessage(msg.getMessageId()));
+
+				return true;
+			}
+		}).when(mockHandler).publish(any(Client.class), any(PubMessage.class));
+
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		// connect client
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient11", true);
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+
+		client.publish(new PublishMessage("foo", QoS.AT_LEAST_ONCE, "abc"));
+		verify(listener, timeout(5000)).published(any(MqttClient.class), any(PublishMessage.class));
 	}
 }
