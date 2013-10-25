@@ -2,6 +2,9 @@ The xenqtt.jar in each release folder is the same as the xenqtt-version.jar. It 
 when running XenQTT applications. The versioned JAR is better suited when using it as a dependency in another 
 application.
 
+0.9.4
+	Fixed bug that can cause an AsyncClientListener callback to be called with a null message when multiple acks are received for a message.
+
 0.9.3
 	Fixed bug in latency stats collection
 	Fixed issue where log4j was required when using the APIs. Now logging is disabled in log4j is not found.

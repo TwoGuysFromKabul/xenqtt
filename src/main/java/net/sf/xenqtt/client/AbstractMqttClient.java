@@ -535,7 +535,9 @@ abstract class AbstractMqttClient implements MqttClient {
 					public void run() {
 						try {
 							PublishMessage publishMessage = (PublishMessage) dataByMessageId.remove(message.getMessageId());
-							asyncClientListener.published(client, publishMessage);
+							if (publishMessage != null) {
+								asyncClientListener.published(client, publishMessage);
+							}
 						} catch (Exception e) {
 							Log.error(e, "Failed to process message for %s: %s", channel, message);
 						}
@@ -590,11 +592,13 @@ abstract class AbstractMqttClient implements MqttClient {
 					public void run() {
 						try {
 							Subscription[] requestedSubscriptions = (Subscription[]) dataByMessageId.remove(message.getMessageId());
-							try {
-								Subscription[] grantedSubscriptions = grantedSubscriptions(requestedSubscriptions, message);
-								asyncClientListener.subscribed(client, requestedSubscriptions, grantedSubscriptions, true);
-							} catch (MqttQosNotGrantedException e) {
-								asyncClientListener.subscribed(client, requestedSubscriptions, e.getGrantedSubscriptions(), false);
+							if (requestedSubscriptions != null) {
+								try {
+									Subscription[] grantedSubscriptions = grantedSubscriptions(requestedSubscriptions, message);
+									asyncClientListener.subscribed(client, requestedSubscriptions, grantedSubscriptions, true);
+								} catch (MqttQosNotGrantedException e) {
+									asyncClientListener.subscribed(client, requestedSubscriptions, e.getGrantedSubscriptions(), false);
+								}
 							}
 						} catch (Exception e) {
 							Log.error(e, "Failed to process message for %s: %s", channel, message);
@@ -627,7 +631,9 @@ abstract class AbstractMqttClient implements MqttClient {
 					public void run() {
 						try {
 							String[] topics = (String[]) dataByMessageId.remove(message.getMessageId());
-							asyncClientListener.unsubscribed(client, topics);
+							if (topics != null) {
+								asyncClientListener.unsubscribed(client, topics);
+							}
 						} catch (Exception e) {
 							Log.error(e, "Failed to process message for %s: %s", channel, message);
 						}
