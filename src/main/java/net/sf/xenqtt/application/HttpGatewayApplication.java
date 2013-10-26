@@ -16,7 +16,7 @@
 package net.sf.xenqtt.application;
 
 import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.httpgateway.GatewayHandler;
+import net.sf.xenqtt.httpgateway.HttpGatewayHandler;
 
 import org.eclipse.jetty.server.Server;
 
@@ -35,7 +35,10 @@ public class HttpGatewayApplication extends AbstractXenqttApplication {
 
 		int port = appContext.getArgAsInt("p", 1880);
 		server = new Server(port);
-		server.setHandler(new GatewayHandler());
+
+		HttpGatewayHandler gatewayHandler = new HttpGatewayHandler();
+		server.setHandler(gatewayHandler);
+
 		server.start();
 	}
 
