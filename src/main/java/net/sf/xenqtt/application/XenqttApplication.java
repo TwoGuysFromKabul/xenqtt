@@ -30,13 +30,13 @@ public interface XenqttApplication {
 	 * @param appContext
 	 *            The {@link AppContext context} for the application.
 	 */
-	void start(AppContext appContext);
+	void start(AppContext appContext) throws Exception;
 
 	/**
 	 * Stop the application. This method is called once the application is halted normally (e.g. {@code CTRL-c}). The application should take all appropriate
 	 * shutdown actions at this point. This is called by the main thread that is used in launching Xenqtt
 	 */
-	void stop();
+	void stop() throws Exception;
 
 	/**
 	 * @return The application's name for use on the command line

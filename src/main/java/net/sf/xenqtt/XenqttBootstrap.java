@@ -34,11 +34,11 @@ public final class XenqttBootstrap {
 		Arguments arguments = ArgumentExtractor.extractArguments(null, args);
 
 		LoggingLevels loggingLevels = arguments != null ? arguments.determineLoggingLevels() : new LoggingLevels(LoggingLevels.DEFAULT_LOGGING_LEVELS);
-		String appName = arguments.applicationName;
-		boolean consoleLogger = arguments.isConsoleLoggingSpecified();
+		String appName = arguments != null ? arguments.applicationName : null;
+		boolean consoleLogger = arguments != null ? arguments.isConsoleLoggingSpecified() : true;
 
 		try {
-			ClassLoader classLoader = createClassLoader(loggingLevels, appName, consoleLogger);
+			ClassLoader classLoader = arguments != null ? createClassLoader(loggingLevels, appName, consoleLogger) : Xenqtt.class.getClassLoader();
 
 			Class<?> xenqttClass = classLoader.loadClass("net.sf.xenqtt.Xenqtt");
 			Method mainMethod = xenqttClass.getMethod("main", new Class<?>[] { String[].class });

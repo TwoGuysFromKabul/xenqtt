@@ -74,11 +74,11 @@ public final class ProxyApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getOptsUsageText() {
-		return "\n\tb brokerUri : URI of the broker to connect to. For example: tcp://q.m2m.io:1883. Required." //
-				+ "\n\tp port : Port to listen on. Defaults to 1883." //
-				+ "\n\tm maxInFlight : Maximum number of in-flight messages to the broker per cluster. This" //
-				+ "\n\t                should not be changed unless you really understand what you are doing." //
-				+ "\n\t                Defaults to 65535." //
+		return "\n\t-b brokerUri : URI of the broker to connect to. For example: tcp://q.m2m.io:1883. Required." //
+				+ "\n\t-p port : Port to listen on. Defaults to 1883." //
+				+ "\n\t-m maxInFlight : Maximum number of in-flight messages to the broker per cluster. This" //
+				+ "\n\t                 should not be changed unless you really understand what you are doing." //
+				+ "\n\t                 Defaults to 65535." //
 		;
 	}
 

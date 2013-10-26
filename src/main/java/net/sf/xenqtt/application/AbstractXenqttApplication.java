@@ -26,7 +26,7 @@ public abstract class AbstractXenqttApplication implements XenqttApplication {
 	 * @see net.sf.xenqtt.application.XenqttApplication#getName()
 	 */
 	@Override
-	public String getName() {
+	public final String getName() {
 		return getClass().getSimpleName().replaceAll("Application$", "").toLowerCase();
 	}
 }
