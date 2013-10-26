@@ -13,10 +13,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-package net.sf.xenqtt.application;
+package net.sf.xenqtt.httpgateway;
 
 import net.sf.xenqtt.AppContext;
-import net.sf.xenqtt.httpgateway.HttpGatewayHandler;
+import net.sf.xenqtt.application.AbstractXenqttApplication;
+import net.sf.xenqtt.application.XenqttApplication;
 
 import org.eclipse.jetty.server.Server;
 
