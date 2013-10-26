@@ -73,11 +73,11 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getOptsUsageText() {
-		return "\n\tt timeout : Seconds to wait for an ack to a message with QoS > 0. Defaults to 15." //
-				+ "\n\tp port : Port to listen on. Defaults to 1883." //
-				+ "\n\ta : Allow anonymous access. Allows clients to connect with no credentials." //
-				+ "\n\tm : Max in-flight messages to a client. Defaults to 50." //
-				+ "\n\tu user:pass... : Credentials (usernames and passwords) a client can use to connet." //
+		return "\n\t-t timeout : Seconds to wait for an ack to a message with QoS > 0. Defaults to 15." //
+				+ "\n\t-p port : Port to listen on. Defaults to 1883." //
+				+ "\n\t-a : Allow anonymous access. Allows clients to connect with no credentials." //
+				+ "\n\t-m : Max in-flight messages to a client. Defaults to 50." //
+				+ "\n\t-u user:pass... : Credentials (usernames and passwords) a client can use to connet." //
 		;
 	}
 

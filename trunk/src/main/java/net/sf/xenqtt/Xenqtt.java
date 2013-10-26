@@ -81,7 +81,11 @@ public final class Xenqtt {
 			@Override
 			public void run() {
 				if (application != null) {
-					application.stop();
+					try {
+						application.stop();
+					} catch (Exception e) {
+						Log.error(e, "Failed to stop %s", application.getName());
+					}
 				}
 
 				shutdownLatch.countDown();
@@ -98,6 +102,7 @@ public final class Xenqtt {
 			if (exceptionClass == IllegalArgumentException.class || exceptionClass == IllegalStateException.class) {
 				XenqttUtil.prettyPrintln("\nUSAGE: " + getAppSpecificUsageText(application), true);
 			}
+			System.exit(1);
 		}
 	}
 
@@ -198,7 +203,7 @@ public final class Xenqtt {
 		return classNames;
 	}
 
-	private static void runApplication(String appName, AppContext applicationArguments) {
+	private static void runApplication(String appName, AppContext appContext) throws Exception {
 
 		if (application == null) {
 			Log.info("The following application is not presently supported: %s", appName);
@@ -206,6 +211,6 @@ public final class Xenqtt {
 		}
 
 		Log.info("Starting the following application: %s", application.getClass().getSimpleName());
-		application.start(applicationArguments);
+		application.start(appContext);
 	}
 }
