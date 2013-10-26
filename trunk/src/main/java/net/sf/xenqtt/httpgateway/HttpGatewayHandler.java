@@ -31,7 +31,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-public class GatewayHandler extends AbstractHandler {
+public class HttpGatewayHandler extends AbstractHandler {
 
 	/**
 	 * The handler sets the response status, content-type, and marks the request as handled before it generates the body of the response using a writer. There
@@ -47,13 +47,13 @@ public class GatewayHandler extends AbstractHandler {
 	 * @param response
 	 *            the response, which may have been wrapped by a filter or servlet.
 	 * 
-	 * 
-	 * 
 	 * @see org.eclipse.jetty.server.Handler#handle(java.lang.String, org.eclipse.jetty.server.Request, javax.servlet.http.HttpServletRequest,
 	 *      javax.servlet.http.HttpServletResponse)
 	 */
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+
+		// FIXME [jim] - make sure http 1.1 persistent connections are being used on both server and client sides
 
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		HttpGet httpGet = new HttpGet("http://www.google.com" + target);
