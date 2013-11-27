@@ -2,6 +2,9 @@ The xenqtt.jar in each release folder is the same as the xenqtt-version.jar. It 
 when running XenQTT applications. The versioned JAR is better suited when using it as a dependency in another 
 application.
 
+0.9.6 - PENDING
+	Fixed minor issues with argument validation text formatting
+	
 0.9.5
 	Fixed minor issues with help display formatting
 	Fixed bug where null pointer exception was thrown if the jar was run from the command line with no arguments.
