@@ -219,7 +219,7 @@ public final class XenqttUtil {
 		}
 
 		if (value.longValue() >= max.longValue()) {
-			doThrow("The argument %s must not be greater than or equal to %d. Was: %d", name, value, max);
+			doThrow("The argument %s must be less than %d. Was: %d", name, max, value);
 		}
 
 		return value;
@@ -246,61 +246,61 @@ public final class XenqttUtil {
 		}
 
 		if (value.longValue() > max.longValue()) {
-			doThrow("The argument %s must not be greater than %d. Was: %d", name, value, max);
+			doThrow("The argument %s must less than or equal to %d. Was: %d", name, max, value);
 		}
 
 		return value;
 	}
 
 	/**
-	 * Validate that a number is greater than a defined maximum.
+	 * Validate that a number is greater than a defined minimum.
 	 * 
 	 * @param name
 	 *            The name of the object being validated. Included in the exception message if one is thrown
 	 * @param value
 	 *            The value of the number
-	 * @param max
-	 *            The maximum that the specified {@code value} must be over
+	 * @param min
+	 *            The minimum that the specified {@code value} must be over
 	 * 
 	 * @return The specified {@code value}
 	 * 
 	 * @throws IllegalArgumentException
 	 *             If {@code value} is {@code null} or is less than or equal to {@code max}
 	 */
-	public static <T extends Number> T validateGreaterThan(String name, T value, T max) {
+	public static <T extends Number> T validateGreaterThan(String name, T value, T min) {
 		if (value == null) {
 			doThrow("The argument %s must not be null.", name);
 		}
 
-		if (value.longValue() <= max.longValue()) {
-			doThrow("The argument %s must not be less than or equal to %d. Was: %d", name, value, max);
+		if (value.longValue() <= min.longValue()) {
+			doThrow("The argument %s must greater than %d. Was: %d", name, min, value);
 		}
 
 		return value;
 	}
 
 	/**
-	 * Validate that a number is greater than or equal to a defined maximum.
+	 * Validate that a number is greater than or equal to a defined minimum.
 	 * 
 	 * @param name
 	 *            The name of the object being validated. Included in the exception message if one is thrown
 	 * @param value
 	 *            The value of the number
-	 * @param max
-	 *            The maximum that the specified {@code value} must be over
+	 * @param min
+	 *            The minimum that the specified {@code value} must be over
 	 * 
 	 * @return The specified {@code value}
 	 * 
 	 * @throws IllegalArgumentException
 	 *             If {@code value} is {@code null} or is less than or equal to {@code max}
 	 */
-	public static <T extends Number> T validateGreaterThanOrEqualTo(String name, T value, T max) {
+	public static <T extends Number> T validateGreaterThanOrEqualTo(String name, T value, T min) {
 		if (value == null) {
 			doThrow("The argument %s must not be null.", name);
 		}
 
-		if (value.longValue() < max.longValue()) {
-			doThrow("The argument %s must not be less than %d. Was: %d", name, value, max);
+		if (value.longValue() < min.longValue()) {
+			doThrow("The argument %s must be greater than or equal to %d. Was: %d", name, min, value);
 		}
 
 		return value;
