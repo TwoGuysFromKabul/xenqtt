@@ -216,7 +216,7 @@ public class SyncMqttClientIT {
 	@Test
 	public void testConnect_Credentials_BadCredentials() throws Exception {
 
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(null, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		brokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -233,7 +233,7 @@ public class SyncMqttClientIT {
 	@Test
 	public void testConnect_Credentials_Accepted() throws Exception {
 
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(null, 15, 0, true, false, true, 50);
 		mockBroker.addCredentials("user1", "password1");
 		mockBroker.init();
 		brokerUri = "tcp://localhost:" + mockBroker.getPort();
@@ -388,7 +388,7 @@ public class SyncMqttClientIT {
 	@Test
 	public void testConnect_CredentialsAndWill_Accepted() throws Exception {
 
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(null, 15, 0, true, false, true, 50);
 		mockBroker.addCredentials("user1", "password1");
 		mockBroker.init();
 		brokerUri = "tcp://localhost:" + mockBroker.getPort();
@@ -710,7 +710,7 @@ public class SyncMqttClientIT {
 	@Test
 	public void testConnectMessageTimesOut() throws Exception {
 
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		mockBroker.addCredentials("user1", "password1");
 		brokerUri = "tcp://localhost:" + mockBroker.getPort();
@@ -757,7 +757,7 @@ public class SyncMqttClientIT {
 		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L);
 
 		// create the broker
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		brokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -808,7 +808,7 @@ public class SyncMqttClientIT {
 		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L);
 
 		// create the broker
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		brokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -853,7 +853,7 @@ public class SyncMqttClientIT {
 		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L, 1000L, 1000L, 0L);
 
 		// create the broker
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		brokerUri = "tcp://localhost:" + mockBroker.getPort();
 

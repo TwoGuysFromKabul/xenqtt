@@ -3,6 +3,7 @@ when running XenQTT applications. The versioned JAR is better suited when using 
 application.
 
 0.9.6 - PENDING
+	Ticket #2 fixed: added constructor arg and -i command line arg to mock broker to make the broker accept any credentials
 	Fixed minor issues with argument validation text formatting
 	
 0.9.5

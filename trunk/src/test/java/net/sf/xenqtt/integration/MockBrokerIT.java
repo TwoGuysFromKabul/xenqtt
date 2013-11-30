@@ -48,7 +48,7 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 
 		MockitoAnnotations.initMocks(this);
 
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -69,12 +69,24 @@ public class MockBrokerIT extends AbstractAsyncMqttClientIT {
 	}
 
 	@Test
-	public void testConnect_Credentials_Accepted() throws Exception {
+	public final void testConnect_Credentials_CredentialsIgnored() throws Exception {
 
-		if (mockBroker == null) {
-			mockBroker = new MockBroker(null, 15, 0, true, true, 50);
-			mockBroker.init();
-		}
+		mockBroker.shutdown(5000);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, true, 50);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient2", true, "user1", "password1");
+
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.ACCEPTED);
+
+		client.disconnect();
+		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+	}
+
+	@Test
+	public void testConnect_Credentials_Accepted() throws Exception {
 
 		mockBroker.addCredentials("user1", "password1");
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();

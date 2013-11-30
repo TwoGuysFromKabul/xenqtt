@@ -42,12 +42,13 @@ public final class MockBroker extends SimpleBroker {
 	 * <li>15 second message resend interval</li>
 	 * <li>Any available port. Use {@link #getPort()} to get the port.</li>
 	 * <li>allows anonymous access</li>
+	 * <li>does not ignore credentials</li>
 	 * <li>captures broker events</li>
 	 * <li>allows 50 in-flight messages</li>
 	 * </ul>
 	 */
 	public MockBroker() {
-		this(null, 15, 0, true, true, 50);
+		this(null, 15, 0, true, false, true, 50);
 	}
 
 	/**
@@ -57,12 +58,13 @@ public final class MockBroker extends SimpleBroker {
 	 * <li>15 second message resend interval</li>
 	 * <li>Any available port. Use {@link #getPort()} to get the port.</li>
 	 * <li>allows anonymous access</li>
+	 * <li>does not ignore credentials</li>
 	 * <li>captures broker events</li>
 	 * <li>allows 50 in-flight messages</li>
 	 * </ul>
 	 */
 	public MockBroker(MockBrokerHandler brokerHandler) {
-		this(brokerHandler, 15, 0, true, true, 50);
+		this(brokerHandler, 15, 0, true, false, true, 50);
 	}
 
 	/**
@@ -77,21 +79,23 @@ public final class MockBroker extends SimpleBroker {
 	 *            calling {@link #init()}.
 	 * @param allowAnonymousAccess
 	 *            If true then {@link ConnectMessage} with no username/password will be accepted. Otherwise only valid credentials will be accepted.
+	 * @param ignoreCredentials
+	 *            If true then {@link ConnectMessage} with any username/password will be accepted. Otherwise only valid credentials will be accepted.
 	 * @param captureBrokerEvents
 	 *            If {@code true} then capture all events within the broker; otherwise, do not capture any events
 	 * @param maxInFlightMessages
 	 *            Maximum number of concurrent publish messages the broker will have in-flight to the client. This is an approximation. The actual maximum
 	 *            number of in-flight messages may vary slightly.
 	 */
-	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean captureBrokerEvents,
-			int maxInFlightMessages) {
+	public MockBroker(MockBrokerHandler brokerHandler, long messageResendIntervalSeconds, int port, boolean allowAnonymousAccess, boolean ignoreCredentials,
+			boolean captureBrokerEvents, int maxInFlightMessages) {
 
 		super(messageResendIntervalSeconds, port);
 
 		XenqttUtil.validateGreaterThan("maxInFlightMessages", maxInFlightMessages, 0);
 
 		this.events = captureBrokerEvents ? new BrokerEventsImpl() : new NullBrokerEvents();
-		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess, maxInFlightMessages);
+		this.messageHandler = new BrokerMessageHandler(brokerHandler, events, credentials, allowAnonymousAccess, ignoreCredentials, maxInFlightMessages);
 	}
 
 	/**

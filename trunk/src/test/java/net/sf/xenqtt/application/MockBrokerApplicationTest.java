@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.MqttInvocationException;
-import net.sf.xenqtt.application.MockBrokerApplication;
 import net.sf.xenqtt.client.MqttClient;
 import net.sf.xenqtt.client.MqttClientConfig;
 import net.sf.xenqtt.client.MqttClientListener;
@@ -140,6 +139,43 @@ public class MockBrokerApplicationTest {
 		args.put("-p", "0");
 		args.put("-u", "user1:pass1");
 		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
+		application.start(arguments);
+
+		int port = getPort();
+		final List<String> messagePayloads = new ArrayList<String>();
+		final CountDownLatch latch = new CountDownLatch(1);
+		MqttClientListener listener = new MqttClientListener() {
+
+			@Override
+			public void publishReceived(MqttClient client, PublishMessage message) {
+				messagePayloads.add(message.getPayloadString());
+				message.ack();
+				latch.countDown();
+			}
+
+			@Override
+			public void disconnected(MqttClient client, Throwable cause, boolean reconnecting) {
+			}
+
+		};
+		SyncMqttClient client = new SyncMqttClient(String.format("tcp://localhost:%d", port), listener, 1, config);
+		assertSame(ConnectReturnCode.ACCEPTED, client.connect("clientId", true, "user1", "pass1"));
+
+		Subscription[] subscriptions = new Subscription[] { new Subscription("grand/foo/bar", QoS.AT_LEAST_ONCE) };
+		assertArrayEquals(subscriptions, client.subscribe(subscriptions));
+		client.publish(new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "onyx"));
+		assertTrue(latch.await(5, TimeUnit.SECONDS));
+		assertEquals(1, messagePayloads.size());
+		assertEquals("onyx", messagePayloads.get(0));
+	}
+
+	@Test
+	public void testStart_CredentialsIgnored() throws Exception {
+		List<String> flags = new ArrayList<String>();
+		flags.add("-i");
+		Map<String, String> args = new HashMap<String, String>();
+		args.put("-p", "0");
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 
 		int port = getPort();

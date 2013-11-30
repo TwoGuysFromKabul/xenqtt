@@ -53,6 +53,7 @@ final class BrokerMessageHandler implements MessageHandler {
 	private final BrokerEvents events;
 	private final ConcurrentHashMap<String, String> credentials;
 	private final boolean allowAnonymousAccess;
+	private final boolean ignoreCredentials;
 	private final int maxInFlightMessages;
 
 	/**
@@ -66,13 +67,16 @@ final class BrokerMessageHandler implements MessageHandler {
 	 *            The credentials to use in this broker message handler
 	 * @param allowAnonymousAccess
 	 *            Whether or not anonymous access is allowed ({@code true}) or not ({@code false})
+	 * @param ignoreCredentials
+	 *            If true then {@link ConnectMessage} with any username/password will be accepted. Otherwise only valid credentials will be accepted.
 	 * @param maxInFlightMessages
 	 *            The maximum number of in-flight messages that are allowed
 	 */
 	BrokerMessageHandler(MockBrokerHandler brokerHandler, BrokerEvents events, ConcurrentHashMap<String, String> credentials, boolean allowAnonymousAccess,
-			int maxInFlightMessages) {
+			boolean ignoreCredentials, int maxInFlightMessages) {
 		this.credentials = credentials;
 		this.allowAnonymousAccess = allowAnonymousAccess;
+		this.ignoreCredentials = ignoreCredentials;
 		this.maxInFlightMessages = maxInFlightMessages;
 		this.brokerHandler = brokerHandler == null ? new MockBrokerHandler() : brokerHandler;
 		this.events = events;
@@ -106,7 +110,7 @@ final class BrokerMessageHandler implements MessageHandler {
 			if (!allowAnonymousAccess) {
 				returnCode = ConnectReturnCode.NOT_AUTHORIZED;
 			}
-		} else if (password == null || !password.equals(credentials.get(user))) {
+		} else if (!ignoreCredentials && (password == null || !password.equals(credentials.get(user)))) {
 			returnCode = ConnectReturnCode.BAD_CREDENTIALS;
 		}
 		if (client.clientId.length() < 1 || client.clientId.length() > 23) {
