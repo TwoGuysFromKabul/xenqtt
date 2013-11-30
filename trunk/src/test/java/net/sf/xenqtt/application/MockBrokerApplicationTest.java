@@ -44,6 +44,8 @@ import org.junit.Test;
 
 public class MockBrokerApplicationTest {
 
+	List<String> flags = new ArrayList<String>();
+	Map<String, String> args = new HashMap<String, String>();
 	MqttClientConfig config = new MqttClientConfig().setReconnectionStrategy(new NullReconnectStrategy()).setConnectTimeoutSeconds(0)
 			.setMessageResendIntervalSeconds(10).setBlockingTimeoutSeconds(0);
 
@@ -51,9 +53,8 @@ public class MockBrokerApplicationTest {
 
 	@Test
 	public void testStart_NotAuthorized() {
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -74,10 +75,9 @@ public class MockBrokerApplicationTest {
 
 	@Test
 	public void testStart_NotAuthorized_BadCredentials() throws Exception {
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		args.put("-u", "user1:pass1");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -98,9 +98,7 @@ public class MockBrokerApplicationTest {
 
 	@Test
 	public void testStart_AnonymousAuthorization() throws Exception {
-		List<String> flags = new ArrayList<String>();
 		flags.add("-a");
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
@@ -133,12 +131,19 @@ public class MockBrokerApplicationTest {
 		assertEquals("onyx", messagePayloads.get(0));
 	}
 
+	@Test(expected = IllegalStateException.class)
+	public void testStart_CredentialsFlagUsedWithoutArgs() throws Exception {
+		args.put("-p", "0");
+		flags.add("-u");
+		AppContext arguments = new AppContext(flags, args, null);
+		application.start(arguments);
+	}
+
 	@Test
 	public void testStart_CredentialAuthorization() throws Exception {
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		args.put("-u", "user1:pass1");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -171,9 +176,7 @@ public class MockBrokerApplicationTest {
 
 	@Test
 	public void testStart_CredentialsIgnored() throws Exception {
-		List<String> flags = new ArrayList<String>();
 		flags.add("-i");
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
@@ -208,11 +211,10 @@ public class MockBrokerApplicationTest {
 
 	@Test
 	public void testStart_NonDefaultResendInterval() throws Exception {
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		args.put("-t", "2");
 		args.put("-u", "user1:pass1");
-		AppContext arguments = new AppContext(new ArrayList<String>(), args, null);
+		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);
 
 		int port = getPort();
@@ -255,9 +257,7 @@ public class MockBrokerApplicationTest {
 
 	@Test
 	public void testStart_NonDefaultMaxInFlightMessages() throws Exception {
-		ArrayList<String> flags = new ArrayList<String>();
 		flags.add("-a");
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		args.put("-t", "2");
 		args.put("-m", "2");
@@ -293,9 +293,7 @@ public class MockBrokerApplicationTest {
 
 	@Test(expected = MqttInvocationException.class)
 	public void testStop() throws Exception {
-		List<String> flags = new ArrayList<String>();
 		flags.add("-a");
-		Map<String, String> args = new HashMap<String, String>();
 		args.put("-p", "0");
 		AppContext arguments = new AppContext(flags, args, null);
 		application.start(arguments);

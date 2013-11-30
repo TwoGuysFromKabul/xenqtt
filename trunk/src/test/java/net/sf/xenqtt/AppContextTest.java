@@ -23,8 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AppContextTest {
 
 	AppContext arguments;
@@ -61,9 +64,19 @@ public class AppContextTest {
 		arguments.getArgAsInt("-s");
 	}
 
+	@Test(expected = RuntimeException.class)
+	public void testGetArgAsInt_Required_FoundAsFlag() {
+		arguments.getArgAsInt("-a");
+	}
+
 	@Test
 	public void testGetArgAsInt_Optional_Found() {
 		assertEquals(Integer.MAX_VALUE, arguments.getArgAsInt("-i", 1));
+	}
+
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsInt_Optional_FoundAsFlag() {
+		arguments.getArgAsInt("-a", 1);
 	}
 
 	@Test
@@ -81,6 +94,11 @@ public class AppContextTest {
 		arguments.getArgAsLong("-x");
 	}
 
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsLong_Required_FoundAsFlag() {
+		arguments.getArgAsLong("-a");
+	}
+
 	@Test(expected = RuntimeException.class)
 	public void testGetArgAsLong_Required_Malformed() {
 		arguments.getArgAsLong("-s");
@@ -89,6 +107,11 @@ public class AppContextTest {
 	@Test
 	public void testGetArgAsLong_Optional_Found() {
 		assertEquals(Long.MAX_VALUE, arguments.getArgAsLong("-l", 1));
+	}
+
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsLong_Optional_FoundAsFlag() {
+		arguments.getArgAsLong("-a", 1);
 	}
 
 	@Test
@@ -106,6 +129,11 @@ public class AppContextTest {
 		arguments.getArgAsDouble("-x");
 	}
 
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsDouble_Required_FoundAsFlag() {
+		arguments.getArgAsDouble("-a");
+	}
+
 	@Test(expected = RuntimeException.class)
 	public void testGetArgAsDouble_Required_Malformed() {
 		arguments.getArgAsDouble("-s");
@@ -114,6 +142,11 @@ public class AppContextTest {
 	@Test
 	public void testGetArgAsDouble_Optional_Found() {
 		assertEquals(Double.MAX_VALUE, arguments.getArgAsDouble("-d", 1.0D), 0.0D);
+	}
+
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsDouble_Optional_FoundAsFlag() {
+		arguments.getArgAsDouble("-a", 1.0D);
 	}
 
 	@Test
@@ -131,6 +164,11 @@ public class AppContextTest {
 		arguments.getArgAsBoolean("-x");
 	}
 
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsBoolean_Required_FoundAsFlag() {
+		arguments.getArgAsBoolean("-a");
+	}
+
 	@Test
 	public void testGetArgAsBoolean_Required_Malformed() {
 		assertFalse(arguments.getArgAsBoolean("-s"));
@@ -139,6 +177,11 @@ public class AppContextTest {
 	@Test
 	public void testGetArgAsBoolean_Optional_Found() {
 		assertTrue(arguments.getArgAsBoolean("-b", false));
+	}
+
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsBoolean_Optional_FoundAsFlag() {
+		arguments.getArgAsBoolean("-a", false);
 	}
 
 	@Test
@@ -156,9 +199,19 @@ public class AppContextTest {
 		arguments.getArgAsInt("-x");
 	}
 
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsString_Required_FoundAsFlag() {
+		arguments.getArgAsInt("-a");
+	}
+
 	@Test
 	public void testGetArgAsString_Optional_Found() {
 		assertEquals("I am the very model of a modern Major General.", arguments.getArgAsString("-s", "I am information, vegetable, animal, and mineral."));
+	}
+
+	@Test(expected = IllegalStateException.class)
+	public void testGetArgAsString_Optional_FoundAsFlag() {
+		arguments.getArgAsString("-a", "I am information, vegetable, animal, and mineral.");
 	}
 
 	@Test
@@ -197,5 +250,4 @@ public class AppContextTest {
 		assertFalse(arguments.isEmpty());
 		assertTrue(new AppContext(null).isEmpty());
 	}
-
 }

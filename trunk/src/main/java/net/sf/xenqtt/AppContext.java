@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import net.sf.xenqtt.application.XenqttApplication;
+
 /**
  * Contains the application context for a Xenqtt {@link XenqttApplication application}
  */
@@ -120,19 +122,11 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as an {@code int}
 	 */
 	public int getArgAsInt(String argument) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
-		if (arg == null) {
-			String message = String.format("The argument %s was required but not found.", argument);
-			Log.error(message);
-			throw new IllegalStateException(message);
-		}
-
+		String arg = getArgAsString(argument);
 		try {
 			return Integer.parseInt(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as an integer.", argument);
+			Log.error(ex, "Unable to parse the argument %s as an integer.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -151,9 +145,7 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as an {@code int}
 	 */
 	public int getArgAsInt(String argument, int defaultValue) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
+		String arg = getArgAsString(argument, null);
 		if (arg == null) {
 			return defaultValue;
 		}
@@ -161,7 +153,7 @@ public final class AppContext {
 		try {
 			return Integer.parseInt(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as an integer.", argument);
+			Log.error(ex, "Unable to parse the argument %s as an integer.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -180,19 +172,11 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as a {@code long}
 	 */
 	public long getArgAsLong(String argument) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
-		if (arg == null) {
-			String message = String.format("The argument %s was required but not found.", argument);
-			Log.error(message);
-			throw new IllegalStateException(message);
-		}
-
+		String arg = getArgAsString(argument);
 		try {
 			return Long.parseLong(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as a long.", argument);
+			Log.error(ex, "Unable to parse the argument %s as a long.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -211,9 +195,7 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as a {@code long}
 	 */
 	public long getArgAsLong(String argument, long defaultValue) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
+		String arg = getArgAsString(argument, null);
 		if (arg == null) {
 			return defaultValue;
 		}
@@ -221,7 +203,7 @@ public final class AppContext {
 		try {
 			return Long.parseLong(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as a long.", argument);
+			Log.error(ex, "Unable to parse the argument %s as a long.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -240,19 +222,11 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as a {@code double}
 	 */
 	public double getArgAsDouble(String argument) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
-		if (arg == null) {
-			String message = String.format("The argument %s was required but not found.", argument);
-			Log.error(message);
-			throw new IllegalStateException(message);
-		}
-
+		String arg = getArgAsString(argument);
 		try {
 			return Double.parseDouble(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as a double.", argument);
+			Log.error(ex, "Unable to parse the argument %s as a double.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -271,9 +245,7 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as a {@code double}
 	 */
 	public double getArgAsDouble(String argument, double defaultValue) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
+		String arg = getArgAsString(argument, null);
 		if (arg == null) {
 			return defaultValue;
 		}
@@ -281,7 +253,7 @@ public final class AppContext {
 		try {
 			return Double.parseDouble(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as a double.", argument);
+			Log.error(ex, "Unable to parse the argument %s as a double.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -300,19 +272,11 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as a {@code boolean}
 	 */
 	public boolean getArgAsBoolean(String argument) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
-		if (arg == null) {
-			String message = String.format("The argument %s was required but not found.", argument);
-			Log.error(message);
-			throw new IllegalStateException(message);
-		}
-
+		String arg = getArgAsString(argument);
 		try {
 			return Boolean.parseBoolean(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as a boolean.", argument);
+			Log.error(ex, "Unable to parse the argument %s as a boolean.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -331,9 +295,7 @@ public final class AppContext {
 	 *             If the argument is found but cannot be interpreted as a {@code boolean}
 	 */
 	public boolean getArgAsBoolean(String argument, boolean defaultValue) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
+		String arg = getArgAsString(argument, null);
 		if (arg == null) {
 			return defaultValue;
 		}
@@ -341,7 +303,7 @@ public final class AppContext {
 		try {
 			return Boolean.parseBoolean(arg);
 		} catch (Exception ex) {
-			Log.error(ex, "Unable to parse the argument %s as a boolean.", argument);
+			Log.error(ex, "Unable to parse the argument %s as a boolean.", format(argument));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -358,11 +320,9 @@ public final class AppContext {
 	 *             If the argument is not found
 	 */
 	public String getArgAsString(String argument) {
-		XenqttUtil.validateNotEmpty("argument", argument);
-
-		String arg = arguments.get(format(argument));
+		String arg = getArgAsString(argument, null);
 		if (arg == null) {
-			String message = String.format("The argument %s was required but not found.", argument);
+			String message = String.format("The argument %s was required but not found.", format(argument));
 			Log.error(message);
 			throw new IllegalStateException(message);
 		}
@@ -381,10 +341,16 @@ public final class AppContext {
 	 * @return The value associated with the argument interpreted as a string
 	 */
 	public String getArgAsString(String argument, String defaultValue) {
+
 		XenqttUtil.validateNotEmpty("argument", argument);
 
 		String arg = arguments.get(format(argument));
 		if (arg == null) {
+			if (isFlagSpecified(argument)) {
+				String message = String.format("The argument %s requires a value.", format(argument));
+				Log.error(message);
+				throw new IllegalStateException(message);
+			}
 			return defaultValue;
 		}
 
