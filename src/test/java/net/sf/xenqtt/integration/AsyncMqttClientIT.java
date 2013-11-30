@@ -73,7 +73,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public final void testConnect_Credentials_BadCredentials() throws Exception {
 
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(null, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -136,7 +136,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testConnect_Credentials_Accepted() throws Exception {
 
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(null, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		mockBroker.addCredentials("user1", "password1");
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
@@ -153,7 +153,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testConnect_CredentialsAndWill_Accepted() throws Exception {
 
-		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(null, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		mockBroker.addCredentials("user1", "password1");
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
@@ -219,7 +219,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	@Test
 	public void testConnectMessageTimesOut() throws Exception {
 
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		mockBroker.addCredentials("user1", "password1");
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
@@ -257,7 +257,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L);
 
 		// create the broker
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -305,7 +305,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L);
 
 		// create the broker
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -361,7 +361,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 		when(reconnectionStrategy.connectionLost(isA(MqttClient.class), isNull(Throwable.class))).thenReturn(1000L, 1000L, 1000L, 0L);
 
 		// create the broker
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -427,7 +427,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 
 		when(mockHandler.publish(any(Client.class), any(PubMessage.class))).thenReturn(true);
 
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = mockBroker.getURI();
 
@@ -483,7 +483,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 			}
 		}).when(mockHandler).subscribe(any(Client.class), any(SubscribeMessage.class));
 
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -515,7 +515,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 			}
 		}).when(mockHandler).unsubscribe(any(Client.class), any(UnsubscribeMessage.class));
 
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 
@@ -545,7 +545,7 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 			}
 		}).when(mockHandler).publish(any(Client.class), any(PubMessage.class));
 
-		mockBroker = new MockBroker(mockHandler, 15, 0, true, true, 50);
+		mockBroker = new MockBroker(mockHandler, 15, 0, true, false, true, 50);
 		mockBroker.init();
 		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
 

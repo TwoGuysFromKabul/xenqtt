@@ -67,7 +67,7 @@ public class ProxyIT {
 	@Before
 	public void before() throws Exception {
 		MockitoAnnotations.initMocks(this);
-		broker = new MockBroker(handler, 15, 0, true, true, 50);
+		broker = new MockBroker(handler, 15, 0, true, false, true, 50);
 		broker.init();
 
 		proxy = new ProxyApplication();
