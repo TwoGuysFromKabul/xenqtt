@@ -71,6 +71,23 @@ public class AsyncMqttClientIT extends AbstractAsyncMqttClientIT {
 	}
 
 	@Test
+	public final void testConnect_Credentials_BadCredentials() throws Exception {
+
+		mockBroker = new MockBroker(null, 15, 0, true, true, 50);
+		mockBroker.init();
+		validBrokerUri = "tcp://localhost:" + mockBroker.getPort();
+
+		client = new AsyncMqttClient(validBrokerUri, listener, 5, config);
+		client.connect("testclient2", true, "not_a_user", "not_a_password");
+
+		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.BAD_CREDENTIALS);
+		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
+
+		verify(reconnectionStrategy).clone();
+		verifyNoMoreInteractions(listener, reconnectionStrategy);
+	}
+
+	@Test
 	public void testConstructor_InvalidScheme() throws Exception {
 
 		try {
