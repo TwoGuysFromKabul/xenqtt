@@ -3,6 +3,7 @@ when running XenQTT applications. The versioned JAR is better suited when using 
 application.
 
 0.9.6 - PENDING
+	Ticket #5 fixed: any command line args that are specified without required values will cause an error 
 	Ticket #4 fixed: removed erroneous -c from the mock broker application specific command line args
 	Ticket #2 fixed: added constructor arg and -i command line arg to mock broker to make the broker accept any credentials
 	Fixed minor issues with argument validation text formatting
