@@ -48,7 +48,6 @@ public abstract class AbstractAsyncMqttClientIT {
 
 	MqttClientConfig config = new MqttClientConfig().setConnectTimeoutSeconds(0).setMessageResendIntervalSeconds(5);
 
-	String badCredentialsUri = "tcp://q.m2m.io:1883";
 	String validBrokerUri = "tcp://test.mosquitto.org:1883";
 
 	@Mock AsyncClientListener listener;
@@ -95,19 +94,6 @@ public abstract class AbstractAsyncMqttClientIT {
 		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
 		verify(reconnectionStrategy).clone();
 
-		verifyNoMoreInteractions(listener, reconnectionStrategy);
-	}
-
-	@Test
-	public final void testConnect_Credentials_BadCredentials() throws Exception {
-
-		client = new AsyncMqttClient(badCredentialsUri, listener, 5, config);
-		client.connect("testclient2", true, "not_a_user", "not_a_password");
-
-		verify(listener, timeout(5000)).connected(client, ConnectReturnCode.BAD_CREDENTIALS);
-		verify(listener, timeout(5000)).disconnected(eq(client), isNull(Throwable.class), eq(false));
-
-		verify(reconnectionStrategy).clone();
 		verifyNoMoreInteractions(listener, reconnectionStrategy);
 	}
 
