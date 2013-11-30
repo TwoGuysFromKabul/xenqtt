@@ -40,6 +40,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 
 		broker = new MockBroker(null, timeout, port, allowAnonymousAccess, ignoreCredentials, false, maxInFlightMessages);
 
+		System.out.println(arguments.isFlagSpecified("-u"));
 		String credentials = arguments.getArgAsString("u", "");
 		for (String creds : XenqttUtil.quickSplit(credentials, ',')) {
 			String[] userpass = XenqttUtil.quickSplit(creds, ':');
