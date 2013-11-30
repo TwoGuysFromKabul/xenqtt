@@ -66,7 +66,7 @@ public final class MockBrokerApplication extends AbstractXenqttApplication {
 	 */
 	@Override
 	public String getOptsText() {
-		return "[-t timeout] [-p port] [-c] [-a] [-i] [-u user1:pass1,...usern:passn]";
+		return "[-t timeout] [-p port] [-a] [-i] [-u user1:pass1,...usern:passn]";
 	}
 
 	/**
