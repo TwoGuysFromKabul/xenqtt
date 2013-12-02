@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.sf.xenqtt</groupId>
 	<artifactId>xenqtt</artifactId>
-	<version>0.9.6</version>
+	<version>0.9.7-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>XenQTT</name>
 	<description>A library of MQTT APIs and tools</description>
@@ -232,9 +232,9 @@
 		</profile>
 	</profiles>
 	<scm>
-		<connection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/tags/xenqtt-0.9.6</connection>
-		<developerConnection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/tags/xenqtt-0.9.6</developerConnection>
-		<url>https://svn.code.sf.net/p/xenqtt/code/tags/xenqtt-0.9.6</url>
+		<connection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/trunk</connection>
+		<developerConnection>scm:svn:https://svn.code.sf.net/p/xenqtt/code/trunk</developerConnection>
+		<url>https://svn.code.sf.net/p/xenqtt/code/trunk</url>
 	</scm>
 	<developers>
 		<developer>
