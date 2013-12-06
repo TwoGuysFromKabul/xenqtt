@@ -17,7 +17,6 @@ package net.sf.xenqtt.httpgateway;
 
 import net.sf.xenqtt.AppContext;
 import net.sf.xenqtt.application.AbstractXenqttApplication;
-import net.sf.xenqtt.application.XenqttApplication;
 
 import org.eclipse.jetty.server.Server;
 
