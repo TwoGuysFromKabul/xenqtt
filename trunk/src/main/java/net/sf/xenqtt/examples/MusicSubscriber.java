@@ -16,6 +16,7 @@
 package net.sf.xenqtt.examples;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import net.sf.xenqtt.client.MqttClient;
@@ -36,7 +37,7 @@ public class MusicSubscriber {
 	private static final Logger log = Logger.getLogger(MusicSubscriber.class);
 
 	public static void main(String... args) throws Throwable {
-		final List<String> catalog = new ArrayList<String>();
+		final List<String> catalog = Collections.synchronizedList(new ArrayList<String>());
 		MqttClientListener listener = new MqttClientListener() {
 
 			@Override
@@ -62,39 +63,45 @@ public class MusicSubscriber {
 
 		// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
 		SyncMqttClient client = new SyncMqttClient("tcp://mqtt.broker:1883", listener, 5);
-
-		// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
-		ConnectReturnCode returnCode = client.connect("musicLover", true);
-		if (returnCode != ConnectReturnCode.ACCEPTED) {
-			log.error("Unable to connect to the MQTT broker. Reason: " + returnCode);
-			return;
-		}
-
-		// Create your subscriptions. In this case we want to build up a catalog of classic rock.
-		List<Subscription> subscriptions = new ArrayList<Subscription>();
-		subscriptions.add(new Subscription("grand/funk/railroad", QoS.AT_MOST_ONCE));
-		subscriptions.add(new Subscription("jefferson/airplane", QoS.AT_MOST_ONCE));
-		subscriptions.add(new Subscription("seventies/prog/#", QoS.AT_MOST_ONCE));
-		client.subscribe(subscriptions);
-
-		// Build up your catalog. After a while you've waited long enough so move on.
 		try {
-			Thread.sleep(30000);
-		} catch (InterruptedException ignore) {
-		}
+			// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
+			ConnectReturnCode returnCode = client.connect("musicLover", true);
+			if (returnCode != ConnectReturnCode.ACCEPTED) {
+				log.error("Unable to connect to the MQTT broker. Reason: " + returnCode);
+				return;
+			}
 
-		// Report on what we have found.
-		for (String record : catalog) {
-			log.debug("Got a record: " + record);
-		}
+			// Create your subscriptions. In this case we want to build up a catalog of classic rock.
+			List<Subscription> subscriptions = new ArrayList<Subscription>();
+			subscriptions.add(new Subscription("grand/funk/railroad", QoS.AT_MOST_ONCE));
+			subscriptions.add(new Subscription("jefferson/airplane", QoS.AT_MOST_ONCE));
+			subscriptions.add(new Subscription("seventies/prog/#", QoS.AT_MOST_ONCE));
+			client.subscribe(subscriptions);
 
-		// We are done. Unsubscribe and disconnect.
-		List<String> topics = new ArrayList<String>();
-		for (Subscription subscription : subscriptions) {
-			topics.add(subscription.getTopic());
+			// Build up your catalog. After a while you've waited long enough so move on.
+			try {
+				Thread.sleep(30000);
+			} catch (InterruptedException ignore) {
+			}
+
+			// Report on what we have found.
+			for (String record : catalog) {
+				log.debug("Got a record: " + record);
+			}
+
+			// We are done. Unsubscribe from further updates.
+			List<String> topics = new ArrayList<String>();
+			for (Subscription subscription : subscriptions) {
+				topics.add(subscription.getTopic());
+			}
+			client.unsubscribe(topics);
+		} catch (Exception ex) {
+			log.error("An unexpected exception has occurred.", ex);
+		} finally {
+			if (!client.isClosed()) {
+				client.disconnect();
+			}
 		}
-		client.unsubscribe(topics);
-		client.disconnect();
 	}
 
 }
