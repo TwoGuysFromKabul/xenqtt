@@ -17,7 +17,10 @@ package net.sf.xenqtt.examples;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import net.sf.xenqtt.client.AsyncClientListener;
 import net.sf.xenqtt.client.AsyncMqttClient;
@@ -37,7 +40,9 @@ public class MusicSubscriberAsync {
 	private static final Logger log = Logger.getLogger(MusicSubscriberAsync.class);
 
 	public static void main(String... args) throws Throwable {
-		final List<String> catalog = new ArrayList<String>();
+		final CountDownLatch connectLatch = new CountDownLatch(1);
+		final AtomicReference<ConnectReturnCode> connectReturnCode = new AtomicReference<ConnectReturnCode>();
+		final List<String> catalog = Collections.synchronizedList(new ArrayList<String>());
 		AsyncClientListener listener = new AsyncClientListener() {
 
 			@Override
@@ -61,9 +66,8 @@ public class MusicSubscriberAsync {
 
 			@Override
 			public void connected(MqttClient client, ConnectReturnCode returnCode) {
-				if (returnCode != ConnectReturnCode.ACCEPTED) {
-					log.error("Unable to connect to the broker. Reason: " + returnCode);
-				}
+				connectReturnCode.set(returnCode);
+				connectLatch.countDown();
 			}
 
 			@Override
@@ -87,41 +91,46 @@ public class MusicSubscriberAsync {
 
 		};
 
-		// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
-		AsyncMqttClient client = new AsyncMqttClient("tcp://mqtt.broker:1883", listener, 5);
-
-		// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
-		ConnectReturnCode returnCode = client.connect("musicLover", true);
-		if (returnCode != ConnectReturnCode.ACCEPTED) {
-			log.error("Unable to connect to the MQTT broker. Reason: " + returnCode);
-			return;
-		}
-
-		// Create your subscriptions. In this case we want to build up a catalog of classic rock.
-		List<Subscription> subscriptions = new ArrayList<Subscription>();
-		subscriptions.add(new Subscription("grand/funk/railroad", QoS.AT_MOST_ONCE));
-		subscriptions.add(new Subscription("jefferson/airplane", QoS.AT_MOST_ONCE));
-		subscriptions.add(new Subscription("seventies/prog/#", QoS.AT_MOST_ONCE));
-		client.subscribe(subscriptions);
-
-		// Build up your catalog. After a while you've waited long enough so move on.
+		// Build your client. This client is an asynchronous one so all interaction with the broker will be non-blocking.
+		AsyncMqttClient client = new AsyncMqttClient("tcp://mqtt-broker:1883", listener, 5);
 		try {
-			Thread.sleep(30000);
-		} catch (InterruptedException ignore) {
-		}
+			// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
+			client.connect("musicLover", true);
+			ConnectReturnCode returnCode = connectReturnCode.get();
+			if (returnCode == null || returnCode != ConnectReturnCode.ACCEPTED) {
+				log.error("Unable to connect to the MQTT broker. Reason: " + returnCode);
+				return;
+			}
 
-		// Report on what we have found.
-		for (String record : catalog) {
-			log.debug("Got a record: " + record);
-		}
+			// Create your subscriptions. In this case we want to build up a catalog of classic rock.
+			List<Subscription> subscriptions = new ArrayList<Subscription>();
+			subscriptions.add(new Subscription("grand/funk/railroad", QoS.AT_MOST_ONCE));
+			subscriptions.add(new Subscription("jefferson/airplane", QoS.AT_MOST_ONCE));
+			subscriptions.add(new Subscription("seventies/prog/#", QoS.AT_MOST_ONCE));
+			client.subscribe(subscriptions);
 
-		// We are done. Unsubscribe and disconnect.
-		List<String> topics = new ArrayList<String>();
-		for (Subscription subscription : subscriptions) {
-			topics.add(subscription.getTopic());
+			// Build up your catalog. After a while you've waited long enough so move on.
+			try {
+				Thread.sleep(30000);
+			} catch (InterruptedException ignore) {
+			}
+
+			// Report on what we have found.
+			for (String record : catalog) {
+				log.debug("Got a record: " + record);
+			}
+
+			// We are done. Unsubscribe at this time.
+			List<String> topics = new ArrayList<String>();
+			for (Subscription subscription : subscriptions) {
+				topics.add(subscription.getTopic());
+			}
+			client.unsubscribe(topics);
+		} finally {
+			if (!client.isClosed()) {
+				client.disconnect();
+			}
 		}
-		client.unsubscribe(topics);
-		client.disconnect();
 	}
 
 }
