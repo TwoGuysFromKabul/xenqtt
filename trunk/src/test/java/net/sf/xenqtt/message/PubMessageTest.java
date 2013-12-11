@@ -37,7 +37,7 @@ public class PubMessageTest {
 			109, 115 };
 
 	@Test
-	public void testOuboundCtor_EmptyPayload() {
+	public void testOutboundCtor_EmptyPayload() {
 		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, new byte[] {});
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
@@ -53,7 +53,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos1_NotDuplicateNotRetain() {
+	public void testOutboundCtor_Qos1_NotDuplicateNotRetain() {
 		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, paylaod);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
@@ -70,7 +70,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos1_DuplicateNotRetain() {
+	public void testOutboundCtor_Qos1_DuplicateNotRetain() {
 		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, paylaod);
 		message.setDuplicateFlag();
 
@@ -90,7 +90,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos1_NotDuplicateRetain() {
+	public void testOutboundCtor_Qos1_NotDuplicateRetain() {
 		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, paylaod);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
@@ -109,7 +109,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos1_DuplicateRetain() {
+	public void testOutboundCtor_Qos1_DuplicateRetain() {
 		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, true, "net.sf/message/topic", 1, paylaod);
 		message.setDuplicateFlag();
 
@@ -125,6 +125,23 @@ public class PubMessageTest {
 		byte[] bytes = new byte[qos1Bytes.length];
 		message.buffer.get(bytes);
 		assertArrayEquals(qos1Bytes, bytes);
+	}
+
+	@Test
+	public void testInboundCtor_EmptyPayload() {
+
+		PubMessage message = new PubMessage(ByteBuffer.wrap(emptyPayloadBytes), 90, 0);
+
+		assertSame(MessageType.PUBLISH, message.getMessageType());
+
+		assertEquals(1, message.getMessageId());
+		assertEquals("net.sf/message/topic", message.getTopicName());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
+		assertEquals(1, message.getQoSLevel());
+		assertArrayEquals(new byte[0], message.getPayload());
+		assertFalse(message.isDuplicate());
+		assertFalse(message.isRetain());
+		assertArrayEquals(emptyPayloadBytes, message.buffer.array());
 	}
 
 	@Test
@@ -161,7 +178,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos0_NotDuplicateNotRetain() {
+	public void testOutboundCtor_Qos0_NotDuplicateNotRetain() {
 		PubMessage message = new PubMessage(QoS.AT_MOST_ONCE, false, "net.sf/message/topic", 1, paylaod);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
@@ -180,7 +197,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos0_DuplicateNotRetain() {
+	public void testOutboundCtor_Qos0_DuplicateNotRetain() {
 		PubMessage message = new PubMessage(QoS.AT_MOST_ONCE, false, "net.sf/message/topic", 1, paylaod);
 		message.setDuplicateFlag();
 
@@ -200,7 +217,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos0_NotDuplicateRetain() {
+	public void testOutboundCtor_Qos0_NotDuplicateRetain() {
 		PubMessage message = new PubMessage(QoS.AT_MOST_ONCE, true, "net.sf/message/topic", 1, paylaod);
 
 		assertSame(MessageType.PUBLISH, message.getMessageType());
@@ -219,7 +236,7 @@ public class PubMessageTest {
 	}
 
 	@Test
-	public void testOuboundCtor_Qos0_DuplicateRetain() {
+	public void testOutboundCtor_Qos0_DuplicateRetain() {
 		PubMessage message = new PubMessage(QoS.AT_MOST_ONCE, true, "net.sf/message/topic", 1, paylaod);
 		message.setDuplicateFlag();
 
