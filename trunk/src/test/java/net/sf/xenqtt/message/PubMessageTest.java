@@ -25,6 +25,8 @@ import org.junit.Test;
 public class PubMessageTest {
 
 	final byte[] paylaod = "To alcohol - the cause of, and solution to, all of life's problems".getBytes(Charset.forName("UTF-8"));
+	final byte[] emptyPayloadBytes = new byte[] { 50, 24, 0, 20, 110, 101, 116, 46, 115, 102, 47, 109, 101, 115, 115, 97, 103, 101, 47, 116, 111, 112, 105, 99,
+			0, 1 };
 	final byte[] qos1Bytes = new byte[] { 59, 90, 0, 20, 110, 101, 116, 46, 115, 102, 47, 109, 101, 115, 115, 97, 103, 101, 47, 116, 111, 112, 105, 99, 0, 1,
 			84, 111, 32, 97, 108, 99, 111, 104, 111, 108, 32, 45, 32, 116, 104, 101, 32, 99, 97, 117, 115, 101, 32, 111, 102, 44, 32, 97, 110, 100, 32, 115,
 			111, 108, 117, 116, 105, 111, 110, 32, 116, 111, 44, 32, 97, 108, 108, 32, 111, 102, 32, 108, 105, 102, 101, 39, 115, 32, 112, 114, 111, 98, 108,
@@ -33,6 +35,22 @@ public class PubMessageTest {
 			111, 32, 97, 108, 99, 111, 104, 111, 108, 32, 45, 32, 116, 104, 101, 32, 99, 97, 117, 115, 101, 32, 111, 102, 44, 32, 97, 110, 100, 32, 115, 111,
 			108, 117, 116, 105, 111, 110, 32, 116, 111, 44, 32, 97, 108, 108, 32, 111, 102, 32, 108, 105, 102, 101, 39, 115, 32, 112, 114, 111, 98, 108, 101,
 			109, 115 };
+
+	@Test
+	public void testOuboundCtor_EmptyPayload() {
+		PubMessage message = new PubMessage(QoS.AT_LEAST_ONCE, false, "net.sf/message/topic", 1, new byte[] {});
+
+		assertSame(MessageType.PUBLISH, message.getMessageType());
+
+		assertEquals(1, message.getMessageId());
+		assertEquals("net.sf/message/topic", message.getTopicName());
+		assertEquals(QoS.AT_LEAST_ONCE, message.getQoS());
+		assertEquals(1, message.getQoSLevel());
+		assertArrayEquals(new byte[0], message.getPayload());
+		assertFalse(message.isDuplicate());
+		assertFalse(message.isRetain());
+		assertArrayEquals(emptyPayloadBytes, message.buffer.array());
+	}
 
 	@Test
 	public void testOuboundCtor_Qos1_NotDuplicateNotRetain() {
