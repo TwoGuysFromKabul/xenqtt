@@ -74,7 +74,9 @@ public class MusicProducer {
 			log.error("An exception prevented the publishing of the full catalog.", ex);
 		} finally {
 			// We are done. Disconnect.
-			client.disconnect();
+			if (!client.isClosed()) {
+				client.disconnect();
+			}
 		}
 	}
 
