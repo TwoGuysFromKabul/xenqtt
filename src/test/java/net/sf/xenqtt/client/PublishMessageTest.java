@@ -96,6 +96,14 @@ public class PublishMessageTest {
 	}
 
 	@Test
+	public void testGetPayload_EmptyPayload() throws Exception {
+
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "my topic", 123, new byte[0]);
+		message = new PublishMessage(channelManager, channel, pubMessage);
+		assertArrayEquals(new byte[] {}, message.getPayload());
+	}
+
+	@Test
 	public void testGetPayload() throws Exception {
 
 		assertArrayEquals(new byte[] { 97, 98, 99 }, message.getPayload());
@@ -105,6 +113,14 @@ public class PublishMessageTest {
 	public void testGetPayloadString() throws Exception {
 
 		assertEquals("abc", message.getPayloadString());
+	}
+
+	@Test
+	public void testGetPayloadString_EmptyPayload() throws Exception {
+
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "my topic", 123, new byte[0]);
+		message = new PublishMessage(channelManager, channel, pubMessage);
+		assertEquals("", message.getPayloadString());
 	}
 
 	@Test
