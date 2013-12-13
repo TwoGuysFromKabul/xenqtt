@@ -147,6 +147,10 @@ public class MqttMessage {
 			return null;
 		}
 
+		if (bytes.length == 0) {
+			return "";
+		}
+
 		final byte[] hex = new byte[(bytes.length - 1) * 3 + 2];
 
 		for (int i = 0, j = 0; i < bytes.length; i++) {
