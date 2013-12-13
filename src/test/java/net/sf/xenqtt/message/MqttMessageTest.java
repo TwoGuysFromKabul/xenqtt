@@ -26,6 +26,24 @@ public class MqttMessageTest {
 	static final byte[] PAYLOAD = new byte[] { 27, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 	@Test
+	public void testBytesToHex_NullArray() throws Exception {
+
+		assertNull(MqttMessage.bytesToHex(null));
+	}
+
+	@Test
+	public void testBytesToHex_EmptyArray() throws Exception {
+
+		assertEquals("", MqttMessage.bytesToHex(new byte[0]));
+	}
+
+	@Test
+	public void testBytesToHex_ArrayWithData() throws Exception {
+
+		assertEquals("01 02 7f", MqttMessage.bytesToHex(new byte[] { 1, 2, 127 }));
+	}
+
+	@Test
 	public void testOutboundCtor_MessageTypeAndRemainingLength() {
 		MqttMessage message = new MqttMessage(MessageType.CONNECT, 24);
 		message.buffer.flip();
