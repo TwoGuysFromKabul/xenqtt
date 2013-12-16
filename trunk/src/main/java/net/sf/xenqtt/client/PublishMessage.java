@@ -33,6 +33,8 @@ public class PublishMessage {
 
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
+	private static final byte[] EMPTY_PAYLOAD = new byte[0];
+
 	private final ChannelManager manager;
 	private final MqttChannelRef channel;
 	private final PubMessage pubMessage;
@@ -45,7 +47,7 @@ public class PublishMessage {
 	 * @param qos
 	 *            The level of assurance for delivery.
 	 * @param payload
-	 *            The payload as a byte array. It is valid to publish a zero length payload.
+	 *            The payload as a byte array. It is valid to publish a zero length payload. Null will be converted to byte[0].
 	 * @param retain
 	 *            If the Retain flag is set (1), the broker should hold on to the message after it has been delivered to the current subscribers. This is useful
 	 *            where publishers send messages on a "report by exception" basis, where it might be some time between messages. This allows new subscribers to
@@ -55,7 +57,10 @@ public class PublishMessage {
 	public PublishMessage(String topicName, QoS qos, byte[] payload, boolean retain) {
 		XenqttUtil.validateNotNull("topicName", topicName);
 		XenqttUtil.validateNotNull("qos", qos);
-		XenqttUtil.validateNotNull("payload", payload);
+
+		if (payload == null) {
+			payload = EMPTY_PAYLOAD;
+		}
 
 		this.channel = null;
 		this.manager = null;
@@ -89,6 +94,15 @@ public class PublishMessage {
 	 */
 	public PublishMessage(String topicName, QoS qos, String payload, boolean retain) {
 		this(topicName, qos, payload.getBytes(UTF8), retain);
+	}
+
+	/**
+	 * Creates a message with no payload and retain set to false
+	 * 
+	 * @see PublishMessage#PublishMessage(String, QoS, byte[], boolean)
+	 */
+	public PublishMessage(String topicName, QoS qos) {
+		this(topicName, qos, EMPTY_PAYLOAD, false);
 	}
 
 	/**
@@ -136,6 +150,13 @@ public class PublishMessage {
 	 */
 	public final String getPayloadString() {
 		return new String(pubMessage.getPayload(), UTF8);
+	}
+
+	/**
+	 * @return True if the message is empty (has no payload). False if it is not empty.
+	 */
+	public final boolean isEmpty() {
+		return pubMessage.getPayload().length == 0;
 	}
 
 	/**
