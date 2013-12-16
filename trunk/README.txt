@@ -2,7 +2,10 @@ The xenqtt.jar in each release folder is the same as the xenqtt-version.jar. It 
 when running XenQTT applications. The versioned JAR is better suited when using it as a dependency in another 
 application.
 
-0.9.6 - PENDING
+0.9.7 - PENDING
+
+0.9.6
+	Ticket #8 fixed: bug in toString() that throws an exception when the payload is zero length
 	Ticket #5 fixed: any command line args that are specified without required values will cause an error 
 	Ticket #4 fixed: removed erroneous -c from the mock broker application specific command line args
 	Ticket #2 fixed: added constructor arg and -i command line arg to mock broker to make the broker accept any credentials
