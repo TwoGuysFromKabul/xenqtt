@@ -53,6 +53,17 @@ public class PublishMessageTest {
 	}
 
 	@Test
+	public void testCtor_TopicQos() {
+		PublishMessage message = new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE);
+		assertEquals("grand/foo/bar", message.getTopic());
+		assertSame(QoS.AT_LEAST_ONCE, message.getQoS());
+		assertArrayEquals(new byte[0], message.getPayload());
+		assertEquals("", message.getPayloadString());
+		assertFalse(message.isDuplicate());
+		assertFalse(message.isRetain());
+	}
+
+	@Test
 	public void testCtor_TopicQosPayloadString() {
 		PublishMessage message = new PublishMessage("grand/foo/bar", QoS.AT_LEAST_ONCE, "abc");
 		assertEquals("grand/foo/bar", message.getTopic());
@@ -84,15 +95,32 @@ public class PublishMessageTest {
 		new PublishMessage("grand/foo/bar", null, new byte[] { 97, 98, 99 }, true);
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void testCtor_NullPayload() {
 		byte[] payload = null;
-		new PublishMessage("grand/foo/bar", QoS.AT_MOST_ONCE, payload, true);
+		message = new PublishMessage("grand/foo/bar", QoS.AT_MOST_ONCE, payload, true);
+		assertArrayEquals(new byte[] {}, message.getPayload());
 	}
 
 	@Test
 	public void testGetTopic() throws Exception {
 		assertEquals("my topic", message.getTopic());
+	}
+
+	@Test
+	public void testIsEmpty_NoPayload() throws Exception {
+
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "my topic", 123, new byte[0]);
+		message = new PublishMessage(channelManager, channel, pubMessage);
+		assertTrue(message.isEmpty());
+	}
+
+	@Test
+	public void testIsEmpty_WithPayload() throws Exception {
+
+		pubMessage = new PubMessage(QoS.AT_LEAST_ONCE, false, "my topic", 123, new byte[] { 1, 2, 3 });
+		message = new PublishMessage(channelManager, channel, pubMessage);
+		assertFalse(message.isEmpty());
 	}
 
 	@Test
