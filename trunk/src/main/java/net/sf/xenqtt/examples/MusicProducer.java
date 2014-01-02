@@ -54,9 +54,9 @@ public class MusicProducer {
 		};
 
 		// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
-		MqttClient client = new SyncMqttClient("tcp://mqtt-broker:1883", listener, 5);
+		MqttClient client = new SyncMqttClient("tcp://localhost:1883", listener, 5);
 		try {
-			ConnectReturnCode returnCode = client.connect("musicProducer", false, "music-user", "music-pass");
+			ConnectReturnCode returnCode = client.connect("musicProducer", false);
 			if (returnCode != ConnectReturnCode.ACCEPTED) {
 				log.error("Unable to connect to the broker. Reason: " + returnCode);
 				return;

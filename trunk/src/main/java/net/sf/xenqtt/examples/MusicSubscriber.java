@@ -62,7 +62,7 @@ public class MusicSubscriber {
 		};
 
 		// Build your client. This client is a synchronous one so all interaction with the broker will block until said interaction completes.
-		SyncMqttClient client = new SyncMqttClient("tcp://mqtt.broker:1883", listener, 5);
+		SyncMqttClient client = new SyncMqttClient("tcp://localhost:1883", listener, 5);
 		try {
 			// Connect to the broker with a specific client ID. Only if the broker accepted the connection shall we proceed.
 			ConnectReturnCode returnCode = client.connect("musicLover", true);
