@@ -86,7 +86,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	/**
 	 * Constructs a synchronous instance of this class using an {@link Executor} owned by this class.
-	 * 
+	 *
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param mqttClientListener
@@ -102,7 +102,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	/**
 	 * Constructs a synchronous instance of this class using a user provided {@link Executor}.
-	 * 
+	 *
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param mqttClientListener
@@ -119,7 +119,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	/**
 	 * Constructs an asynchronous instance of this class using an {@link Executor} owned by this class.
-	 * 
+	 *
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param AsyncClientListener
@@ -135,7 +135,7 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	/**
 	 * Constructs an asynchronous instance of this class using a user provided {@link Executor}.
-	 * 
+	 *
 	 * @param brokerUri
 	 *            The URL to the broker to connect to. For example, tcp://q.m2m.io:1883
 	 * @param asyncClientListener
@@ -168,7 +168,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	@Override
 	public final ConnectReturnCode connect(String clientId, boolean cleanSession) throws MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException {
+	MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, config.getKeepAliveSeconds());
 		return doConnect(channel, message);
@@ -179,7 +179,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	@Override
 	public final ConnectReturnCode connect(String clientId, boolean cleanSession, String userName, String password) throws MqttCommandCancelledException,
-			MqttTimeoutException, MqttInterruptedException {
+	MqttTimeoutException, MqttInterruptedException {
 
 		ConnectMessage message = new ConnectMessage(clientId, cleanSession, config.getKeepAliveSeconds(), userName, password);
 		return doConnect(channel, message);
@@ -233,7 +233,7 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	@Override
 	public final List<Subscription> subscribe(List<Subscription> subscriptions) throws MqttCommandCancelledException, MqttTimeoutException,
-			MqttInterruptedException {
+	MqttInterruptedException {
 
 		Subscription[] array = subscribe(subscriptions.toArray(new Subscription[subscriptions.size()]));
 		return array == null ? null : Arrays.asList(array);
@@ -304,19 +304,19 @@ abstract class AbstractMqttClient implements MqttClient {
 	 */
 	AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener, Executor executor,
 			ChannelManager manager, ScheduledExecutorService scheduledExecutor, MqttClientConfig config) {
-		this.ownedByFactory = true;
+		ownedByFactory = true;
 		this.brokerUri = brokerUri;
 		this.config = config.clone();
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
-		this.debugListener = config.getClientDebugListener();
+		debugListener = config.getClientDebugListener();
 		this.executor = executor;
 		this.scheduledExecutor = scheduledExecutor;
-		this.executorService = null;
-		this.messageHandler = new AsyncMessageHandler();
+		executorService = null;
+		messageHandler = new AsyncMessageHandler();
 		this.manager = manager;
-		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
-		this.channel = manager.newClientChannel(brokerUri, messageHandler);
+		dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
+		channel = manager.newClientChannel(brokerUri, messageHandler);
 	}
 
 	private final void shutdown() throws MqttInterruptedException {
@@ -341,22 +341,22 @@ abstract class AbstractMqttClient implements MqttClient {
 
 	private AbstractMqttClient(String brokerUri, MqttClientListener mqttClientListener, AsyncClientListener asyncClientListener,
 			int messageHandlerThreadPoolSize, Executor executor, MqttClientConfig config) {
-		this.ownedByFactory = false;
+		ownedByFactory = false;
 		this.brokerUri = brokerUri;
 		this.config = config.clone();
 		this.mqttClientListener = mqttClientListener;
 		this.asyncClientListener = asyncClientListener;
-		this.debugListener = config.getClientDebugListener();
-		this.executorService = executor == null ? Executors
-				.newFixedThreadPool(messageHandlerThreadPoolSize, new ConfigurableThreadFactory("MqttClient", false)) : null;
-		this.executor = executor == null ? executorService : executor;
-		this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-		this.messageHandler = new AsyncMessageHandler();
-		this.dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
-		int blockingTimeoutSeconds = asyncClientListener == null ? config.getBlockingTimeoutSeconds() : -1;
-		this.manager = new ChannelManagerImpl(config.getMessageResendIntervalSeconds(), blockingTimeoutSeconds);
-		this.manager.init();
-		this.channel = manager.newClientChannel(brokerUri, messageHandler);
+		debugListener = config.getClientDebugListener();
+		executorService = executor == null ? Executors.newFixedThreadPool(messageHandlerThreadPoolSize, new ConfigurableThreadFactory("MqttClient", false))
+				: null;
+				this.executor = executor == null ? executorService : executor;
+				scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+				messageHandler = new AsyncMessageHandler();
+				dataByMessageId = asyncClientListener == null ? null : new ConcurrentHashMap<Integer, Object>();
+				int blockingTimeoutSeconds = asyncClientListener == null ? config.getBlockingTimeoutSeconds() : -1;
+				manager = new ChannelManagerImpl(config.getMessageResendIntervalSeconds(), blockingTimeoutSeconds);
+				manager.init();
+				channel = manager.newClientChannel(brokerUri, messageHandler);
 	}
 
 	private int nextMessageId(Object messageData) {
@@ -476,8 +476,8 @@ abstract class AbstractMqttClient implements MqttClient {
 
 						config.getReconnectionStrategy().connectionEstablished();
 						if (newChannel != null) {
-							manager.transfer(AbstractMqttClient.this.channel, newChannel);
-							AbstractMqttClient.this.channel = newChannel;
+							manager.transfer(channel, newChannel);
+							channel = newChannel;
 							newChannel = null;
 						}
 					}
@@ -790,7 +790,7 @@ abstract class AbstractMqttClient implements MqttClient {
 			try {
 				newChannel = manager.newClientChannel(brokerUri, messageHandler);
 			} catch (Throwable t) {
-				tryReconnect(t);
+				Log.error(t, "Unable to create a new connection.");
 			}
 		}
 	}

@@ -75,6 +75,23 @@ public class ProgressiveReconnectionStrategyTest {
 	}
 
 	@Test
+	public void testConnectionEstablished_NoMultiplicationOverflow() {
+		strategy = new ProgressiveReconnectionStrategy(100, 2, 3, 250);
+		assertEquals(100, strategy.connectionLost(null, null));
+		assertEquals(200, strategy.connectionLost(null, null));
+		assertEquals(250, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+
+		strategy.connectionEstablished();
+		assertEquals(100, strategy.connectionLost(null, null));
+		assertEquals(200, strategy.connectionLost(null, null));
+		assertEquals(250, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+		assertEquals(-1, strategy.connectionLost(null, null));
+	}
+
+	@Test
 	public void testClone() throws Exception {
 
 		assertEquals(1000, strategy.connectionLost(null, null));

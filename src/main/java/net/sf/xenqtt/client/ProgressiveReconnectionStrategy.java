@@ -25,7 +25,7 @@ import net.sf.xenqtt.XenqttUtil;
  * (configurable) interval. Subsequent attempts back off in aggressiveness with the assumption that if the broker is not nearly immediate available that an
  * issue might prevent a reconnect in the near-term but perhaps not in the longer-term.
  * </p>
- * 
+ *
  * <p>
  * This class is thread-safe.
  * </p>
@@ -40,7 +40,7 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 
 	/**
 	 * Create a new instance of this class.
-	 * 
+	 *
 	 * @param baseReconnectMillis
 	 *            The base reconnect millis to start at. The first retry is attempted at this interval
 	 * @param progressiveFactor
@@ -56,7 +56,7 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 		this.progressiveFactor = XenqttUtil.validateGreaterThan("progressiveFactor", progressiveFactor, 0);
 		this.maxNumberOfReconnects = XenqttUtil.validateGreaterThanOrEqualTo("maxNumberOfReconnects", maxNumberOfReconnects, 0);
 		this.maxReconnectMillis = XenqttUtil.validateGreaterThanOrEqualTo("maxReconnectMillis", maxReconnectMillis, baseReconnectMillis);
-		this.currentRetry = new AtomicInteger();
+		currentRetry = new AtomicInteger();
 	}
 
 	/**
@@ -70,7 +70,7 @@ public final class ProgressiveReconnectionStrategy implements ReconnectionStrate
 
 		int retry = currentRetry.getAndIncrement();
 		long reconnectMillis = baseReconnectMillis;
-		for (int i = 0; i < retry; i++) {
+		for (int i = 0; (i < retry) && (reconnectMillis < maxReconnectMillis); i++) {
 			reconnectMillis *= progressiveFactor;
 		}
 
