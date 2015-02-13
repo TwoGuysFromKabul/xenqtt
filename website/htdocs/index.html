@@ -25,80 +25,105 @@ Version    : 1.0
 Released   : 20121119
 -->
 <html xmlns="http://www.w3.org/1999/xhtml">
-	<head>
-		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<meta name="description" content="A Java MQTT client, Mock MQTT Broker, HTTP to MQTT gateway, and MQTT clustering proxy" />
-		<meta name="keywords" content="" />
-		<title>Xenqtt - A Simple and Innovative Tookit for MQTT Integration</title>
-		<link rel="shortcut icon" href="images/favicon.ico">
-		<link rel="stylesheet" type="text/css" href="style.css" />
-		<script>
-		  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-		  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-		
-		  ga('create', 'UA-44597320-1', 'sourceforge.net');
-		  ga('send', 'pageview');
-		
-		</script>
-	</head>
-	<body>
-		<div id="wrapper">
-			<div id="header">
-				<img src="images/happy-minion.png" />
-				<div id="logo">
-					<h1><a href="index.html">XenQTT</a></h1>
-				</div>
-				<div id="menu">
-					<ul>
-						<li class="first"><a href="index.html">Home</a></li>
-						<li><a href="features.html">Features</a></li>
-						<li><a href="documentation.html">Documentation</a></li>
-						<li><a href="http://sourceforge.net/projects/xenqtt/files">Downloads</a></li>
-						<li><a href="http://sourceforge.net/p/xenqtt/tickets">Tickets</a></li>
-						<li class="last"><a href="about.html">About</a></li>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="description"
+	content="A Java MQTT client, Mock MQTT Broker, HTTP to MQTT gateway, and MQTT clustering proxy" />
+<meta name="keywords" content="" />
+<title>Xenqtt - A Simple and Innovative Tookit for MQTT
+	Integration</title>
+<link rel="shortcut icon" href="images/favicon.ico">
+	<link rel="stylesheet" type="text/css" href="style.css" />
+	<script>
+		(function(i, s, o, g, r, a, m) {
+			i['GoogleAnalyticsObject'] = r;
+			i[r] = i[r] || function() {
+				(i[r].q = i[r].q || []).push(arguments)
+			}, i[r].l = 1 * new Date();
+			a = s.createElement(o), m = s.getElementsByTagName(o)[0];
+			a.async = 1;
+			a.src = g;
+			m.parentNode.insertBefore(a, m)
+		})(window, document, 'script',
+				'//www.google-analytics.com/analytics.js', 'ga');
+
+		ga('create', 'UA-44597320-1', 'sourceforge.net');
+		ga('send', 'pageview');
+	</script>
+</head>
+<body>
+	<div id="wrapper">
+		<div id="header">
+			<img src="images/happy-minion.png" />
+			<div id="logo">
+				<h1>
+					<a href="index.html">XenQTT</a>
+				</h1>
+			</div>
+			<div id="menu">
+				<ul>
+					<li class="first"><a href="index.html">Home</a></li>
+					<li><a href="features.html">Features</a></li>
+					<li><a href="documentation.html">Documentation</a></li>
+					<li><a href="http://sourceforge.net/projects/xenqtt/files">Downloads</a></li>
+					<li><a href="http://sourceforge.net/p/xenqtt/tickets">Tickets</a></li>
+					<li class="last"><a href="about.html">About</a></li>
+				</ul>
+				<br class="clearfix" />
+			</div>
+		</div>
+		<div id="splash">
+			<img src="images/pic01.jpg" width="930" height="230" alt="" />
+		</div>
+		<div id="page">
+			<div id="content">
+				<div class="post">
+					<h2>Welcome to XenQTT</h2>
+					<span style="font-weight: bold;">Update: We've moved! We are
+						now hosted on GitHub. You can find us at <a
+						href="https://github.com/Jorgamundus/xenqtt">https://github.com/Jorgamundus/xenqtt</a>
+					</span>
+					<p>XenQTT is an MQTT support library and application suite that
+						offers clients powerful and innovative features for working in an
+						MQTT-enabled ecosystem. These features help to address certain
+						gaps and needs that have come up within this relatively new and
+						increasingly popular communication protocol. XenQTT provides the
+						following:</p>
+					<ul class="list">
+						<li class="first">A Java MQTT client API that can be used
+							both synchronously and asynchronously</li>
+						<li>A clustering proxy that allows a cluster of clients to
+							act as a single MQTT client transparently
+					</span>
+					</li>
+					<li>A mock MQTT broker that is useful for testing and
+						debugging</li>
+					<li class="last">An HTTP to MQTT gateway <span
+						style="float: right; font-weight: bold;">(PENDING)</span></li>
 					</ul>
-					<br class="clearfix" />
-				</div>
-			</div>
-			<div id="splash">
-				<img src="images/pic01.jpg" width="930" height="230" alt="" />
-			</div>
-			<div id="page">
-				<div id="content">
-					<div class="post">
-						<h2>Welcome to XenQTT</h2>
-						<p>
-						XenQTT is an MQTT support library and application suite that offers clients powerful and innovative features for working in an 
-						MQTT-enabled ecosystem. These features help to address certain gaps and needs that have come up within this relatively new and 
-						increasingly popular communication protocol. XenQTT provides the following:
-						</p>
-						<ul class="list">
-							<li class="first">A Java MQTT client API that can be used both synchronously and asynchronously</li>
-							<li>A clustering proxy that allows a cluster of clients to act as a single MQTT client transparently</span></li>
-							<li>A mock MQTT broker that is useful for testing and debugging</li>
-							<li class="last">An HTTP to MQTT gateway <span style="float: right; font-weight: bold;">(PENDING)</span></li>
-						</ul>
-						<p>
-						This website provides a detailed overview of XenQTT, information on how to download and use the library in your projects, example code,
-						and other related resources. We encourage you to browse around!
-						</p>
-						<p>
-						For those eager to get started here and now the links below provide access to important resources related to XenQTT, MQTT, and other
-						related resources.
-						</p>
-						<ul class="list">
-							<li class="first"><a href="http://mqtt.org">MQTT Overview</a><img src="images/ext-link.gif" height="10" width="10" /></li>
-							<li class="last"><a href="documentation.html#clientapi">Client API Examples</a></li>
-							<li class="last"><a href="documentation.html#mockbrokerapi">Mock Broker API Examples</a></li>
-						</ul>
-					</div>
+					<p>This website provides a detailed overview of XenQTT,
+						information on how to download and use the library in your
+						projects, example code, and other related resources. We encourage
+						you to browse around!</p>
+					<p>For those eager to get started here and now the links below
+						provide access to important resources related to XenQTT, MQTT, and
+						other related resources.</p>
+					<ul class="list">
+						<li class="first"><a href="http://mqtt.org">MQTT Overview</a><img
+							src="images/ext-link.gif" height="10" width="10" /></li>
+						<li class="last"><a href="documentation.html#clientapi">Client
+								API Examples</a></li>
+						<li class="last"><a href="documentation.html#mockbrokerapi">Mock
+								Broker API Examples</a></li>
+					</ul>
 				</div>
 			</div>
 		</div>
-		<div id="footer">
-			&copy; 2013 J2 Enterprises | Design by <a href="http://www.freecsstemplates.org/" rel="nofollow">FreeCSSTemplates.org</a> | Images by <a href="http://fotogrph.com/">Fotogrph</a>
-		</div>
-	</body>
+	</div>
+	<div id="footer">
+		&copy; 2013 J2 Enterprises | Design by <a
+			href="http://www.freecsstemplates.org/" rel="nofollow">FreeCSSTemplates.org</a>
+		| Images by <a href="http://fotogrph.com/">Fotogrph</a>
+	</div>
+</body>
 </html>
